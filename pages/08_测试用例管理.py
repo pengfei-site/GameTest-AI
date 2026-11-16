@@ -1059,43 +1059,158 @@ def show_manual_review_actions(candidate):
 # ============================================================
 
 def show_quality_recheck(candidate):
+    """
+    执行完整质量复检，并在页面刷新后保留本次执行结果。
+
+    结果按 candidate_id 关联，避免切换候选后显示错误结果。
+    """
     st.markdown("### 完整质量复检")
 
     st.caption(
         "完整质量复检会同时执行 Python Validator 和 AI Reviewer。"
     )
 
+    candidate_id = candidate["id"]
+
+    # 使用固定 session key 保存最近一次完整质量复检结果。
+    result_session_key = "testcase_quality_recheck_display"
+
+    # --------------------------------------------------------
+    # 1. 执行复检
+    # --------------------------------------------------------
+
     if st.button(
         "重新执行质量复检",
-        key=f"recheck_{candidate['id']}",
+        key=f"recheck_{candidate_id}",
+        type="primary",
     ):
         try:
             with st.spinner(
                 "正在执行 Python Validator 和 AI Reviewer..."
             ):
-                result = recheck_testcase_quality(
-                    candidate["id"]
-                )
+                result = recheck_testcase_quality(candidate_id)
 
-            if result.get("success"):
-                st.success("质量复检执行及报告保存成功")
-            else:
-                st.error(
-                    f"质量复检失败，阶段："
-                    f"{result.get('stage', '-')}"
-                )
+            if not isinstance(result, dict):
+                result = {
+                    "success": False,
+                    "stage": "invalid_result",
+                    "error": "质量复检 Service 返回了非字典类型结果",
+                    "raw_result": str(result),
+                }
 
-            st.json(result)
+            # 保存完整 Service 返回结果。
+            st.session_state[result_session_key] = {
+                "candidate_id": candidate_id,
+                "result": result,
+                "exception": None,
+            }
 
+            # 通过完整 rerun 重新读取当前版本质量报告。
+            # 结果已存入 session_state，不会因刷新丢失。
             st.rerun()
 
         except Exception as exc:
-            st.error(f"质量复检执行异常：{exc}")
+            # 即使 Service 抛出异常，也保留异常信息。
+            st.session_state[result_session_key] = {
+                "candidate_id": candidate_id,
+                "result": None,
+                "exception": str(exc),
+            }
+
+            st.rerun()
+
+    # --------------------------------------------------------
+    # 2. 展示本次执行结果
+    # --------------------------------------------------------
+
+    saved_result = st.session_state.get(result_session_key)
+
+    # 只展示当前候选对应的复检结果。
+    if (
+        isinstance(saved_result, dict)
+        and saved_result.get("candidate_id") == candidate_id
+    ):
+        st.divider()
+        st.markdown("#### 本次完整质量复检执行结果")
+
+        exception_message = saved_result.get("exception")
+        result = saved_result.get("result")
+
+        if exception_message:
+            st.error("完整质量复检执行异常")
+            st.write(f"异常信息：{exception_message}")
+
+        elif isinstance(result, dict):
+            if result.get("success"):
+                st.success("完整质量复检执行成功，报告保存流程已完成。")
+
+                st.caption(
+                    "执行成功不代表质量检查通过。"
+                    "请分别查看下方 Validator 和 Reviewer 的实际检查结论。"
+                )
+
+                validation_saved = result.get("validation_saved")
+                reviewer_saved = result.get("reviewer_saved")
+
+                if validation_saved is not None:
+                    st.write(
+                        "Validator 报告保存状态："
+                        + ("已保存" if validation_saved else "未保存")
+                    )
+
+                if reviewer_saved is not None:
+                    st.write(
+                        "Reviewer 报告保存状态："
+                        + ("已保存" if reviewer_saved else "未保存")
+                    )
+
+            else:
+                stage = result.get("stage", "-")
+                error = result.get("error")
+
+                st.error(
+                    f"完整质量复检失败，阶段：{stage}"
+                )
+
+                if error:
+                    st.write(f"失败原因：{error}")
+
+                if stage == "version_consistency":
+                    st.warning(
+                        "复检过程中候选版本发生变化，"
+                        "本次复检报告未保存。请重新确认当前版本后再执行。"
+                    )
+
+                elif stage == "quality_persistence":
+                    st.warning(
+                        "质量报告持久化失败。"
+                        "请检查数据库事务执行结果，不应存在单份报告被单独保存的情况。"
+                    )
+
+            # 展示 Service 完整返回值，便于定位问题和验收。
+            with st.expander("查看完整复检执行结果", expanded=True):
+                st.json(result)
+
+        else:
+            st.error("当前保存的复检结果格式不正确")
+
+        # 清除当前候选的本次执行结果。
+        if st.button(
+            "清除本次复检结果",
+            key=f"clear_quality_recheck_{candidate_id}",
+        ):
+            st.session_state.pop(result_session_key, None)
+            st.rerun()
+
+    # --------------------------------------------------------
+    # 3. 业务说明
+    # --------------------------------------------------------
 
     st.caption(
         "说明：复检成功只代表检查流程执行及报告保存成功，"
-        "不代表用例质量合格。审核通过仍需满足 Validator "
-        "和 Reviewer 的通过条件。"
+        "不代表用例质量合格。Validator 未通过或 Reviewer "
+        "提出问题时，报告仍可能成功保存。审核通过仍需满足 "
+        "Validator 和 Reviewer 的通过条件。"
     )
 
 
