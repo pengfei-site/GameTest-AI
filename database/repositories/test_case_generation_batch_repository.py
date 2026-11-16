@@ -147,6 +147,72 @@ def get_generation_batch(batch_id: str) -> dict | None:
     return _row_to_batch(row) if row else None
 
 
+def list_generation_batches(
+    project_id: str,
+    requirement_analysis_id: str | None = None,
+    status: str | None = None,
+) -> list[dict]:
+    """
+    查询指定项目下的测试用例生成批次。
+
+    支持：
+    1. 按项目 ID 查询
+    2. 按需求分析 ID 筛选
+    3. 按批次状态筛选
+    4. 按创建时间倒序排列
+
+    最新批次优先。
+    """
+
+    if not isinstance(project_id, str) or not project_id.strip():
+        raise ValueError("project_id 不能为空")
+
+    allowed_statuses = {
+        "pending",
+        "running",
+        "completed",
+        "failed",
+    }
+
+    if status is not None and status not in allowed_statuses:
+        raise ValueError("无效的批次状态")
+
+    conditions = ["project_id = ?"]
+    params = [project_id]
+
+    if requirement_analysis_id is not None:
+        if (
+            not isinstance(requirement_analysis_id, str)
+            or not requirement_analysis_id.strip()
+        ):
+            raise ValueError("requirement_analysis_id 不能为空")
+
+        conditions.append("requirement_analysis_id = ?")
+        params.append(requirement_analysis_id)
+
+    if status is not None:
+        conditions.append("status = ?")
+        params.append(status)
+
+    where_clause = " AND ".join(conditions)
+
+    with get_connection() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT *
+            FROM test_case_generation_batches
+            WHERE {where_clause}
+            ORDER BY created_at DESC, rowid DESC
+            """,
+            params,
+        ).fetchall()
+
+    return [
+        _row_to_batch(row)
+        for row in rows
+    ]
+
+
 def _row_to_batch(row) -> dict:
     result = dict(row)
 

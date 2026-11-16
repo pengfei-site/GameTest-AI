@@ -8,7 +8,7 @@ def init_db():
 
     创建：
     1. 六张核心数据表
-    2. 七张 MVP-1 测试用例生成数据表
+    2. 八张 MVP-1 测试用例生成及管理数据表
     3. 全部必要查询索引
 
     重复执行不会覆盖已有业务数据。
@@ -194,7 +194,7 @@ def init_db():
         """,
 
         # ============================================================
-        # 二、MVP-1 新增七张测试用例数据表
+        # 二、MVP-1 测试用例生成及管理数据表
         # ============================================================
 
         # 7. 测试用例生成批次
@@ -422,6 +422,51 @@ def init_db():
             )
         )
         """,
+
+        # 14. AI Reviewer 人工确认记录
+        """
+        CREATE TABLE IF NOT EXISTS test_case_reviewer_confirmations (
+            id TEXT PRIMARY KEY,
+
+            reviewer_record_id TEXT NOT NULL,
+            candidate_id TEXT NOT NULL,
+            candidate_version_id TEXT NOT NULL,
+
+            confirmation_status TEXT NOT NULL
+                CHECK (
+                    confirmation_status IN (
+                        'confirmed_passed',
+                        'confirmed_issues',
+                        'recheck_required'
+                    )
+                ),
+
+            confirmation_comment TEXT NOT NULL DEFAULT '',
+            confirmed_by TEXT NOT NULL,
+
+            confirmed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+            FOREIGN KEY (candidate_id, candidate_version_id)
+                REFERENCES test_case_candidate_versions(
+                    candidate_id,
+                    id
+                )
+                ON DELETE RESTRICT,
+
+            FOREIGN KEY (
+                candidate_id,
+                candidate_version_id,
+                reviewer_record_id
+            )
+                REFERENCES test_case_reviewer_records(
+                    candidate_id,
+                    candidate_version_id,
+                    id
+                )
+                ON DELETE RESTRICT
+        )
+        """,
     ]
 
     # ============================================================
@@ -477,7 +522,7 @@ def init_db():
         ON test_point_history(batch_id, created_at)
         """,
 
-        # MVP-1 新增索引
+        # MVP-1 原有索引
 
         """
         CREATE INDEX IF NOT EXISTS idx_tc_batches_project
@@ -533,6 +578,40 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_tc_manual_candidate
         ON test_case_manual_reviews(candidate_id)
         """,
+
+        # Reviewer 复合唯一索引
+        # 为人工确认表的三列复合外键提供合法父键
+
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS
+        idx_tc_reviewer_candidate_version_id
+        ON test_case_reviewer_records(
+            candidate_id,
+            candidate_version_id,
+            id
+        )
+        """,
+
+        # Reviewer 人工确认记录索引
+
+        """
+        CREATE INDEX IF NOT EXISTS
+        idx_tc_reviewer_confirmations_record
+        ON test_case_reviewer_confirmations(
+            reviewer_record_id,
+            created_at
+        )
+        """,
+
+        """
+        CREATE INDEX IF NOT EXISTS
+        idx_tc_reviewer_confirmations_version
+        ON test_case_reviewer_confirmations(
+            candidate_id,
+            candidate_version_id,
+            created_at
+        )
+        """,
     ]
 
     # ============================================================
@@ -541,7 +620,7 @@ def init_db():
 
     with get_connection() as conn:
 
-        # 创建全部十三张数据表
+        # 创建全部十四张数据表
         for sql in tables:
             conn.execute(sql)
 
@@ -574,7 +653,8 @@ def init_db():
 
     print("GameTest AI 数据库初始化完成！")
     print("核心数据表：6 张")
-    print("MVP-1 新增数据表：7 张")
+    print("MVP-1 新增数据表：8 张")
+    print("业务数据表总计：14 张")
     print("数据库索引：初始化完成")
 
 
