@@ -88,6 +88,10 @@ class TestTestPointManagementReviewPage(unittest.TestCase):
                 side_effect=lambda point_id: self.test_point,
             ),
             patch(
+                "database.repositories.test_point_repository.list_test_point_history",
+                return_value=[],
+            ),
+            patch(
                 "core.testpoint_review_service.approve_test_point",
                 return_value={
                     "success": True,
@@ -134,6 +138,7 @@ class TestTestPointManagementReviewPage(unittest.TestCase):
             self.mock_get_batch,
             self.mock_list_points,
             self.mock_get_point,
+            self.mock_list_history,
             self.mock_approve,
             self.mock_reject,
             self.mock_batch_approve,
@@ -309,6 +314,95 @@ class TestTestPointManagementReviewPage(unittest.TestCase):
         self.mock_batch_reject.assert_called_once_with(
             ["test-point-uuid-001"],
             "批次测试点需要补充异常场景",
+        )
+
+
+    def test_history_empty_state_is_shown(self):
+        app = self.run_page()
+
+        self.mock_list_history.assert_called_once_with("test-point-uuid-001")
+        self.assertTrue(
+            any("暂无操作历史记录" in item.value for item in app.info)
+        )
+        self.assertEqual(len(app.exception), 0)
+
+    def test_history_shows_edit_before_and_after_snapshots(self):
+        self.mock_list_history.return_value = [
+            {
+                "action_type": "edited",
+                "created_at": "2026-11-02 10:00:00",
+                "comment": "调整测试目标",
+                "before_data": {"title": "旧标题"},
+                "after_data": {"title": "新标题"},
+            }
+        ]
+        app = self.run_page()
+
+        self.assertEqual(len(app.exception), 0)
+        self.assertTrue(any("编辑测试点" in item.label for item in app.expander))
+        self.assertTrue(any("修改前快照" in item.value for item in app.subheader))
+        self.assertTrue(any("修改后快照" in item.value for item in app.subheader))
+        self.assertTrue(any("调整测试目标" in item.value for item in app.get("markdown")))
+
+    def test_history_newest_operation_is_displayed_first(self):
+        self.mock_list_history.return_value = [
+            {
+                "action_type": "created",
+                "created_at": "2026-11-01 09:00:00",
+                "comment": "较早创建",
+                "before_data": None,
+                "after_data": {"title": "初始标题"},
+            },
+            {
+                "action_type": "edited",
+                "created_at": "2026-11-02 10:00:00",
+                "comment": "最新修改",
+                "before_data": {"title": "旧标题"},
+                "after_data": {"title": "新标题"},
+            },
+        ]
+        app = self.run_page()
+
+        self.assertEqual(len(app.exception), 0)
+        history_expanders = [
+            item
+            for item in app.expander
+            if "编辑测试点" in item.label or "创建测试点" in item.label
+        ]
+        self.assertEqual(len(history_expanders), 2)
+        self.assertIn("编辑测试点", history_expanders[0].label)
+        self.assertIn("创建测试点", history_expanders[1].label)
+        self.assertTrue(
+            any("倒序排列（最新记录在前）" in item.value for item in app.caption)
+        )
+
+    def test_history_query_error_is_shown_without_page_crash(self):
+        self.mock_list_history.side_effect = RuntimeError("history unavailable")
+        app = self.run_page()
+
+        self.assertTrue(
+            any("读取测试点操作历史失败" in item.value for item in app.error)
+        )
+        self.assertEqual(len(app.exception), 0)
+
+    def test_history_unknown_action_type_is_supported(self):
+        self.mock_list_history.return_value = [
+            {
+                "action_type": "future_action",
+                "created_at": "2026-11-02 10:00:00",
+                "comment": "未知操作",
+                "before_data": None,
+                "after_data": None,
+            }
+        ]
+        app = self.run_page()
+
+        self.assertEqual(len(app.exception), 0)
+        self.assertTrue(
+            any("其他操作（future_action）" in item.label for item in app.expander)
+        )
+        self.assertTrue(
+            any("没有可展示的快照数据" in item.value for item in app.info)
         )
 
     def test_ai_failed_status_does_not_block_manual_approval(self):

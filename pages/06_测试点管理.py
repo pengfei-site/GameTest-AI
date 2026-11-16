@@ -1,4 +1,3 @@
-
 import streamlit as st
 from pydantic import ValidationError
 
@@ -12,6 +11,7 @@ from database.repositories.generation_batch_repository import (
 from database.repositories.test_point_repository import (
     get_test_point,
     list_test_points,
+    list_test_point_history,
 )
 
 from core.schemas import TestPointEditableContent
@@ -162,6 +162,75 @@ def calculate_statistics(points):
             statistics["other"] += 1
 
     return statistics
+
+
+# ============================================================
+# 测试点操作历史
+# ============================================================
+
+HISTORY_ACTION_LABELS = {
+    "created": "创建测试点",
+    "edited": "编辑测试点",
+    "approved": "人工审核通过",
+    "rejected": "人工审核驳回",
+    "batch_approved": "批量审核通过",
+    "batch_rejected": "批量审核驳回",
+    "deleted": "删除测试点",
+    "restored": "恢复测试点",
+}
+
+
+def render_test_point_history(test_point_id):
+    """展示单个测试点的操作历史及其数据快照。"""
+    st.divider()
+    st.subheader("操作历史")
+
+    try:
+        history_records = list_test_point_history(test_point_id)
+    except Exception as exc:
+        st.error(f"读取测试点操作历史失败：{exc}")
+        return
+
+    if not history_records:
+        st.info("该测试点暂无操作历史记录。")
+        return
+
+    # Repository 按 created_at ASC、rowid ASC 返回；页面反转后，
+    # 最新操作显示在最上方，同时保留同一时间戳下的写入先后关系（新记录优先）。
+    history_records = list(reversed(history_records))
+    st.caption(f"共 {len(history_records)} 条历史记录，按操作时间倒序排列（最新记录在前）。")
+
+    for index, record in enumerate(history_records, start=1):
+        action_type = record.get("action_type") or "unknown"
+        action_label = HISTORY_ACTION_LABELS.get(
+            action_type, f"其他操作（{action_type}）"
+        )
+        created_at = format_local_datetime(record.get("created_at"))
+        title = f"{index}. {action_label} | {created_at}"
+
+        with st.expander(title, expanded=False):
+            st.write("操作类型：", action_label)
+            st.write("操作时间：", created_at)
+
+            comment = record.get("comment")
+            if comment:
+                st.write("操作意见 / 原因：", comment)
+            else:
+                st.caption("无操作意见或原因。")
+
+            before_data = record.get("before_data")
+            after_data = record.get("after_data")
+
+            if action_type == "edited":
+                show_content("修改前快照", before_data)
+                show_content("修改后快照", after_data)
+            else:
+                if before_data is not None:
+                    show_content("操作前快照", before_data)
+                if after_data is not None:
+                    show_content("操作后快照", after_data)
+                if before_data is None and after_data is None:
+                    st.info("该条历史记录没有可展示的快照数据。")
 
 
 # ============================================================
@@ -931,6 +1000,14 @@ else:
 
         render_edit_form(test_point)
 
+
+
+
+        # ----------------------------------------------------
+        # 操作历史
+        # ----------------------------------------------------
+
+        render_test_point_history(test_point["id"])
 
         # ----------------------------------------------------
         # 原始内容

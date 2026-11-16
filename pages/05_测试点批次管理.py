@@ -13,6 +13,7 @@ from database.repositories.generation_batch_repository import (
 )
 from database.repositories.test_point_repository import (
     get_test_point_review_statistics,
+    list_batch_test_point_history,
     list_test_points,
 )
 
@@ -489,8 +490,168 @@ else:
 
             st.caption(f"内部记录 ID：{point.get('id', '')}")
 
+
+# ============================================================
+# 十二、当前批次操作历史
+# ============================================================
+
+HISTORY_ACTION_LABELS = {
+    "created": "创建测试点",
+    "edited": "编辑测试点",
+    "approved": "人工审核通过",
+    "rejected": "人工审核驳回",
+    "batch_approved": "批量审核通过",
+    "batch_rejected": "批量审核驳回",
+    "deleted": "删除测试点",
+    "restored": "恢复测试点",
+}
+
+
+def get_history_point_label(history: dict) -> str:
+    """优先使用快照中的业务测试点编号，缺失时回退到内部 UUID。"""
+    for snapshot_name in ("after_data", "before_data"):
+        snapshot = history.get(snapshot_name)
+        if isinstance(snapshot, dict):
+            point_id = snapshot.get("point_id")
+            if point_id:
+                return str(point_id)
+
+    return str(history.get("test_point_id") or "未知测试点")
+
+
+def history_matches_point_filter(history: dict, selected_value: str) -> bool:
+    """筛选值可以是业务测试点编号，也可以是内部记录 UUID。"""
+    if selected_value == "全部测试点":
+        return True
+
+    if str(history.get("test_point_id") or "") == selected_value:
+        return True
+
+    return get_history_point_label(history) == selected_value
+
+
+def render_history_snapshot(title: str, snapshot):
+    st.markdown(f"**{title}**")
+    if snapshot is None:
+        st.caption("无快照数据。")
+    else:
+        st.json(snapshot, expanded=2)
+
+
+st.divider()
+st.subheader("7.6 批次操作历史")
+
+try:
+    batch_history = list_batch_test_point_history(selected_batch_id)
+except Exception as exc:
+    st.error(f"读取批次操作历史失败：{exc}")
+    batch_history = None
+
+if batch_history is None:
+    # 查询异常时不把异常误报成“暂无历史”。
+    pass
+elif not batch_history:
+    st.info("该批次暂无操作历史记录。")
+else:
+    # Repository 按 created_at、rowid 正序返回。
+    # 反转后，时间较新及同一时间后写入的记录均置顶。
+    batch_history = list(reversed(batch_history))
+
+    action_values = sorted({
+        str(item.get("action_type") or "unknown")
+        for item in batch_history
+    })
+    action_options = ["全部操作"] + action_values
+
+    point_values = set()
+    for item in batch_history:
+        point_values.add(get_history_point_label(item))
+        internal_id = item.get("test_point_id")
+        if internal_id:
+            point_values.add(str(internal_id))
+
+    point_options = ["全部测试点"] + sorted(point_values)
+
+    filter_col1, filter_col2 = st.columns(2)
+
+    with filter_col1:
+        selected_action = st.selectbox(
+            "按操作类型筛选",
+            options=action_options,
+            format_func=lambda value: (
+                "全部操作"
+                if value == "全部操作"
+                else HISTORY_ACTION_LABELS.get(
+                    value,
+                    f"其他操作（{value}）",
+                )
+            ),
+            key=f"batch_history_action_{selected_batch_id}",
+        )
+
+    with filter_col2:
+        selected_point = st.selectbox(
+            "按测试点编号 / 内部 ID 筛选",
+            options=point_options,
+            key=f"batch_history_point_{selected_batch_id}",
+        )
+
+    filtered_history = [
+        item
+        for item in batch_history
+        if (
+            selected_action == "全部操作"
+            or item.get("action_type") == selected_action
+        )
+        and history_matches_point_filter(item, selected_point)
+    ]
+
+    st.caption(
+        f"当前批次共 {len(batch_history)} 条历史记录，"
+        f"筛选后显示 {len(filtered_history)} 条。最新操作置顶。"
+    )
+
+    if not filtered_history:
+        st.info("没有符合当前筛选条件的操作历史。")
+    else:
+        for index, history in enumerate(filtered_history, start=1):
+            action_type = str(history.get("action_type") or "unknown")
+            action_label = HISTORY_ACTION_LABELS.get(
+                action_type,
+                f"其他操作（{action_type}）",
+            )
+            point_label = get_history_point_label(history)
+            created_at = format_local_datetime(history.get("created_at"))
+            comment = history.get("comment") or "无操作意见"
+
+            with st.expander(
+                f"{action_label} | {point_label} | {created_at}",
+                expanded=(index == 1),
+            ):
+                st.write(f"**操作类型：** {action_label}")
+                st.write(f"**测试点编号：** {point_label}")
+                st.caption(
+                    f"测试点内部 ID：{history.get('test_point_id') or '未知'}"
+                )
+                st.write(f"**操作时间：** {created_at}")
+                st.write(f"**操作意见：** {comment}")
+
+                before_data = history.get("before_data")
+                after_data = history.get("after_data")
+
+                if action_type == "edited":
+                    st.markdown("**编辑前后内容对比**")
+                    render_history_snapshot("修改前", before_data)
+                    render_history_snapshot("修改后", after_data)
+                else:
+                    if before_data is not None:
+                        render_history_snapshot("操作前快照", before_data)
+                    if after_data is not None:
+                        render_history_snapshot("操作后快照", after_data)
+                    if before_data is None and after_data is None:
+                        st.caption("该操作没有可展示的快照数据。")
+
 st.divider()
 st.caption(
-    "STEP 11.2.2 当前版本为批次历史只读管理页面。"
-    "测试点编辑、人工审核和操作历史将在后续子步骤中实现。"
+    "STEP 11.2.6.3.2：当前批次操作历史支持查询、筛选及快照查看。"
 )
