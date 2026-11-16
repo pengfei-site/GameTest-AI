@@ -18,11 +18,9 @@ def create_validation_record(
     candidate_id: str,
     candidate_version_id: str,
     report: TestCaseValidationReport,
+    conn=None,
 ) -> dict:
-    """
-    保存 Python 自动校验报告。
-    报告关联候选用例及其具体版本。
-    """
+    """保存 Python 自动校验报告。"""
     record_id = str(uuid.uuid4())
 
     report_json = json.dumps(
@@ -30,8 +28,8 @@ def create_validation_record(
         ensure_ascii=False,
     )
 
-    with get_connection(write=True) as conn:
-        conn.execute(
+    def _insert(connection):
+        connection.execute(
             """
             INSERT INTO test_case_validation_records (
                 id,
@@ -55,7 +53,7 @@ def create_validation_record(
             ),
         )
 
-        row = conn.execute(
+        row = connection.execute(
             """
             SELECT *
             FROM test_case_validation_records
@@ -64,16 +62,20 @@ def create_validation_record(
             (record_id,),
         ).fetchone()
 
-    return _row_to_validation_record(row)
+        return _row_to_validation_record(row)
+
+    if conn is not None:
+        return _insert(conn)
+
+    with get_connection(write=True) as connection:
+        return _insert(connection)
 
 
 def get_latest_validation_record(
     candidate_id: str,
     candidate_version_id: str,
 ) -> dict | None:
-    """
-    查询指定候选用例版本的最新 Python 校验记录。
-    """
+    """查询指定候选版本的最新 Python 校验记录。"""
     with get_connection() as conn:
         row = conn.execute(
             """
@@ -101,11 +103,9 @@ def create_reviewer_record(
     candidate_version_id: str,
     report: TestCaseReviewResult,
     model_name: str | None = None,
+    conn=None,
 ) -> dict:
-    """
-    保存 AI Reviewer 审查报告。
-    报告关联候选用例及其具体版本。
-    """
+    """保存 AI Reviewer 审查报告。"""
     record_id = str(uuid.uuid4())
 
     report_json = json.dumps(
@@ -113,8 +113,8 @@ def create_reviewer_record(
         ensure_ascii=False,
     )
 
-    with get_connection(write=True) as conn:
-        conn.execute(
+    def _insert(connection):
+        connection.execute(
             """
             INSERT INTO test_case_reviewer_records (
                 id,
@@ -138,7 +138,7 @@ def create_reviewer_record(
             ),
         )
 
-        row = conn.execute(
+        row = connection.execute(
             """
             SELECT *
             FROM test_case_reviewer_records
@@ -147,16 +147,20 @@ def create_reviewer_record(
             (record_id,),
         ).fetchone()
 
-    return _row_to_reviewer_record(row)
+        return _row_to_reviewer_record(row)
+
+    if conn is not None:
+        return _insert(conn)
+
+    with get_connection(write=True) as connection:
+        return _insert(connection)
 
 
 def get_latest_reviewer_record(
     candidate_id: str,
     candidate_version_id: str,
 ) -> dict | None:
-    """
-    查询指定候选用例版本的最新 AI Reviewer 审查记录。
-    """
+    """查询指定候选版本的最新 AI Reviewer 审查记录。"""
     with get_connection() as conn:
         row = conn.execute(
             """
@@ -183,11 +187,7 @@ def list_reviewer_records(
     candidate_id: str,
     candidate_version_id: str,
 ) -> list[dict]:
-    """
-    查询指定候选、指定版本的全部 AI Reviewer 历史记录。
-    按创建时间倒序排列。
-    不同候选版本之间的记录严格隔离。
-    """
+    """查询指定候选、指定版本的全部 AI Reviewer 历史记录。"""
     with get_connection() as conn:
         rows = conn.execute(
             """
@@ -221,7 +221,6 @@ def create_reviewer_confirmation(
     创建一条 AI Reviewer 人工确认记录。
 
     每次确认均新增记录，不覆盖历史记录。
-    人工确认必须关联具体 Reviewer 报告、候选用例及版本。
     """
     required_fields = {
         "reviewer_record_id": reviewer_record_id,
@@ -264,7 +263,7 @@ def create_reviewer_confirmation(
 
         if reviewer_row is None:
             raise ValueError(
-                "Reviewer 报告不存在，或报告与指定候选用例版本不匹配。"
+                "Reviewer 报告不存在，或报告与指定候选版本不匹配。"
             )
 
         conn.execute(
@@ -306,11 +305,7 @@ def create_reviewer_confirmation(
 def get_latest_reviewer_confirmation(
     reviewer_record_id: str,
 ) -> dict | None:
-    """
-    查询指定 AI Reviewer 报告的最新人工确认记录。
-
-    如果尚未人工确认，返回 None。
-    """
+    """查询指定 AI Reviewer 报告的最新人工确认记录。"""
     if not isinstance(reviewer_record_id, str) or not reviewer_record_id.strip():
         raise ValueError("reviewer_record_id 不能为空。")
 
@@ -335,9 +330,7 @@ def get_latest_reviewer_confirmation(
 def list_reviewer_confirmations(
     reviewer_record_id: str,
 ) -> list[dict]:
-    """
-    查询指定 AI Reviewer 报告的全部人工确认历史。
-    """
+    """查询指定 AI Reviewer 报告的全部人工确认历史。"""
     if not isinstance(reviewer_record_id, str) or not reviewer_record_id.strip():
         raise ValueError("reviewer_record_id 不能为空。")
 
@@ -362,13 +355,11 @@ def list_version_reviewer_confirmations(
     candidate_id: str,
     candidate_version_id: str,
 ) -> list[dict]:
-    """
-    查询指定候选用例版本下的全部人工确认记录。
-
-    不同候选版本之间严格隔离。
-    """
+    """查询指定候选版本下的全部人工确认记录。"""
     if not candidate_id or not candidate_version_id:
-        raise ValueError("candidate_id 和 candidate_version_id 不能为空。")
+        raise ValueError(
+            "candidate_id 和 candidate_version_id 不能为空。"
+        )
 
     with get_connection() as conn:
         rows = conn.execute(
@@ -394,22 +385,14 @@ def list_version_reviewer_confirmations(
 def _row_to_validation_record(row) -> dict:
     """将 Python 校验记录转换为字典。"""
     result = dict(row)
-
-    result["report"] = json.loads(
-        result.pop("report_json")
-    )
-
+    result["report"] = json.loads(result.pop("report_json"))
     return result
 
 
 def _row_to_reviewer_record(row) -> dict:
     """将 AI Reviewer 审查记录转换为字典。"""
     result = dict(row)
-
-    result["report"] = json.loads(
-        result.pop("report_json")
-    )
-
+    result["report"] = json.loads(result.pop("report_json"))
     return result
 
 

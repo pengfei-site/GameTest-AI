@@ -1,3 +1,4 @@
+
 import json
 import sqlite3
 import tempfile
@@ -38,6 +39,13 @@ class TestTestCaseQualityRecheckService(unittest.TestCase):
         self.connection_patches = [
             patch.object(
                 init_db,
+                "get_connection",
+                side_effect=self._get_connection,
+            ),
+            # 质量复检 Service 直接导入了 get_connection，
+            # 必须单独 Mock，确保复检事务也使用临时测试数据库。
+            patch.object(
+                recheck_service,
                 "get_connection",
                 side_effect=self._get_connection,
             ),
@@ -299,7 +307,10 @@ class TestTestCaseQualityRecheckService(unittest.TestCase):
                 ),
             )
 
-    def _build_candidate(self, title="正确账号密码登录成功"):
+    def _build_candidate(
+        self,
+        title="正确账号密码登录成功",
+    ):
         return TestCaseCandidate(
             title=title,
             objective="验证用户能够使用正确账号密码登录游戏",
@@ -574,10 +585,10 @@ class TestTestCaseQualityRecheckService(unittest.TestCase):
         )
 
     # =========================================================
-    # 测试 7：Reviewer 报告保存失败，明确返回部分保存
+    # 测试 7：Reviewer 保存失败，整个事务回滚
     # =========================================================
 
-    def test_reviewer_persistence_failure_returns_partial_result(self):
+    def test_reviewer_persistence_failure_rolls_back_all_records(self):
         validation_patch = patch.object(
             recheck_service,
             "validate_testcases",
@@ -604,14 +615,18 @@ class TestTestCaseQualityRecheckService(unittest.TestCase):
         self.assertFalse(result["success"])
         self.assertEqual(
             result["stage"],
-            "reviewer_persistence",
+            "quality_persistence",
         )
-        self.assertTrue(result["validation_saved"])
+        self.assertFalse(result["validation_saved"])
         self.assertFalse(result["reviewer_saved"])
+        self.assertIsNone(result["validation_record"])
+        self.assertIsNone(result["reviewer_record"])
 
+        # Validator 虽然已经尝试写入，但 Reviewer 写入失败，
+        # 整个事务必须回滚，不能留下 Validator 记录。
         self.assertEqual(
             self._get_quality_counts(self.version_1["id"]),
-            (1, 0),
+            (0, 0),
         )
 
     # =========================================================
@@ -638,6 +653,90 @@ class TestTestCaseQualityRecheckService(unittest.TestCase):
         self.assertEqual(
             current["current_version"],
             original["current_version"],
+        )
+
+    # =========================================================
+    # 测试 9：复检期间候选版本发生变化，拒绝保存
+    # =========================================================
+
+    def test_candidate_version_changed_during_recheck_rejects_persistence(self):
+        validation_patch = patch.object(
+            recheck_service,
+            "validate_testcases",
+            return_value=self.validation_report,
+        )
+
+        def modify_candidate_during_review(*args, **kwargs):
+            # 模拟 Reviewer 执行期间，另一项业务操作
+            # 修改候选并创建 V2。
+            updated_candidate = self._build_candidate(
+                title="复检期间发生修改的新版本"
+            )
+
+            modification = manual_review_service.modify_candidate(
+                self.candidate_id,
+                updated_candidate,
+                "模拟复检期间候选版本发生变化",
+            )
+
+            self.assertEqual(
+                modification["new_version_id"] is not None,
+                True,
+            )
+
+            return self.reviewer_report
+
+        reviewer_patch = patch.object(
+            recheck_service,
+            "review_testcases",
+            side_effect=modify_candidate_during_review,
+        )
+
+        with validation_patch, reviewer_patch:
+            result = recheck_service.recheck_testcase_quality(
+                self.candidate_id
+            )
+
+        # 保存前必须发现版本已经从 V1 变为 V2。
+        self.assertFalse(result["success"])
+        self.assertEqual(
+            result["stage"],
+            "version_consistency",
+        )
+        self.assertFalse(result["validation_saved"])
+        self.assertFalse(result["reviewer_saved"])
+        self.assertIsNone(result["validation_record"])
+        self.assertIsNone(result["reviewer_record"])
+
+        # V1 不得留下任何质量报告。
+        self.assertEqual(
+            self._get_quality_counts(self.version_1["id"]),
+            (0, 0),
+        )
+
+        # 找到模拟并发修改创建的 V2。
+        current_versions = candidate_repo.list_candidate_versions(
+            self.candidate_id
+        )
+
+        version_2 = next(
+            version
+            for version in current_versions
+            if version["version_no"] == 2
+        )
+
+        # V2 也不应有本次复检产生的质量报告。
+        self.assertEqual(
+            self._get_quality_counts(version_2["id"]),
+            (0, 0),
+        )
+
+        # 复检不能回滚已经提交的其他业务事务。
+        current = self._get_candidate()
+
+        self.assertEqual(
+            current["current_version"],
+            2,
         )
 
 

@@ -1,4 +1,6 @@
 
+import json
+
 from core.case_schemas import (
     TestCaseCandidate,
     TestCaseCandidateCollection,
@@ -7,6 +9,7 @@ from core.schemas import RequirementAnalysis, TestPoint
 from core.testcase_validator import validate_testcases
 from core.testcase_reviewer import review_testcases
 
+from database.connection import get_connection
 from database.repositories import (
     test_case_candidate_repository as candidate_repo,
     test_case_generation_batch_point_repository as batch_point_repo,
@@ -16,6 +19,127 @@ from database.repositories import (
 from database.repositories.requirement_repository import (
     get_requirement_analysis,
 )
+
+
+class _CandidateVersionChangedError(Exception):
+    """质量复检执行期间候选当前版本发生变化。"""
+
+
+def _normalize_candidate_content(content: dict) -> dict:
+    """使用候选 Schema 规范化正文，确保比较口径一致。"""
+    return TestCaseCandidate.model_validate(
+        content
+    ).model_dump(mode="json")
+
+
+def _verify_candidate_version_in_transaction(
+    conn,
+    candidate_id: str,
+    expected_version_no: int,
+    expected_version_id: str,
+    expected_content: dict,
+) -> None:
+    """
+    在即将保存质量报告的同一事务中重新检查候选版本。
+
+    使用 BEGIN IMMEDIATE 后调用，避免检查与保存之间
+    发生其他数据库写入。
+    """
+    candidate_row = conn.execute(
+        """
+        SELECT
+            id,
+            current_version,
+            current_content_json
+        FROM test_case_candidates
+        WHERE id = ?
+        """,
+        (candidate_id,),
+    ).fetchone()
+
+    if candidate_row is None:
+        raise _CandidateVersionChangedError(
+            "质量复检期间候选记录已不存在，拒绝保存报告。"
+        )
+
+    current_version_no = candidate_row["current_version"]
+
+    if current_version_no != expected_version_no:
+        raise _CandidateVersionChangedError(
+            "质量复检期间候选当前版本号发生变化，拒绝保存报告。"
+        )
+
+    version_row = conn.execute(
+        """
+        SELECT
+            id,
+            candidate_id,
+            version_no,
+            content_json
+        FROM test_case_candidate_versions
+        WHERE candidate_id = ?
+          AND version_no = ?
+        """,
+        (
+            candidate_id,
+            expected_version_no,
+        ),
+    ).fetchone()
+
+    if version_row is None:
+        raise _CandidateVersionChangedError(
+            "质量复检期间候选当前版本记录不存在，拒绝保存报告。"
+        )
+
+    if version_row["id"] != expected_version_id:
+        raise _CandidateVersionChangedError(
+            "质量复检期间候选版本记录 ID 发生变化，拒绝保存报告。"
+        )
+
+    if version_row["candidate_id"] != candidate_id:
+        raise _CandidateVersionChangedError(
+            "候选版本归属发生变化，拒绝保存报告。"
+        )
+
+    if version_row["version_no"] != expected_version_no:
+        raise _CandidateVersionChangedError(
+            "候选版本号与版本记录不一致，拒绝保存报告。"
+        )
+
+    try:
+        candidate_content = json.loads(
+            candidate_row["current_content_json"]
+        )
+        version_content = json.loads(
+            version_row["content_json"]
+        )
+
+        candidate_normalized = _normalize_candidate_content(
+            candidate_content
+        )
+        version_normalized = _normalize_candidate_content(
+            version_content
+        )
+
+    except Exception as exc:
+        raise _CandidateVersionChangedError(
+            f"质量复检期间候选正文无法正确解析，拒绝保存报告：{exc}"
+        ) from exc
+
+    if candidate_normalized != expected_content:
+        raise _CandidateVersionChangedError(
+            "质量复检期间候选当前正文发生变化，拒绝保存报告。"
+        )
+
+    if version_normalized != expected_content:
+        raise _CandidateVersionChangedError(
+            "质量复检期间候选版本正文发生变化，拒绝保存报告。"
+        )
+
+    if candidate_normalized != version_normalized:
+        raise _CandidateVersionChangedError(
+            "候选当前正文与版本记录正文不一致，拒绝保存报告。"
+        )
 
 
 def recheck_testcase_quality(candidate_id: str) -> dict:
@@ -30,16 +154,12 @@ def recheck_testcase_quality(candidate_id: str) -> dict:
     5. 两类质量报告均关联当前 candidate_version_id。
     6. 不修改候选正文、版本号和人工审核状态。
     7. 不覆盖历史质量记录。
+    8. 两份质量报告在同一事务中原子保存。
+    9. 保存前再次核对候选版本，防止并发修改。
 
     返回：
         dict，包含执行状态、版本信息、检查报告及持久化状态。
-
-    注意：
-        两类质量记录通过独立 Repository 分别提交。
-        如果第二份报告保存失败，第一份可能已经保存。
-        此时 success=False，并明确返回部分保存状态。
     """
-
     if not isinstance(candidate_id, str) or not candidate_id.strip():
         raise ValueError("candidate_id 不能为空")
 
@@ -105,8 +225,10 @@ def recheck_testcase_quality(candidate_id: str) -> dict:
         candidate_content
     )
 
+    expected_content = current_candidate.model_dump(mode="json")
+
     if (
-        current_candidate.model_dump(mode="json")
+        expected_content
         != candidate_current_model.model_dump(mode="json")
     ):
         raise ValueError(
@@ -202,21 +324,26 @@ def recheck_testcase_quality(candidate_id: str) -> dict:
         candidates=[current_candidate]
     )
 
-    # 先执行 Python Validator
     validation_report = validate_testcases(
         candidate_collection
     )
 
-    # 再执行 AI Reviewer
-    # Reviewer 异常时，不保存本次任何质量记录。
     reviewer_report = review_testcases(
         requirement,
         test_point,
         candidate_collection,
     )
 
+    validation_report_data = validation_report.model_dump(
+        mode="json"
+    )
+
+    reviewer_report_data = reviewer_report.model_dump(
+        mode="json"
+    )
+
     # =========================================================
-    # 7. 持久化 Python Validator 报告
+    # 7. 原子保存两份质量报告
     # =========================================================
 
     validation_saved = False
@@ -226,27 +353,69 @@ def recheck_testcase_quality(candidate_id: str) -> dict:
     reviewer_record = None
 
     try:
-        validation_record = quality_repo.create_validation_record(
-            candidate_id=candidate_id,
-            candidate_version_id=version_id,
-            report=validation_report,
-        )
+        with get_connection(write=True) as conn:
+            # 先取得 SQLite 写锁。
+            # 从此处开始，其他写事务不能在本次事务提交前
+            # 修改候选当前版本。
+            conn.execute("BEGIN IMMEDIATE")
 
+            # 在同一个事务连接中再次核对候选版本。
+            _verify_candidate_version_in_transaction(
+                conn=conn,
+                candidate_id=candidate_id,
+                expected_version_no=current_version_no,
+                expected_version_id=version_id,
+                expected_content=expected_content,
+            )
+
+            # 保存 Validator 报告。
+            validation_record = quality_repo.create_validation_record(
+                candidate_id=candidate_id,
+                candidate_version_id=version_id,
+                report=validation_report,
+                conn=conn,
+            )
+
+            # 保存 Reviewer 报告。
+            reviewer_record = quality_repo.create_reviewer_record(
+                candidate_id=candidate_id,
+                candidate_version_id=version_id,
+                report=reviewer_report,
+                conn=conn,
+            )
+
+        # 只有正常退出 with，事务成功提交后，
+        # 才能将两份报告标记为保存成功。
         validation_saved = True
+        reviewer_saved = True
 
-    except Exception as exc:
+    except _CandidateVersionChangedError as exc:
         return {
             "success": False,
-            "stage": "validation_persistence",
+            "stage": "version_consistency",
             "candidate_id": candidate_id,
             "candidate_version_id": version_id,
             "version_no": current_version_no,
-            "validation_report": validation_report.model_dump(
-                mode="json"
-            ),
-            "reviewer_report": reviewer_report.model_dump(
-                mode="json"
-            ),
+            "validation_report": validation_report_data,
+            "reviewer_report": reviewer_report_data,
+            "validation_saved": False,
+            "reviewer_saved": False,
+            "validation_record": None,
+            "reviewer_record": None,
+            "error": str(exc),
+        }
+
+    except Exception as exc:
+        # 任一报告写入失败，get_connection 会回滚整个事务。
+        # 因此两份报告均视为未保存。
+        return {
+            "success": False,
+            "stage": "quality_persistence",
+            "candidate_id": candidate_id,
+            "candidate_version_id": version_id,
+            "version_no": current_version_no,
+            "validation_report": validation_report_data,
+            "reviewer_report": reviewer_report_data,
             "validation_saved": False,
             "reviewer_saved": False,
             "validation_record": None,
@@ -255,40 +424,7 @@ def recheck_testcase_quality(candidate_id: str) -> dict:
         }
 
     # =========================================================
-    # 8. 持久化 AI Reviewer 报告
-    # =========================================================
-
-    try:
-        reviewer_record = quality_repo.create_reviewer_record(
-            candidate_id=candidate_id,
-            candidate_version_id=version_id,
-            report=reviewer_report,
-        )
-
-        reviewer_saved = True
-
-    except Exception as exc:
-        return {
-            "success": False,
-            "stage": "reviewer_persistence",
-            "candidate_id": candidate_id,
-            "candidate_version_id": version_id,
-            "version_no": current_version_no,
-            "validation_report": validation_report.model_dump(
-                mode="json"
-            ),
-            "reviewer_report": reviewer_report.model_dump(
-                mode="json"
-            ),
-            "validation_saved": validation_saved,
-            "reviewer_saved": False,
-            "validation_record": validation_record,
-            "reviewer_record": None,
-            "error": str(exc),
-        }
-
-    # =========================================================
-    # 9. 返回完整复检结果
+    # 8. 返回完整复检结果
     # =========================================================
 
     return {
@@ -297,12 +433,8 @@ def recheck_testcase_quality(candidate_id: str) -> dict:
         "candidate_id": candidate_id,
         "candidate_version_id": version_id,
         "version_no": current_version_no,
-        "validation_report": validation_report.model_dump(
-            mode="json"
-        ),
-        "reviewer_report": reviewer_report.model_dump(
-            mode="json"
-        ),
+        "validation_report": validation_report_data,
+        "reviewer_report": reviewer_report_data,
         "validation_saved": validation_saved,
         "reviewer_saved": reviewer_saved,
         "validation_record": validation_record,
