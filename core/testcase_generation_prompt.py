@@ -136,6 +136,11 @@ P3：低影响问题或非核心细节。
 8. steps 中的 action：字符串，类型为 String。
 9. steps 中的 expected_result：字符串，类型为 String。
 10. postconditions：字符串数组，类型为 Array[String]。
+11. action 必须是描述测试人员操作的非空自然语言字符串。
+12. action 不得是整数、浮点数、布尔值、对象或数组。
+13. action 不得仅使用步骤序号、数字或编号代替操作描述。
+14. step_no 是整数，action 和 expected_result 都必须是字符串。
+15. 输出前必须逐个检查 steps 中所有字段的实际 JSON 类型。
 
 特别强调：
 
@@ -253,6 +258,11 @@ USER_PROMPT_TEMPLATE = """
 - 即使 preconditions 或 postconditions 只有一项，也必须使用数组格式。
 - 没有内容时使用空数组 []。
 - 严禁将数组字段输出为字符串或 null。
+- steps[].step_no 必须是整数。
+- steps[].action 必须是非空字符串。
+- steps[].expected_result 必须是非空字符串。
+- 严禁将 action 输出为数字，例如 1、2、3。
+- action 必须描述实际执行的操作。
 
 请在输出前检查：
 1. 所有字段的数据类型。

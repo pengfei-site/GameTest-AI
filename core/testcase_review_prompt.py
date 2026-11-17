@@ -160,6 +160,23 @@ JSON 结构如下：
 
 所有字段必须符合上述结构。
 不得增加其他字段。
+
+十、JSON 完整性和输出长度约束
+
+1. 必须一次性输出完整 JSON 对象。
+2. 不允许输出未完成的字段名或字段值。
+3. 不允许在字段值尚未生成时提前结束输出。
+4. 所有字段都必须有明确值。
+5. 没有问题时 issues 必须输出 []。
+6. 没有通过候选时 approved_candidate_indices 必须输出 []。
+7. 没有复核候选时 review_candidate_indices 必须输出 []。
+8. approved_candidate_indices 和 review_candidate_indices
+   必须完整覆盖所有候选用例。
+9. 不得输出候选用例正文的重复内容。
+10. summary 应简洁，issues 的 description 和 suggestion
+    只描述必要的问题和处理建议。
+11. 不要重复解释同一个问题。
+12. 输出前检查 JSON 括号、逗号、引号是否完整。
 """
 
 
@@ -189,3 +206,5 @@ USER_PROMPT_TEMPLATE = """
 6. 不得修改候选用例正文。
 7. 只返回严格 JSON。
 """
+
+

@@ -1,6 +1,8 @@
 
 import json
 
+from pydantic import ValidationError
+
 from core.ai_client import ai_client
 from core.schemas import RequirementAnalysis, TestPoint
 from core.case_schemas import (
@@ -13,6 +15,9 @@ from core.testcase_generation_prompt import (
 )
 
 
+MAX_GENERATION_ATTEMPTS = 3
+
+
 def generate_testcases(
     requirement: RequirementAnalysis,
     test_point: TestPoint,
@@ -20,55 +25,73 @@ def generate_testcases(
     """
     根据需求分析和单个测试点生成 AI 测试用例候选。
 
-    本函数只负责：
+    负责：
     1. 组织 AI 输入
     2. 调用 AI
     3. 解析 JSON
     4. 执行 Pydantic 结构校验
-    5. 返回统一生成结果
-
-    不负责：
-    - 测试点人工审核状态检查
-    - Python 测试用例质量校验
-    - AI Reviewer 审查
-    - 数据库持久化
+    5. 失败时有限重试
+    6. 返回统一生成结果
     """
 
-    # 1. 序列化需求分析
-    requirement_json = requirement.model_dump_json(
-        indent=2
-    )
+    requirement_json = requirement.model_dump_json(indent=2)
+    test_point_json = test_point.model_dump_json(indent=2)
 
-    # 2. 序列化当前测试点
-    test_point_json = test_point.model_dump_json(
-        indent=2
-    )
-
-    # 3. 组织用户 Prompt
     user_prompt = USER_PROMPT_TEMPLATE.format(
         requirement_analysis=requirement_json,
         test_point=test_point_json,
     )
 
-    # 4. 调用 AI 生成 JSON
-    raw_result = ai_client.chat_json(
-        SYSTEM_PROMPT,
-        user_prompt,
-    )
+    last_error = None
 
-    # 5. 解析 JSON
-    data = json.loads(raw_result)
+    for attempt in range(1, MAX_GENERATION_ATTEMPTS + 1):
+        try:
+            raw_result = ai_client.chat_json(
+                SYSTEM_PROMPT,
+                user_prompt,
+            )
 
-    # 6. Pydantic 结构校验
-    collection = TestCaseCandidateCollection.model_validate(
-        data
-    )
+            data = json.loads(raw_result)
 
-    # 7. 组装统一生成结果
-    result = TestCaseGenerationResult(
-        success=True,
-        candidate_count=len(collection.candidates),
-        candidates=collection.candidates,
-    )
+            if not isinstance(data, dict):
+                raise ValueError("AI 返回结果必须是 JSON 对象")
 
-    return result
+            collection = TestCaseCandidateCollection.model_validate(
+                data
+            )
+
+            return TestCaseGenerationResult(
+                success=True,
+                candidate_count=len(collection.candidates),
+                candidates=collection.candidates,
+            )
+
+        except (ValueError, ValidationError) as exc:
+            last_error = exc
+
+            print(
+                f"[TestCase Generator] 第 {attempt}/"
+                f"{MAX_GENERATION_ATTEMPTS} 次生成校验失败：{exc}"
+            )
+
+            if attempt >= MAX_GENERATION_ATTEMPTS:
+                break
+
+            user_prompt = (
+                USER_PROMPT_TEMPLATE.format(
+                    requirement_analysis=requirement_json,
+                    test_point=test_point_json,
+                )
+                + "\n\n【上一次输出存在错误，请重新生成完整 JSON】\n"
+                + f"错误信息：{str(exc)[:1500]}\n"
+                + "请重新检查全部字段的数据类型和结构。"
+                + "特别注意：steps 中的 action 必须是非空字符串，"
+                + "不得输出整数、布尔值、对象或数组。"
+                + "不要解释错误，不要修补旧 JSON，"
+                + "请重新生成完整的 candidates JSON 对象。"
+            )
+
+    if last_error is not None:
+        raise last_error
+
+    raise RuntimeError("测试用例候选生成失败，但未记录具体错误。")
