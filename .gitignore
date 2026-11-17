@@ -5,5 +5,4 @@ __pycache__/
 *.py[cod]
 .streamlit/secrets.toml
 backups/
-data/
 data/gametest_ai.db
