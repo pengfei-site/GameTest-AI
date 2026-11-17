@@ -64,7 +64,7 @@ class AIClient:
                 response_format={
                     "type": "json_object"
                 },
-                max_tokens=8000,
+                max_tokens=32000,
                 stream=False,
                 extra_body={
                     "thinking": {"type": "disabled"}
@@ -97,6 +97,14 @@ class AIClient:
             raise ValueError(
                 "AI 返回内容触发了内容过滤，无法完成需求分析。"
             )
+
+        if response.usage:
+            print("\n========== AI Token 使用情况 ==========")
+            print("Prompt Tokens：", response.usage.prompt_tokens)
+            print("Completion Tokens：", response.usage.completion_tokens)
+            print("Total Tokens：", response.usage.total_tokens)
+            print("Finish Reason：", finish_reason)
+            print("========================================\n")
 
         # 检查拒绝响应
         if getattr(message, "refusal", None):

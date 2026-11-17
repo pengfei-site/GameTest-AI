@@ -145,9 +145,18 @@ SYSTEM_PROMPT = """
 def generate_testpoints(
     requirement: RequirementAnalysis
 ) -> TestPointGenerationResult:
-    """生成测试点，并执行 Python 校验和 AI 逻辑审查。"""
+    """生成测试点，由 Python 自动回填规则原文，并执行质量校验和 AI 逻辑审查。"""
 
-    # 1. AI 生成测试点
+    # 1. 建立原始业务规则映射
+    rule_map = {
+        rule.rule_id: rule.rule_text
+        for rule in requirement.business_rules
+    }
+
+    if not rule_map:
+        raise ValueError("当前需求没有业务规则，无法生成测试点。")
+
+    # 2. AI 生成测试点
     requirement_json = requirement.model_dump_json(indent=2)
 
     raw_result = ai_client.chat_json(
@@ -157,25 +166,61 @@ def generate_testpoints(
 
     data = json.loads(raw_result)
 
-    # 2. Pydantic 数据结构校验
-    testpoints = TestPointCollection.model_validate(data)
+    if not isinstance(data, dict):
+        raise ValueError("AI 返回的数据顶层必须是 JSON 对象。")
 
-    # 3. 检查规则引用、原文和测试点编号
-    rule_map = {
-        rule.rule_id: rule.rule_text
-        for rule in requirement.business_rules
-    }
+    points_data = data.get("points")
 
-    for point in testpoints.points:
-        if point.requirement_id not in rule_map:
+    if not isinstance(points_data, list):
+        raise ValueError("AI 返回的数据中 points 必须是数组。")
+
+    # 3. Python 检查规则 ID，并自动回填规则原文
+    corrected_count = 0
+
+    for point in points_data:
+        if not isinstance(point, dict):
+            raise ValueError("AI 返回的测试点必须是 JSON 对象。")
+
+        requirement_id = point.get("requirement_id")
+
+        if not requirement_id:
             raise ValueError(
-                f"测试点 {point.point_id} 引用了不存在的需求规则："
-                f"{point.requirement_id}"
+                f"测试点 {point.get('point_id', '未知')} 缺少 requirement_id。"
             )
 
+        if requirement_id not in rule_map:
+            raise ValueError(
+                f"测试点 {point.get('point_id', '未知')} "
+                f"引用了不存在的需求规则：{requirement_id}"
+            )
+
+        # 由 Python 回填权威原文，不使用 AI 改写的内容
+        expected_source = rule_map[requirement_id]
+        ai_source = point.get("source_rule", "")
+
+        if ai_source != expected_source:
+            corrected_count += 1
+            print(
+                f"[规则追溯自动修正] "
+                f"{point.get('point_id', '未知')} "
+                f"关联规则 {requirement_id}：已自动回填原始规则。"
+            )
+
+        point["source_rule"] = expected_source
+
+    if corrected_count:
+        print(
+            f"[规则追溯] 共自动修正 {corrected_count} 个测试点的规则原文。"
+        )
+
+    # 4. Pydantic 数据结构校验
+    testpoints = TestPointCollection.model_validate(data)
+
+    # 5. 再次执行严格规则追溯校验
+    for point in testpoints.points:
         expected_source = rule_map[point.requirement_id]
 
-        if point.source_rule.strip() != expected_source.strip():
+        if point.source_rule != expected_source:
             raise ValueError(
                 f"测试点 {point.point_id} 的规则追溯不一致！\n"
                 f"关联规则ID：{point.requirement_id}\n"
@@ -183,15 +228,16 @@ def generate_testpoints(
                 f"AI填写内容：{point.source_rule}"
             )
 
+    # 6. 检查测试点编号是否重复
     point_ids = [
         point.point_id
         for point in testpoints.points
     ]
 
     if len(point_ids) != len(set(point_ids)):
-        raise ValueError("AI 生成了重复的测试点编号")
+        raise ValueError("AI 生成了重复的测试点编号。")
 
-    # 4. Python 确定性质量检查
+    # 7. Python 确定性质量检查
     validation_data = validate_testpoints(
         requirement,
         testpoints
@@ -212,7 +258,7 @@ def generate_testpoints(
     for warning in validation_report.warnings:
         print("[警告]", warning)
 
-    # 5. Python 检查失败，不调用 AI Reviewer
+    # 8. Python 检查失败，不调用 AI Reviewer
     if not validation_report.passed:
         return TestPointGenerationResult(
             testpoints=testpoints,
@@ -232,7 +278,7 @@ def generate_testpoints(
 
     print("Python 质量检查结果：通过")
 
-    # 6. Python 检查通过，调用 AI Reviewer
+    # 9. Python 检查通过，调用 AI Reviewer
     review_report = review_testpoints(
         requirement,
         testpoints
@@ -241,7 +287,7 @@ def generate_testpoints(
     print("\n========== AI 逻辑审查报告 ==========")
     print(review_report.model_dump_json(indent=2))
 
-    # 7. 汇总最终状态
+    # 10. 汇总最终状态
     if review_report.overall_status == "failed":
         final_status = "review_failed"
 
@@ -251,7 +297,7 @@ def generate_testpoints(
     else:
         final_status = "ready_for_manual_review"
 
-    # 8. 返回统一结果
+    # 11. 返回统一结果
     return TestPointGenerationResult(
         testpoints=testpoints,
         validation_report=validation_report,
