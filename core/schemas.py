@@ -1,7 +1,12 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+)
 
 
 class TestPoint(BaseModel):
@@ -132,6 +137,10 @@ class TestPointCollection(BaseModel):
 class BusinessRule(BaseModel):
     """单条业务规则"""
 
+    model_config = ConfigDict(
+        extra="forbid"
+    )
+
     rule_id: str = Field(
         description="规则编号，例如 R1"
     )
@@ -155,14 +164,35 @@ class BusinessRule(BaseModel):
 class NumericConstraint(BaseModel):
     """结构化数值约束"""
 
-    name: str
-    value: str | int | float
-    unit: str = ""
-    description: str = ""
+    model_config = ConfigDict(
+        extra="forbid"
+    )
+
+    name: str = Field(
+        description="数值约束名称"
+    )
+
+    value: str | int | float = Field(
+        description="数值约束"
+    )
+
+    unit: str = Field(
+        default="",
+        description="数值单位"
+    )
+
+    description: str = Field(
+        default="",
+        description="数值约束说明"
+    )
 
 
 class RequirementAnalysis(BaseModel):
     """游戏需求结构化分析结果"""
+
+    model_config = ConfigDict(
+        extra="forbid"
+    )
 
     module: str = Field(
         description="所属游戏功能模块"
@@ -173,25 +203,31 @@ class RequirementAnalysis(BaseModel):
     )
 
     business_rules: list[BusinessRule] = Field(
-        default_factory=list
+        default_factory=list,
+        description="业务规则列表"
     )
 
     preconditions: list[str] = Field(
-        default_factory=list
+        default_factory=list,
+        description="需求前置条件"
     )
 
     states: list[str] = Field(
-        default_factory=list
+        default_factory=list,
+        description="功能状态"
     )
 
     numeric_constraints: list[NumericConstraint] = Field(
-        default_factory=list
+        default_factory=list,
+        description="数值约束列表"
     )
 
     exception_cases: list[str] = Field(
-        default_factory=list
+        default_factory=list,
+        description="异常情况列表"
     )
 
     open_questions: list[str] = Field(
-        default_factory=list
+        default_factory=list,
+        description="待确认问题列表"
     )
