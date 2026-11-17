@@ -138,3 +138,84 @@ def list_reviewer_confirmation_history(
     return quality_repo.list_reviewer_confirmations(
         reviewer_record_id
     )
+
+
+def batch_confirm_reviewer_reports(
+    confirmations: list[dict],
+    confirmation_status: str,
+    confirmed_by: str,
+    confirmation_comment: str = "",
+) -> dict:
+    """
+    批量提交 AI Reviewer 人工确认。
+
+    每条记录均调用 confirm_reviewer_report，
+    复用单条确认的全部校验和持久化逻辑。
+
+    confirmations 中每项必须包含：
+        reviewer_record_id
+        candidate_id
+        candidate_version_id
+
+    可选：
+        confirmation_comment
+    """
+
+    if not isinstance(confirmations, (list, tuple)):
+        raise ValueError("confirmations 必须是列表或元组")
+
+    if not confirmations:
+        raise ValueError("请选择至少一条需要人工确认的记录")
+
+    results = []
+
+    for item in confirmations:
+        candidate_id = (
+            item.get("candidate_id")
+            if isinstance(item, dict)
+            else None
+        )
+
+        try:
+            if not isinstance(item, dict):
+                raise ValueError("确认记录必须是字典")
+
+            result = confirm_reviewer_report(
+                reviewer_record_id=item["reviewer_record_id"],
+                candidate_id=item["candidate_id"],
+                candidate_version_id=item["candidate_version_id"],
+                confirmation_status=confirmation_status,
+                confirmed_by=confirmed_by,
+                confirmation_comment=item.get(
+                    "confirmation_comment",
+                    confirmation_comment,
+                ),
+            )
+
+            results.append({
+                "candidate_id": candidate_id,
+                "success": True,
+                "result": result,
+                "error": None,
+            })
+
+        except Exception as exc:
+            results.append({
+                "candidate_id": candidate_id,
+                "success": False,
+                "result": None,
+                "error": str(exc),
+            })
+
+    succeeded = sum(
+        1 for item in results if item["success"]
+    )
+    failed = len(results) - succeeded
+
+    return {
+        "total": len(results),
+        "succeeded": succeeded,
+        "failed": failed,
+        "results": results,
+    }
+

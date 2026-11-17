@@ -42,8 +42,9 @@ def _get_current_candidate(conn, candidate_id: str):
     return candidate, dict(version)
 
 
+
 def _check_quality_records(conn, candidate_id, version_id):
-    """检查当前版本的最新 Python 校验和 AI Reviewer 结果。"""
+    """检查当前版本的 Python 校验、Reviewer 审查和人工确认结果。"""
 
     validation = conn.execute(
         """
@@ -78,10 +79,48 @@ def _check_quality_records(conn, candidate_id, version_id):
     if reviewer is None:
         raise ValueError("当前版本尚未执行 AI Reviewer 审查")
 
-    if reviewer["overall_status"] != "passed":
-        raise ValueError(
-            "当前版本 AI Reviewer 未通过，不能执行人工审核通过操作"
-        )
+    reviewer_status = reviewer["overall_status"]
+
+    # Reviewer 原始审查通过，直接允许进入人工审批流程。
+    if reviewer_status == "passed":
+        return
+
+    # Reviewer 需要复核时，检查该报告对应的最新人工确认。
+    if reviewer_status == "needs_review":
+        confirmation = conn.execute(
+            """
+            SELECT *
+            FROM test_case_reviewer_confirmations
+            WHERE reviewer_record_id = ?
+              AND candidate_id = ?
+              AND candidate_version_id = ?
+            ORDER BY created_at DESC, rowid DESC
+            LIMIT 1
+            """,
+            (
+                reviewer["id"],
+                candidate_id,
+                version_id,
+            ),
+        ).fetchone()
+
+        if confirmation is None:
+            raise ValueError(
+                "AI Reviewer 需要人工复核，尚未完成人工确认"
+            )
+
+        if confirmation["confirmation_status"] != "confirmed_passed":
+            raise ValueError(
+                "AI Reviewer 人工确认未通过，不能执行人工审批"
+            )
+
+        return
+
+    # failed 或其他未知状态不能由人工确认覆盖。
+    raise ValueError(
+        f"当前版本 AI Reviewer 状态为 {reviewer_status}，不能执行人工审批"
+    )
+
 
 
 def _insert_manual_review(
@@ -320,3 +359,102 @@ def modify_candidate(
             "manual_review_status": "pending",
             "review_id": review_id,
         }
+
+
+def _normalize_batch_candidate_ids(candidate_ids):
+    """校验并去重批量审核候选 ID，保持原始顺序。"""
+
+    if isinstance(candidate_ids, (str, bytes)):
+        raise ValueError("candidate_ids 必须是候选 ID 列表")
+
+    if not isinstance(candidate_ids, (list, tuple)):
+        raise ValueError("candidate_ids 必须是列表或元组")
+
+    normalized = []
+    seen = set()
+
+    for candidate_id in candidate_ids:
+        if not isinstance(candidate_id, str) or not candidate_id.strip():
+            raise ValueError("候选 ID 不能为空")
+
+        candidate_id = candidate_id.strip()
+
+        if candidate_id not in seen:
+            seen.add(candidate_id)
+            normalized.append(candidate_id)
+
+    if not normalized:
+        raise ValueError("请至少选择一个候选用例")
+
+    return normalized
+
+
+def batch_approve_candidates(candidate_ids, comment=""):
+    """逐条执行批量人工审核通过，每条候选独立事务。"""
+
+    candidate_ids = _normalize_batch_candidate_ids(candidate_ids)
+    results = []
+
+    for candidate_id in candidate_ids:
+        try:
+            result = approve_candidate(candidate_id, comment)
+            results.append({
+                "candidate_id": candidate_id,
+                "success": True,
+                "result": result,
+                "error": "",
+            })
+        except Exception as exc:
+            results.append({
+                "candidate_id": candidate_id,
+                "success": False,
+                "result": None,
+                "error": str(exc),
+            })
+
+    succeeded = sum(1 for item in results if item["success"])
+
+    return {
+        "total": len(results),
+        "succeeded": succeeded,
+        "failed": len(results) - succeeded,
+        "results": results,
+    }
+
+
+def batch_reject_candidates(candidate_ids, reason):
+    """逐条执行批量人工驳回，每条候选独立事务。"""
+
+    if not isinstance(reason, str) or not reason.strip():
+        raise ValueError("批量驳回必须填写驳回原因")
+
+    candidate_ids = _normalize_batch_candidate_ids(candidate_ids)
+    reason = reason.strip()
+    results = []
+
+    for candidate_id in candidate_ids:
+        try:
+            result = reject_candidate(candidate_id, reason)
+            results.append({
+                "candidate_id": candidate_id,
+                "success": True,
+                "result": result,
+                "error": "",
+            })
+        except Exception as exc:
+            results.append({
+                "candidate_id": candidate_id,
+                "success": False,
+                "result": None,
+                "error": str(exc),
+            })
+
+    succeeded = sum(1 for item in results if item["success"])
+
+    return {
+        "total": len(results),
+        "succeeded": succeeded,
+        "failed": len(results) - succeeded,
+        "results": results,
+    }
+

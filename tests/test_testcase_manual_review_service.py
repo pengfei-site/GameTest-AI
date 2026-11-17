@@ -184,6 +184,24 @@ class TestCaseManualReviewService(unittest.TestCase):
                         candidate_id, id
                     )
             );
+            CREATE TABLE test_case_reviewer_confirmations (
+                id TEXT PRIMARY KEY,
+                reviewer_record_id TEXT NOT NULL,
+                candidate_id TEXT NOT NULL,
+                candidate_version_id TEXT NOT NULL,
+                confirmation_status TEXT NOT NULL
+                CHECK (
+                    confirmation_status IN (
+                        'confirmed_passed',
+                        'confirmed_issues',
+                        'recheck_required'
+                    )
+                ),
+            confirmation_comment TEXT NOT NULL DEFAULT '',
+            confirmed_by TEXT NOT NULL,
+            confirmed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
             """
         )
 

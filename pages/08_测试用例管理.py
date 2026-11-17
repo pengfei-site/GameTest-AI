@@ -38,6 +38,7 @@ from core.testcase_reviewer_recheck_service import (
 )
 from core.testcase_reviewer_confirmation_service import (
     confirm_reviewer_report,
+    batch_confirm_reviewer_reports,
     get_latest_reviewer_confirmation,
     list_reviewer_confirmation_history,
 )
@@ -45,9 +46,10 @@ from core.testcase_manual_review_service import (
     approve_candidate,
     reject_candidate,
     modify_candidate,
+    batch_approve_candidates,
+    batch_reject_candidates,
 )
 from core.testcase_export_service import export_approved_testcases
-
 
 st.set_page_config(
     page_title="测试用例管理",
@@ -1053,6 +1055,419 @@ def show_manual_review_actions(candidate):
                 except Exception as exc:
                     st.error(f"驳回失败：{exc}")
 
+# ============================================================
+# 批量人工审核
+# ============================================================
+
+def show_batch_manual_review(candidates, batch_id):
+    st.markdown("### 批量人工审核")
+
+    pending_candidates = [
+        item for item in candidates
+        if item.get("manual_review_status") == "pending"
+    ]
+
+    if not pending_candidates:
+        st.info("当前批次没有待审核候选用例")
+        return
+
+    st.caption(
+        "仅展示待审核候选。批量审核仍会逐条执行单条审核的全部质量校验，"
+        "每条候选独立成功或失败。"
+    )
+
+    candidate_options = {}
+
+    for item in pending_candidates:
+        content = get_candidate_content(item)
+        label = (
+            f"{item.get('candidate_no', '-')} | "
+            f"{content.get('title', '未命名用例')} | "
+            f"{item['id'][:8]}"
+        )
+        candidate_options[label] = item["id"]
+
+    select_all = st.checkbox(
+        "全选当前批次待审核候选",
+        key=f"batch_review_select_all_{batch_id}",
+    )
+
+    selected_labels = st.multiselect(
+        "选择需要批量审核的候选用例",
+        options=list(candidate_options.keys()),
+        key=f"batch_review_candidates_{batch_id}",
+        help="可以多选；勾选全选后将处理当前批次全部待审核候选。",
+    )
+
+    if select_all:
+        selected_ids = list(candidate_options.values())
+    else:
+        selected_ids = [
+            candidate_options[label]
+            for label in selected_labels
+        ]
+
+    st.write(f"已选择：{len(selected_ids)} 条候选")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button(
+            "批量审核通过",
+            key=f"batch_approve_{batch_id}",
+            type="primary",
+            disabled=not selected_ids,
+        ):
+            try:
+                with st.spinner("正在逐条执行审核通过..."):
+                    result = batch_approve_candidates(selected_ids)
+
+                st.session_state[
+                    f"batch_review_result_{batch_id}"
+                ] = {
+                    "action": "approve",
+                    "result": result,
+                }
+
+                st.rerun()
+
+            except Exception as exc:
+                st.error(f"批量审核通过执行失败：{exc}")
+
+    with col2:
+        reject_reason = st.text_input(
+            "批量驳回原因",
+            key=f"batch_reject_reason_{batch_id}",
+            placeholder="批量驳回时必须填写原因",
+        )
+
+        if st.button(
+            "批量驳回",
+            key=f"batch_reject_{batch_id}",
+            disabled=not selected_ids,
+        ):
+            if not reject_reason.strip():
+                st.warning("请先填写批量驳回原因")
+            else:
+                try:
+                    with st.spinner("正在逐条执行驳回..."):
+                        result = batch_reject_candidates(
+                            selected_ids,
+                            reason=reject_reason.strip(),
+                        )
+
+                    st.session_state[
+                        f"batch_review_result_{batch_id}"
+                    ] = {
+                        "action": "reject",
+                        "result": result,
+                    }
+
+                    st.rerun()
+
+                except Exception as exc:
+                    st.error(f"批量驳回执行失败：{exc}")
+
+    # 展示最近一次批量审核结果
+    saved_result = st.session_state.get(
+        f"batch_review_result_{batch_id}"
+    )
+
+    if isinstance(saved_result, dict):
+        result = saved_result.get("result") or {}
+
+        st.divider()
+        st.markdown("#### 最近一次批量审核结果")
+
+        metric1, metric2, metric3 = st.columns(3)
+
+        metric1.metric("处理总数", result.get("total", 0))
+        metric2.metric("成功", result.get("succeeded", 0))
+        metric3.metric("失败", result.get("failed", 0))
+
+        for item in result.get("results", []):
+            candidate_id = item.get("candidate_id", "-")
+            success = item.get("success", False)
+
+            if success:
+                st.success(
+                    f"候选 {candidate_id[:8]}：处理成功"
+                )
+            else:
+                st.error(
+                    f"候选 {candidate_id[:8]}：处理失败。"
+                    f"原因：{item.get('error') or '未知错误'}"
+                )
+
+        if st.button(
+            "清除批量审核结果",
+            key=f"clear_batch_review_result_{batch_id}",
+        ):
+            st.session_state.pop(
+                f"batch_review_result_{batch_id}",
+                None,
+            )
+            st.rerun()
+
+
+# ============================================================
+# 批量 AI Reviewer 人工复核
+# ============================================================
+
+def show_batch_reviewer_confirmation(candidates, batch_id):
+    st.markdown("### 批量 AI Reviewer 人工复核")
+
+    st.caption(
+        "仅处理候选当前版本最新的 needs_review Reviewer 报告。"
+        "每条记录均调用单条人工确认 Service，"
+        "独立保存确认历史，不修改 Reviewer 原始报告和候选最终审核状态。"
+    )
+
+    # --------------------------------------------------------
+    # 1. 找出当前批次需要人工复核的最新 Reviewer 报告
+    # --------------------------------------------------------
+
+    reviewable_items = []
+
+    for candidate in candidates:
+        candidate_id = candidate.get("id")
+
+        if not candidate_id:
+            continue
+
+        current_version = get_current_version_record(
+            candidate_id,
+            candidate,
+        )
+
+        if not current_version:
+            continue
+
+        version_id = current_version.get("id")
+
+        if not version_id:
+            continue
+
+        reviewer = get_latest_reviewer_record(
+            candidate_id,
+            version_id,
+        )
+
+        if not reviewer:
+            continue
+
+        if reviewer.get("overall_status") != "needs_review":
+            continue
+
+        reviewer_record_id = reviewer.get("id")
+
+        if not reviewer_record_id:
+            continue
+
+        # 再次确认报告确实关联当前版本
+        if reviewer.get("candidate_version_id") != version_id:
+            continue
+
+        content = get_candidate_content(candidate)
+
+        latest_confirmation = get_latest_reviewer_confirmation(
+            reviewer_record_id
+        )
+
+        confirmation_status = latest_confirmation.get(
+            "confirmation_status",
+            "pending",
+        )
+
+        reviewable_items.append({
+            "reviewer_record_id": reviewer_record_id,
+            "candidate_id": candidate_id,
+            "candidate_version_id": version_id,
+            "confirmation_status": confirmation_status,
+            "label": (
+                f"{candidate.get('candidate_no', '-')} | "
+                f"{content.get('title', '未命名用例')} | "
+                f"V{candidate.get('current_version', '-')} | "
+                f"{get_status_label(confirmation_status)}"
+            ),
+        })
+
+    if not reviewable_items:
+        st.info(
+            "当前批次没有需要人工复核的最新 Reviewer 报告。"
+        )
+        return
+
+    st.write(
+        f"当前需要人工复核：{len(reviewable_items)} 条"
+    )
+
+    # --------------------------------------------------------
+    # 2. 多选和全选
+    # --------------------------------------------------------
+
+    item_options = {
+        item["label"]: item
+        for item in reviewable_items
+    }
+
+    select_all = st.checkbox(
+        "全选当前批次需要人工复核的报告",
+        key=f"batch_reviewer_select_all_{batch_id}",
+    )
+
+    selected_labels = st.multiselect(
+        "选择需要人工确认的 Reviewer 报告",
+        options=list(item_options.keys()),
+        key=f"batch_reviewer_items_{batch_id}",
+        help="每条报告对应一个候选当前版本。",
+    )
+
+    if select_all:
+        selected_items = reviewable_items
+    else:
+        selected_items = [
+            item_options[label]
+            for label in selected_labels
+        ]
+
+    st.write(f"已选择：{len(selected_items)} 条")
+
+    # --------------------------------------------------------
+    # 3. 确认人和确认意见
+    # --------------------------------------------------------
+
+    confirmed_by = st.text_input(
+        "批量确认人",
+        key=f"batch_reviewer_confirmed_by_{batch_id}",
+        placeholder="请输入实际确认人",
+    )
+
+    confirmation_comment = st.text_area(
+        "批量人工确认意见",
+        key=f"batch_reviewer_comment_{batch_id}",
+        placeholder="填写本次批量确认的依据、问题说明或复核要求",
+    )
+
+    # --------------------------------------------------------
+    # 4. 执行批量确认
+    # --------------------------------------------------------
+
+    def execute_batch_confirmation(status):
+        if not selected_items:
+            st.warning("请至少选择一条 Reviewer 报告")
+            return
+
+        if not confirmed_by.strip():
+            st.warning("请填写批量确认人")
+            return
+
+        confirmations = [
+            {
+                "reviewer_record_id": item["reviewer_record_id"],
+                "candidate_id": item["candidate_id"],
+                "candidate_version_id": item["candidate_version_id"],
+            }
+            for item in selected_items
+        ]
+
+        try:
+            with st.spinner("正在逐条提交人工确认..."):
+                result = batch_confirm_reviewer_reports(
+                    confirmations=confirmations,
+                    confirmation_status=status,
+                    confirmed_by=confirmed_by.strip(),
+                    confirmation_comment=confirmation_comment.strip(),
+                )
+
+            st.session_state[
+                f"batch_reviewer_confirmation_result_{batch_id}"
+            ] = {
+                "status": status,
+                "result": result,
+            }
+
+            st.rerun()
+
+        except Exception as exc:
+            st.error(f"批量人工复核执行失败：{exc}")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button(
+            "批量确认通过",
+            key=f"batch_reviewer_pass_{batch_id}",
+            type="primary",
+            disabled=not selected_items,
+        ):
+            execute_batch_confirmation("confirmed_passed")
+
+    with col2:
+        if st.button(
+            "批量确认有问题",
+            key=f"batch_reviewer_issues_{batch_id}",
+            disabled=not selected_items,
+        ):
+            execute_batch_confirmation("confirmed_issues")
+
+    with col3:
+        if st.button(
+            "批量要求重新复核",
+            key=f"batch_reviewer_recheck_{batch_id}",
+            disabled=not selected_items,
+        ):
+            execute_batch_confirmation("recheck_required")
+
+    # --------------------------------------------------------
+    # 5. 展示最近一次批量人工复核结果
+    # --------------------------------------------------------
+
+    saved_result = st.session_state.get(
+        f"batch_reviewer_confirmation_result_{batch_id}"
+    )
+
+    if isinstance(saved_result, dict):
+        result = saved_result.get("result") or {}
+        status = saved_result.get("status")
+
+        st.divider()
+        st.markdown("#### 最近一次批量人工复核结果")
+
+        st.write(
+            f"本次操作：{get_status_label(status)}"
+        )
+
+        metric1, metric2, metric3 = st.columns(3)
+
+        metric1.metric("处理总数", result.get("total", 0))
+        metric2.metric("成功", result.get("succeeded", 0))
+        metric3.metric("失败", result.get("failed", 0))
+
+        for item in result.get("results", []):
+            candidate_id = str(
+                item.get("candidate_id") or "-"
+            )
+
+            if item.get("success"):
+                st.success(
+                    f"候选 {candidate_id[:8]}：人工确认成功"
+                )
+            else:
+                st.error(
+                    f"候选 {candidate_id[:8]}：人工确认失败。"
+                    f"原因：{item.get('error') or '未知错误'}"
+                )
+
+        if st.button(
+            "清除批量人工复核结果",
+            key=f"clear_batch_reviewer_result_{batch_id}",
+        ):
+            st.session_state.pop(
+                f"batch_reviewer_confirmation_result_{batch_id}",
+                None,
+            )
+            st.rerun()
 
 # ============================================================
 # 完整质量复检
@@ -1457,6 +1872,16 @@ def main():
     show_candidate_statistics(candidates)
 
     # --------------------------------------------------------
+    # 批量 AI Reviewer 人工复核
+    # --------------------------------------------------------
+
+    with st.expander("批量 AI Reviewer 人工复核", expanded=True):
+        show_batch_reviewer_confirmation(
+            candidates,
+            batch_id,
+        )
+
+    # --------------------------------------------------------
     # 5. 候选筛选
     # --------------------------------------------------------
 
@@ -1491,6 +1916,16 @@ def main():
         st.info("当前筛选条件下没有候选用例")
         show_export(batch_id)
         return
+
+    # --------------------------------------------------------
+    # 批量人工审核
+    # --------------------------------------------------------
+
+    with st.expander("批量人工审核", expanded=True):
+        show_batch_manual_review(
+            candidates,
+            batch_id,
+        )
 
     candidate_options = {
         (
