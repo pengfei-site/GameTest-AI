@@ -1,0 +1,72 @@
+
+/* ============================================================
+   GameTest AI - Global Styles
+   ============================================================ */
+
+.stApp {
+    background: #f7f6fc;
+}
+
+.block-container {
+    padding-top: 1.5rem;
+    padding-bottom: 3rem;
+    max-width: 1500px;
+}
+
+/* 侧边栏 */
+[data-testid="stSidebar"] {
+    background: linear-gradient(
+        180deg,
+        #25234a 0%,
+        #5144a0 100%
+    );
+}
+
+[data-testid="stSidebar"] * {
+    color: white;
+}
+
+[data-testid="stSidebar"] hr {
+    border-color: rgba(255,255,255,.15);
+}
+
+/* 导航链接 */
+[data-testid="stSidebar"] [data-testid="stPageLink"] {
+    border-radius: 10px;
+    transition: background .2s ease;
+}
+
+[data-testid="stSidebar"] [data-testid="stPageLink"]:hover {
+    background: rgba(255,255,255,.12);
+}
+
+/* 数据卡片 */
+div[data-testid="stMetric"] {
+    background: white;
+    border: 1px solid #eeebfa;
+    padding: 18px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(80,60,150,.05);
+}
+
+/* 按钮 */
+.stButton button {
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+/* 输入框 */
+.stTextInput input,
+.stTextArea textarea,
+.stSelectbox div[data-baseweb="select"] {
+    border-radius: 10px;
+}
+
+/* 内容卡片 */
+.gt-card {
+    background: #ffffff;
+    border: 1px solid #eeebfa;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(80,60,150,.04);
+}
