@@ -82,13 +82,13 @@ def get_pages():
                 url_path="test-point-batch-management",
             ),
             st.Page(
-                "pages/07_AI测试用例生成.py",
+                "pages/11_AI测试用例生成.py",
                 title="AI测试用例生成",
                 icon="🤖",
                 url_path="ai-test-case-generation",
             ),
             st.Page(
-                "pages/08_测试用例管理.py",
+                "pages/12_测试用例管理.py",
                 title="测试用例管理",
                 icon="📋",
                 url_path="test-case-management",
