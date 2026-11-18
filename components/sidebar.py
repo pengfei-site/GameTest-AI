@@ -1,4 +1,4 @@
-
+﻿
 import streamlit as st
 
 
@@ -51,7 +51,7 @@ def render_sidebar(pages):
                     page,
                     label=page.title,
                     icon=page.icon,
-                    use_container_width=True,
+                    width="stretch",
                 )
 
         st.divider()
@@ -97,3 +97,4 @@ def render_sidebar(pages):
             """,
             unsafe_allow_html=True,
         )
+

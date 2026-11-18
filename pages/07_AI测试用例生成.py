@@ -1,4 +1,4 @@
-
+﻿
 import streamlit as st
 
 from database.repositories.project_repository import list_projects
@@ -379,7 +379,7 @@ def main():
         "🚀 开始 AI 测试用例生成",
         type="primary",
         disabled=not confirm_generation,
-        use_container_width=True,
+        width="stretch",
     )
 
     if generate_clicked:
@@ -446,3 +446,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

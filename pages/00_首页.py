@@ -1,4 +1,4 @@
-
+﻿
 import html
 import streamlit as st
 
@@ -308,7 +308,7 @@ try:
             "pages/01_项目列表.py",
             label="前往项目中心",
             icon="📁",
-            use_container_width=True,
+            width="stretch",
         )
 
     else:
@@ -361,21 +361,21 @@ try:
                         "pages/05_需求文档.py",
                         label="需求中心",
                         icon="📄",
-                        use_container_width=True,
+                        width="stretch",
                     )
 
                     st.page_link(
                         "pages/08_测试点列表.py",
                         label="测试点中心",
                         icon="🎯",
-                        use_container_width=True,
+                        width="stretch",
                     )
 
                     st.page_link(
                         "pages/07_AI测试用例生成.py",
                         label="测试用例中心",
                         icon="📋",
-                        use_container_width=True,
+                        width="stretch",
                     )
 
 except Exception as exc:
@@ -522,7 +522,7 @@ for start in range(0, len(features), 2):
                 st.page_link(
                     feature["path"],
                     label=f'进入{feature["title"]}',
-                    use_container_width=True,
+                    width="stretch",
                 )
 
 
@@ -545,3 +545,4 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+

@@ -1,4 +1,4 @@
-
+﻿
 import json
 import streamlit as st
 
@@ -401,7 +401,7 @@ for batch in batches:
 
 st.dataframe(
     batch_rows,
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
 )
 
@@ -889,3 +889,4 @@ st.info(
     "测试点预览及人工操作历史。"
     "测试点编辑和人工审核请前往「测试点列表」页面操作。"
 )
+

@@ -1,4 +1,4 @@
-
+﻿
 import streamlit as st
 from pydantic import ValidationError
 
@@ -367,7 +367,7 @@ def render_edit_form(test_point):
         submitted = st.form_submit_button(
             "保存测试点修改",
             type="primary",
-            use_container_width=True,
+            width="stretch",
         )
 
         if submitted:
@@ -442,7 +442,7 @@ def render_single_review_actions(test_point):
         "审核通过",
         key=f"approve_test_point_{test_point['id']}",
         type="primary",
-        use_container_width=True,
+        width="stretch",
     ):
         try:
             result = approve_test_point(
@@ -471,7 +471,7 @@ def render_single_review_actions(test_point):
     if st.button(
         "驳回测试点",
         key=f"reject_test_point_{test_point['id']}",
-        use_container_width=True,
+        width="stretch",
     ):
         if not reason.strip():
             st.error("驳回原因不能为空。")
@@ -544,7 +544,7 @@ def render_batch_review_actions(batch_points, batch_id):
         "批量通过",
         key=f"batch_approve_test_points_{batch_id}",
         type="primary",
-        use_container_width=True,
+        width="stretch",
     ):
         if not selected_ids:
             st.error("请至少选择一条待审核测试点。")
@@ -580,7 +580,7 @@ def render_batch_review_actions(batch_points, batch_id):
     if st.button(
         "批量驳回",
         key=f"batch_reject_test_points_{batch_id}",
-        use_container_width=True,
+        width="stretch",
     ):
         if not selected_ids:
             st.error("请至少选择一条待审核测试点。")
@@ -1070,3 +1070,4 @@ st.info(
     "人工审核独立于 AI 审核状态；编辑成功后人工审核状态重置为 pending，"
     "AI 审核状态保持不变。"
 )
+

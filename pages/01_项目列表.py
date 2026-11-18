@@ -1,4 +1,4 @@
-
+﻿
 import streamlit as st
 
 from database.repositories.project_repository import list_projects
@@ -134,7 +134,7 @@ with col_create:
         "pages/02_项目创建.py",
         label="＋ 创建项目",
         icon="✨",
-        use_container_width=True,
+        width="stretch",
     )
 
 with col_edit:
@@ -142,7 +142,7 @@ with col_edit:
         "pages/03_项目编辑.py",
         label="✏️ 编辑项目",
         icon="✏️",
-        use_container_width=True,
+        width="stretch",
     )
 
 with col_archive:
@@ -150,5 +150,6 @@ with col_archive:
         "pages/04_项目归档.py",
         label="📦 归档管理",
         icon="📦",
-        use_container_width=True,
+        width="stretch",
     )
+

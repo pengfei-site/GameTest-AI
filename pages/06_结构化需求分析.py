@@ -1,4 +1,4 @@
-
+﻿
 import streamlit as st
 import pandas as pd
 import json
@@ -304,7 +304,7 @@ st.caption(
 if st.button(
     "开始结构化需求分析",
     type="primary",
-    use_container_width=True,
+    width="stretch",
 ):
 
     st.session_state.saved_analysis_id = None
@@ -386,7 +386,7 @@ if is_current_analysis:
 
         st.dataframe(
             pd.DataFrame(rule_rows),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
     else:
@@ -431,7 +431,7 @@ if is_current_analysis:
 
         st.dataframe(
             pd.DataFrame(numeric_rows),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
     else:
@@ -508,7 +508,7 @@ if is_current_analysis:
         if st.button(
             "保存分析结果",
             type="primary",
-            use_container_width=True,
+            width="stretch",
             key="save_requirement_analysis",
         ):
 
@@ -549,3 +549,4 @@ else:
 
 st.divider()
 st.caption("GameTest AI · 结构化需求分析")
+

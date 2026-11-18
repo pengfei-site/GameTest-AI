@@ -1,4 +1,4 @@
-
+﻿
 import streamlit as st
 
 from database.repositories.project_repository import create_project
@@ -38,7 +38,7 @@ with st.container(border=True):
         submitted = st.form_submit_button(
             "＋ 创建项目",
             type="primary",
-            use_container_width=True,
+            width="stretch",
         )
 
         if submitted:
@@ -74,3 +74,4 @@ st.page_link(
     label="返回项目列表",
     icon="📚",
 )
+

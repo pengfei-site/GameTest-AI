@@ -1,4 +1,4 @@
-
+﻿
 import json
 from datetime import date, datetime
 from enum import Enum
@@ -269,7 +269,7 @@ if previous_result:
 if st.button(
     "开始生成测试点",
     type="primary",
-    use_container_width=True,
+    width="stretch",
     key="run_testpoint_generation_button",
 ):
 
@@ -456,3 +456,4 @@ st.info(
     "进行人工编辑、单条审核和批量审核；"
     "也可以前往「测试点批次管理」查看批次详情、质量报告和操作历史。"
 )
+

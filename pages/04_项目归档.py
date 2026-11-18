@@ -1,4 +1,4 @@
-
+﻿
 import streamlit as st
 
 from database.repositories.project_repository import (
@@ -94,7 +94,7 @@ with col_archive:
             if st.button(
                 "确认归档项目",
                 key="archive_project_button",
-                use_container_width=True,
+                width="stretch",
             ):
 
                 try:
@@ -148,7 +148,7 @@ with col_restore:
                 "恢复项目",
                 key="restore_project_button",
                 type="primary",
-                use_container_width=True,
+                width="stretch",
             ):
 
                 try:
@@ -172,3 +172,4 @@ st.page_link(
     label="返回项目列表",
     icon="📚",
 )
+

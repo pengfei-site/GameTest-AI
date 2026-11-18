@@ -1,4 +1,4 @@
-
+﻿
 import hashlib
 import streamlit as st
 
@@ -113,7 +113,7 @@ st.caption(f"文件大小：{len(file_bytes):,} bytes")
 st.divider()
 st.subheader("四、解析文档")
 
-if st.button("开始解析文档", type="primary", use_container_width=True):
+if st.button("开始解析文档", type="primary", width="stretch"):
 
     st.session_state.pop("parsed_document", None)
 
@@ -205,7 +205,7 @@ if is_current_parse:
         if st.button(
             "保存到项目文档库",
             type="primary",
-            use_container_width=True,
+            width="stretch",
         ):
             try:
                 with st.spinner("正在保存文档..."):
@@ -254,3 +254,4 @@ if is_current_parse:
 
 st.divider()
 st.caption("GameTest AI · 需求文档管理")
+

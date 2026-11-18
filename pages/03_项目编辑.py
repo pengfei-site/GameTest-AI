@@ -1,4 +1,4 @@
-
+﻿
 import streamlit as st
 
 from database.repositories.project_repository import (
@@ -80,7 +80,7 @@ else:
             submitted = st.form_submit_button(
                 "保存修改",
                 type="primary",
-                use_container_width=True,
+                width="stretch",
             )
 
             if submitted:
@@ -116,3 +116,4 @@ st.page_link(
     label="返回项目列表",
     icon="📚",
 )
+
