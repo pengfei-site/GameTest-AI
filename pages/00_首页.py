@@ -372,7 +372,7 @@ try:
                     )
 
                     st.page_link(
-                        "pages/07_AI测试用例生成.py",
+                        "pages/11_AI测试用例生成.py",
                         label="测试用例中心",
                         icon="📋",
                         width="stretch",
@@ -488,7 +488,7 @@ features = [
     {
         "title": "测试用例中心",
         "description": "生成和管理结构化游戏测试用例。",
-        "path": "pages/07_AI测试用例生成.py",
+        "path": "pages/11_AI测试用例生成.py",
         "icon": "📋",
     },
 ]
