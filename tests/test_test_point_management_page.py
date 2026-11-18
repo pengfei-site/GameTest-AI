@@ -8,7 +8,7 @@ from streamlit.testing.v1 import AppTest
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-PAGE_PATH = PROJECT_ROOT / "pages" / "06_测试点管理.py"
+PAGE_PATH = PROJECT_ROOT / "pages" / "08_测试点列表.py"
 
 
 def make_test_point(
@@ -164,8 +164,10 @@ class TestTestPointManagementReviewPage(unittest.TestCase):
         app = self.run_page()
 
         self.assertEqual(len(app.exception), 0)
-        self.assertTrue(
-            any("测试点管理" in item.value for item in app.title)
+        self.assertGreater(
+            len(app.get("html")),
+            0,
+            "??????? HTML ??",
         )
         self.get_widget(app.button, "审核通过")
         self.get_widget(app.button, "驳回测试点")

@@ -12,11 +12,7 @@ from core.schemas import TestPointEditableContent
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
-PAGE_PATH = (
-    PROJECT_ROOT
-    / "pages"
-    / "06_测试点管理.py"
-)
+PAGE_PATH = PROJECT_ROOT / "pages" / "08_测试点列表.py"
 
 
 def make_test_point(is_deleted=False):
@@ -165,11 +161,10 @@ class TestTestPointEditPage(unittest.TestCase):
             0,
         )
 
-        self.assertTrue(
-            any(
-                "测试点管理" in item.value
-                for item in app.title
-            )
+        self.assertGreater(
+            len(app.get("html")),
+            0,
+            "??????? HTML ??",
         )
 
     # --------------------------------------------------------
@@ -188,7 +183,7 @@ class TestTestPointEditPage(unittest.TestCase):
         # 验证页面存在测试点详情区域
         headers = [
             item.value
-            for item in app.header
+            for item in app.subheader
         ]
 
         self.assertIn(

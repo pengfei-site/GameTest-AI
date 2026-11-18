@@ -4,7 +4,7 @@ from streamlit.testing.v1 import AppTest
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-PAGE_PATH = PROJECT_ROOT / "pages" / "05_测试点批次管理.py"
+PAGE_PATH = PROJECT_ROOT / "pages" / "10_测试点批次管理.py"
 
 
 def _history(
@@ -122,7 +122,10 @@ def test_batch_history_empty_state(monkeypatch):
     app = _run_page(monkeypatch, [])
 
     assert not app.exception
-    assert any("该批次暂无操作历史记录" in item.value for item in app.info)
+    assert any(
+        "当前批次暂无测试点操作历史" in item.value
+        for item in app.info
+    )
 
 
 def test_batch_history_renders_action_and_snapshot(monkeypatch):
@@ -166,7 +169,7 @@ def test_batch_history_newest_record_is_first(monkeypatch):
         for item in app.expander
         if "创建测试点" in item.label or "人工审核通过" in item.label
     ]
-    assert history_labels[0].startswith("人工审核通过")
+    assert history_labels[0].startswith("1. 人工审核通过")
 
 
 def test_batch_history_query_error_is_shown(monkeypatch):
