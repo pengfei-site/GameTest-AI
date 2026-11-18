@@ -365,7 +365,7 @@ try:
                     )
 
                     st.page_link(
-                        "pages/03_测试点中心.py",
+                        "pages/08_测试点列表.py",
                         label="测试点中心",
                         icon="🎯",
                         use_container_width=True,
@@ -482,7 +482,7 @@ features = [
     {
         "title": "测试点中心",
         "description": "生成、审核和管理 AI 测试点及批次。",
-        "path": "pages/03_测试点中心.py",
+        "path": "pages/08_测试点列表.py",
         "icon": "🎯",
     },
     {

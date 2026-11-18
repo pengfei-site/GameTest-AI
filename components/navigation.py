@@ -64,22 +64,22 @@ def get_pages():
 
         "AI 测试中心": [
             st.Page(
-                "pages/03_测试点中心.py",
-                title="测试点中心",
+                "pages/08_测试点列表.py",
+                title="测试点列表",
                 icon="🎯",
-                url_path="test-point-center",
+                url_path="test-point-list",
             ),
             st.Page(
-                "pages/04_测试点生成.py",
-                title="测试点生成",
+                "pages/09_AI测试点生成.py",
+                title="AI 测试点生成",
                 icon="✨",
                 url_path="ai-test-point-generation",
             ),
             st.Page(
-                "pages/05_测试点批次管理.py",
+                "pages/10_测试点批次管理.py",
                 title="测试点批次管理",
                 icon="📦",
-                url_path="test-point-batches",
+                url_path="test-point-batch-management",
             ),
             st.Page(
                 "pages/07_AI测试用例生成.py",
