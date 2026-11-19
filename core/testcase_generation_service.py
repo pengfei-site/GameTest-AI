@@ -1,6 +1,7 @@
 
 from core.schemas import RequirementAnalysis, TestPoint
 from core.case_schemas import TestCaseCandidateCollection
+from core.review_schemas import TestCaseReviewResult
 
 from core.testcase_generator import generate_testcases
 from core.testcase_validator import validate_testcases
@@ -171,7 +172,7 @@ def run_testcase_generation(
             "generator": "generate_testcases",
             "validator": "validate_testcases",
             "reviewer": "review_testcases",
-            "review_scope": "single_candidate",
+            "review_scope": "candidate_collection_per_test_point",
             "source_test_point_batch_id": test_point_batch_id,
         },
         total_points=len(normalized_points),
@@ -321,11 +322,13 @@ def run_testcase_generation(
                 collection_report_data
             )
 
+
             # ------------------------------------------
-            # 9.5 逐条处理候选
+            # 9.5 逐条保存候选及执行 Python Validator
             # ------------------------------------------
 
             candidate_errors = []
+            review_items = []
 
             for candidate_no, candidate_content in enumerate(
                 candidates,
@@ -416,26 +419,16 @@ def run_testcase_generation(
                     )
 
                     # ----------------------------------
-                    # 9.5.4 单候选 AI Reviewer
+                    # 9.5.4 收集待批量 Reviewer 的候选
                     # ----------------------------------
 
-                    reviewer_report = review_testcases(
-                        requirement=requirement,
-                        test_point=test_point,
-                        candidates=single_collection,
-                    )
-
-                    candidate_result["review_report"] = (
-                        reviewer_report.model_dump(mode="json")
-                    )
-
-                    create_reviewer_record(
-                        candidate_id=candidate_id,
-                        candidate_version_id=version_id,
-                        report=reviewer_report,
-                    )
-
-                    candidate_result["success"] = True
+                    review_items.append({
+                        "review_index": len(review_items) + 1,
+                        "candidate_content": candidate_content,
+                        "candidate_id": candidate_id,
+                        "candidate_version_id": version_id,
+                        "candidate_result": candidate_result,
+                    })
 
                 except Exception as candidate_exc:
 
@@ -459,7 +452,162 @@ def run_testcase_generation(
                     )
 
             # ------------------------------------------
-            # 9.6 当前测试点处理结果
+            # 9.6 对当前测试点的候选集合执行一次 AI Reviewer
+            # ------------------------------------------
+
+            if review_items:
+
+                review_collection = TestCaseCandidateCollection(
+                    candidates=[
+                        item["candidate_content"]
+                        for item in review_items
+                    ]
+                )
+
+                try:
+
+                    batch_review_report = review_testcases(
+                        requirement=requirement,
+                        test_point=test_point,
+                        candidates=review_collection,
+                    )
+
+                    # ----------------------------------
+                    # 9.6.1 将批量报告拆分为单候选报告
+                    # ----------------------------------
+
+                    for item in review_items:
+
+                        review_index = item["review_index"]
+
+                        candidate_result = item["candidate_result"]
+
+                        try:
+
+                            candidate_issues = [
+                                issue.model_copy(
+                                    update={"candidate_index": 1}
+                                )
+                                for issue in batch_review_report.issues
+                                if issue.candidate_index == review_index
+                            ]
+
+                            is_approved = (
+                                review_index
+                                in batch_review_report.approved_candidate_indices
+                            )
+
+                            is_review = (
+                                review_index
+                                in batch_review_report.review_candidate_indices
+                            )
+
+                            has_critical_issue = any(
+                                issue.severity == "critical"
+                                for issue in candidate_issues
+                            )
+
+                            # 单候选审核状态
+                            if has_critical_issue:
+                                candidate_status = "failed"
+
+                            elif candidate_issues or is_review or not is_approved:
+                                candidate_status = "needs_review"
+
+                            else:
+                                candidate_status = "passed"
+
+                            # 单候选审核摘要
+                            if candidate_status == "passed":
+                                candidate_summary = (
+                                    "该候选用例通过 AI Reviewer 审查，未发现问题。"
+                                )
+
+                            elif candidate_status == "failed":
+                                candidate_summary = (
+                                    "该候选用例存在严重问题，不能直接接受。"
+                                )
+
+                            else:
+                                candidate_summary = (
+                                    "该候选用例存在需要人工复核的问题。"
+                                )
+
+                            single_review_report = TestCaseReviewResult(
+                                overall_status=candidate_status,
+                                summary=candidate_summary,
+                                issues=candidate_issues,
+                                approved_candidate_indices=(
+                                    [1]
+                                    if candidate_status == "passed"
+                                    else []
+                                ),
+                                review_candidate_indices=(
+                                    []
+                                    if candidate_status == "passed"
+                                    else [1]
+                                ),
+                            )
+
+                            # ----------------------------------
+                            # 9.6.2 保存独立候选 Reviewer 记录
+                            # ----------------------------------
+
+                            create_reviewer_record(
+                                candidate_id=item["candidate_id"],
+                                candidate_version_id=item[
+                                    "candidate_version_id"
+                                ],
+                                report=single_review_report,
+                            )
+
+                            candidate_result["review_report"] = (
+                                single_review_report.model_dump(
+                                    mode="json"
+                                )
+                            )
+
+                            candidate_result["success"] = True
+
+                        except Exception as candidate_exc:
+
+                            candidate_error = (
+                                f"测试点 {point_id} 的候选 "
+                                f"{candidate_result['candidate_no']} "
+                                f"保存 Reviewer 结果失败：{str(candidate_exc)}"
+                            )
+
+                            candidate_result["error_message"] = (
+                                candidate_error
+                            )
+
+                            candidate_errors.append(candidate_error)
+                            errors.append(candidate_error)
+
+                except Exception as reviewer_exc:
+
+                    # 批量 Reviewer 调用失败：
+                    # 当前测试点所有待审核候选均标记失败
+
+                    for item in review_items:
+
+                        candidate_result = item["candidate_result"]
+
+                        candidate_error = (
+                            f"测试点 {point_id} 的候选 "
+                            f"{candidate_result['candidate_no']} "
+                            f"批量 Reviewer 失败：{str(reviewer_exc)}"
+                        )
+
+                        candidate_result["error_message"] = (
+                            candidate_error
+                        )
+
+                        candidate_errors.append(candidate_error)
+                        errors.append(candidate_error)
+
+            # ------------------------------------------
+            # 9.7 当前测试点处理结果
             # ------------------------------------------
 
             if candidate_errors:

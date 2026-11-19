@@ -34,14 +34,27 @@ def generate_testcases(
     6. 返回统一生成结果
     """
 
-    requirement_json = requirement.model_dump_json(indent=2)
-    test_point_json = test_point.model_dump_json(indent=2)
+    # 使用紧凑 JSON，减少缩进、换行和空格带来的 Token 消耗。
+    # 保留全部字段，不改变原始需求和测试点语义。
+    requirement_json = json.dumps(
+        requirement.model_dump(exclude_none=True),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
 
-    user_prompt = USER_PROMPT_TEMPLATE.format(
+    test_point_json = json.dumps(
+        test_point.model_dump(exclude_none=True),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+
+    # 基础 Prompt 只构建一次，重试时复用。
+    base_user_prompt = USER_PROMPT_TEMPLATE.format(
         requirement_analysis=requirement_json,
         test_point=test_point_json,
     )
 
+    user_prompt = base_user_prompt
     last_error = None
 
     for attempt in range(1, MAX_GENERATION_ATTEMPTS + 1):
@@ -49,6 +62,7 @@ def generate_testcases(
             raw_result = ai_client.chat_json(
                 SYSTEM_PROMPT,
                 user_prompt,
+                stage="testcase_generation",
             )
 
             data = json.loads(raw_result)
@@ -78,10 +92,7 @@ def generate_testcases(
                 break
 
             user_prompt = (
-                USER_PROMPT_TEMPLATE.format(
-                    requirement_analysis=requirement_json,
-                    test_point=test_point_json,
-                )
+                base_user_prompt
                 + "\n\n【上一次输出存在错误，请重新生成完整 JSON】\n"
                 + f"错误信息：{str(exc)[:1500]}\n"
                 + "请重新检查全部字段的数据类型和结构。"

@@ -157,11 +157,16 @@ def generate_testpoints(
         raise ValueError("当前需求没有业务规则，无法生成测试点。")
 
     # 2. AI 生成测试点
-    requirement_json = requirement.model_dump_json(indent=2)
+    requirement_json = json.dumps(
+        requirement.model_dump(exclude_none=True),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
 
     raw_result = ai_client.chat_json(
         SYSTEM_PROMPT,
-        requirement_json
+        requirement_json,
+        stage="testpoint_generation",
     )
 
     data = json.loads(raw_result)

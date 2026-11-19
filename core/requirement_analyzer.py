@@ -154,7 +154,8 @@ def analyze_requirement(
     # 2. 调用 AI
     raw_result = ai_client.chat_json(
         SYSTEM_PROMPT,
-        requirement_text.strip()
+        requirement_text.strip(),
+        stage="requirement_analysis",
     )
 
     # 3. 检查返回结果

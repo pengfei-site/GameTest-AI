@@ -69,9 +69,23 @@ def review_testcases(
             review_candidate_indices=[],
         )
 
-    requirement_json = requirement.model_dump_json(indent=2)
-    test_point_json = test_point.model_dump_json(indent=2)
-    candidates_json = candidates.model_dump_json(indent=2)
+    requirement_json = json.dumps(
+        requirement.model_dump(exclude_none=True),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+
+    test_point_json = json.dumps(
+        test_point.model_dump(exclude_none=True),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+
+    candidates_json = json.dumps(
+        candidates.model_dump(exclude_none=True),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
 
     base_prompt = USER_PROMPT_TEMPLATE.format(
         requirement_analysis=requirement_json,
@@ -89,6 +103,7 @@ def review_testcases(
             raw_result = ai_client.chat_json(
                 SYSTEM_PROMPT,
                 user_prompt,
+                stage="testcase_review",
             )
 
             data = json.loads(raw_result)

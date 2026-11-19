@@ -97,19 +97,20 @@ def review_testpoints(
     """
 
     input_data = {
-        "requirement_analysis": requirement.model_dump(),
-        "testpoints": testpoints.model_dump(),
+        "requirement_analysis": requirement.model_dump(exclude_none=True),
+        "testpoints": testpoints.model_dump(exclude_none=True),
     }
 
     user_prompt = json.dumps(
         input_data,
         ensure_ascii=False,
-        indent=2,
+        separators=(",", ":"),
     )
 
     raw_result = ai_client.chat_json(
         SYSTEM_PROMPT,
         user_prompt,
+        stage="testpoint_review",
     )
 
     print("\n========== DeepSeek 原始审查结果 ==========")
