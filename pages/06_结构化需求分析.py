@@ -422,18 +422,27 @@ if is_current_analysis:
         numeric_rows = []
 
         for item in numeric_constraints:
+            value = item.get("value")
+
             numeric_rows.append({
-                "数值名称": item["name"],
-                "数值": item["value"],
-                "单位": item.get("unit", ""),
-                "说明": item.get("description", ""),
+                "数值名称": str(item.get("name") or ""),
+                # 展示层统一转换为字符串，避免 int / float / str 混合
+                "数值": "" if value is None else str(value),
+                "单位": str(item.get("unit") or ""),
+                "说明": str(item.get("description") or ""),
             })
 
+        numeric_df = pd.DataFrame(
+            numeric_rows,
+            columns=["数值名称", "数值", "单位", "说明"],
+        )
+
         st.dataframe(
-            pd.DataFrame(numeric_rows),
+            numeric_df,
             width="stretch",
             hide_index=True,
         )
+
     else:
         st.info("暂未提取到数值约束。")
 
