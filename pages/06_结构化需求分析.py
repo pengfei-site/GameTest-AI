@@ -30,6 +30,113 @@ render_header(
 )
 
 
+# ============================================================
+# 页面专属样式
+# ============================================================
+
+st.html("""
+<style>
+.gt-section {
+    margin: 1.5rem 0 0.8rem 0;
+}
+
+.gt-section-title {
+    font-size: 1.05rem;
+    font-weight: 650;
+    color: #292746;
+    margin-bottom: 0.25rem;
+}
+
+.gt-section-desc {
+    font-size: 0.84rem;
+    color: #85839a;
+    line-height: 1.6;
+}
+
+.gt-info-panel {
+    background: #ffffff;
+    border: 1px solid #eeeafd;
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.gt-info-title {
+    color: #39345f;
+    font-size: 0.95rem;
+    font-weight: 650;
+    margin-bottom: 0.45rem;
+}
+
+.gt-info-desc {
+    color: #85839a;
+    font-size: 0.82rem;
+    line-height: 1.6;
+}
+
+.gt-analysis-banner {
+    background: linear-gradient(120deg, #f4f1ff 0%, #faf9ff 100%);
+    border: 1px solid #e9e4ff;
+    border-radius: 14px;
+    padding: 1.25rem 1.4rem;
+    margin: 0.8rem 0 1rem 0;
+}
+
+.gt-analysis-title {
+    color: #433b83;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+}
+
+.gt-analysis-desc {
+    color: #77728f;
+    font-size: 0.84rem;
+    line-height: 1.7;
+}
+
+.gt-result-panel {
+    background: #ffffff;
+    border: 1px solid #eeeafd;
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+    margin: 0.7rem 0;
+}
+
+.gt-result-heading {
+    color: #39345f;
+    font-size: 0.98rem;
+    font-weight: 700;
+    margin-bottom: 0.65rem;
+}
+
+.gt-question-panel {
+    background: #fffaf1;
+    border: 1px solid #f4e5c9;
+    border-radius: 12px;
+    padding: 1rem 1.15rem;
+    margin: 0.6rem 0;
+}
+
+.gt-save-panel {
+    background: #f7f6ff;
+    border: 1px solid #e9e5fc;
+    border-radius: 14px;
+    padding: 1.2rem 1.3rem;
+    margin-top: 0.8rem;
+}
+
+@media (max-width: 768px) {
+    .gt-info-panel,
+    .gt-result-panel,
+    .gt-save-panel {
+        padding: 0.9rem;
+    }
+}
+</style>
+""")
+
+
 # ==================================================
 # 一、Session State 初始化
 # ==================================================
@@ -107,7 +214,14 @@ def get_document_label(document):
 # 三、选择项目
 # ==================================================
 
-st.subheader("一、选择项目")
+st.markdown("""
+<div class="gt-section">
+    <div class="gt-section-title">一、选择项目</div>
+    <div class="gt-section-desc">
+        选择需要进行需求分析的游戏项目。
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 try:
     projects = list_projects()
@@ -127,21 +241,29 @@ project_map = {
 
 project_ids = list(project_map.keys())
 
-selected_project_id = st.selectbox(
-    "选择项目",
-    options=project_ids,
-    format_func=lambda project_id: get_project_name(
-        project_map[project_id]
-    ),
-    key="analysis_project_selector",
-)
+with st.container(border=True):
+    selected_project_id = st.selectbox(
+        "选择项目",
+        options=project_ids,
+        format_func=lambda project_id: get_project_name(
+            project_map[project_id]
+        ),
+        key="analysis_project_selector",
+    )
 
 
 # ==================================================
 # 四、选择最新有效文档版本
 # ==================================================
 
-st.subheader("二、选择需求文档")
+st.markdown("""
+<div class="gt-section">
+    <div class="gt-section-title">二、选择需求文档</div>
+    <div class="gt-section-desc">
+        系统默认读取每个文档标识对应的最新有效版本。
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 try:
     all_documents = list_documents(
@@ -176,14 +298,15 @@ document_map = {
 
 document_ids = list(document_map.keys())
 
-selected_document_id = st.selectbox(
-    "选择需求文档",
-    options=document_ids,
-    format_func=lambda document_id: get_document_label(
-        document_map[document_id]
-    ),
-    key="analysis_document_selector",
-)
+with st.container(border=True):
+    selected_document_id = st.selectbox(
+        "选择需求文档",
+        options=document_ids,
+        format_func=lambda document_id: get_document_label(
+            document_map[document_id]
+        ),
+        key="analysis_document_selector",
+    )
 
 
 # ==================================================
@@ -212,7 +335,14 @@ if (
 # 六、读取选中文档完整内容
 # ==================================================
 
-st.subheader("三、文档信息")
+st.markdown("""
+<div class="gt-section">
+    <div class="gt-section-title">三、文档信息</div>
+    <div class="gt-section-desc">
+        查看当前选中文档的基本信息和导入内容。
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 try:
     selected_document = get_document(selected_document_id)
@@ -244,41 +374,52 @@ if not content.strip():
 # 七、展示文档元信息
 # ==================================================
 
-col1, col2, col3, col4 = st.columns(4)
+with st.container(border=True):
 
-col1.metric(
-    "文档版本",
-    f"V{selected_document.get('version', '-')}"
-)
+    st.markdown("**当前分析文档**")
 
-col2.metric(
-    "文档类型",
-    get_document_type(selected_document)
-)
+    st.write(f"**文档名称：** {get_document_name(selected_document)}")
 
-col3.metric(
-    "文本字符数",
-    f"{len(content):,}"
-)
+    st.write(
+        f"**导入时间：** "
+        f"{format_local_datetime(selected_document.get('created_at'))}"
+    )
 
-col4.metric(
-    "文档标识",
-    selected_document.get("document_key", "-")
-)
+    col1, col2, col3, col4 = st.columns(4)
 
-st.write(f"**文档名称：** {get_document_name(selected_document)}")
+    col1.metric(
+        "文档版本",
+        f"V{selected_document.get('version', '-')}"
+    )
 
-st.write(
-    f"**导入时间：** "
-    f"{format_local_datetime(selected_document.get('created_at'))}"
-)
+    col2.metric(
+        "文档类型",
+        get_document_type(selected_document)
+    )
+
+    col3.metric(
+        "文本字符数",
+        f"{len(content):,}"
+    )
+
+    col4.metric(
+        "文档标识",
+        selected_document.get("document_key", "-")
+    )
 
 
 # ==================================================
 # 八、查看文档解析内容
 # ==================================================
 
-st.subheader("四、文档解析内容")
+st.markdown("""
+<div class="gt-section">
+    <div class="gt-section-title">四、文档解析内容</div>
+    <div class="gt-section-desc">
+        可展开查看完整原始文本，确认需求上下文。
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 with st.expander("查看完整文档文本", expanded=False):
     st.text_area(
@@ -293,13 +434,22 @@ with st.expander("查看完整文档文本", expanded=False):
 # 九、执行结构化需求分析
 # ==================================================
 
-st.divider()
-st.subheader("五、结构化需求分析")
+st.markdown("""
+<div class="gt-section">
+    <div class="gt-section-title">五、结构化需求分析</div>
+</div>
+""", unsafe_allow_html=True)
 
-st.caption(
-    "点击下方按钮，系统将调用 AI 分析当前选中的需求文档。"
-    "分析结果经过 Pydantic 数据结构校验后展示。"
-)
+st.html("""
+<div class="gt-analysis-banner">
+    <div class="gt-analysis-title">AI 需求分析</div>
+    <div class="gt-analysis-desc">
+        AI 将从当前文档中提取业务规则、前置条件、业务状态、
+        数值约束、异常场景以及待策划确认的问题。
+        分析结果经过 Pydantic 数据结构校验后展示。
+    </div>
+</div>
+""")
 
 if st.button(
     "开始结构化需求分析",
@@ -354,122 +504,190 @@ is_current_analysis = (
 if is_current_analysis:
 
     st.divider()
-    st.subheader("六、分析结果")
+
+    st.markdown("""
+    <div class="gt-section">
+        <div class="gt-section-title">六、分析结果</div>
+        <div class="gt-section-desc">
+            以下内容为 AI 从当前需求文档中提取的结构化信息。
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.caption(
         f"分析文档：{st.session_state.analysis_file_name}"
     )
 
-    st.markdown("#### 一、需求摘要")
+    # ==================================================
+    # 1. 需求摘要
+    # ==================================================
 
-    st.write(f"**功能模块：** {result['module']}")
-    st.write(result["summary"])
+    with st.container(border=True):
 
-    st.markdown("#### 二、核心业务规则")
+        st.markdown("**一、需求摘要**")
 
-    rules = result.get("business_rules", [])
+        st.markdown(f"**功能模块：** {result['module']}")
 
-    if rules:
-        rule_rows = []
+        st.write(result["summary"])
 
-        for rule in rules:
-            rule_rows.append({
-                "规则编号": rule["rule_id"],
-                "规则描述": rule["rule_text"],
-                "需求依据": rule["source_text"],
-                "确认状态": (
-                    "已明确"
-                    if rule["status"] == "confirmed"
-                    else "待确认"
-                ),
-            })
 
-        st.dataframe(
-            pd.DataFrame(rule_rows),
-            width="stretch",
-            hide_index=True,
+    # ==================================================
+    # 2. 核心业务规则
+    # ==================================================
+
+    with st.container(border=True):
+
+        st.markdown("**二、核心业务规则**")
+
+        rules = result.get("business_rules", [])
+
+        if rules:
+            rule_rows = []
+
+            for rule in rules:
+                rule_rows.append({
+                    "规则编号": rule["rule_id"],
+                    "规则描述": rule["rule_text"],
+                    "需求依据": rule["source_text"],
+                    "确认状态": (
+                        "已明确"
+                        if rule["status"] == "confirmed"
+                        else "待确认"
+                    ),
+                })
+
+            st.dataframe(
+                pd.DataFrame(rule_rows),
+                width="stretch",
+                hide_index=True,
+            )
+        else:
+            st.info("暂未提取到业务规则。")
+
+
+    # ==================================================
+    # 3. 前置条件
+    # ==================================================
+
+    with st.container(border=True):
+
+        st.markdown("**三、前置条件**")
+
+        preconditions = result.get("preconditions", [])
+
+        if preconditions:
+            for item in preconditions:
+                st.markdown(f"- {item}")
+        else:
+            st.info("暂未提取到前置条件。")
+
+
+    # ==================================================
+    # 4. 业务状态
+    # ==================================================
+
+    with st.container(border=True):
+
+        st.markdown("**四、业务状态**")
+
+        states = result.get("states", [])
+
+        if states:
+            for item in states:
+                st.markdown(f"- {item}")
+        else:
+            st.info("暂未提取到业务状态。")
+
+
+    # ==================================================
+    # 5. 数值约束
+    # ==================================================
+
+    with st.container(border=True):
+
+        st.markdown("**五、数值约束**")
+
+        numeric_constraints = result.get(
+            "numeric_constraints", []
         )
-    else:
-        st.info("暂未提取到业务规则。")
 
-    st.markdown("#### 三、前置条件")
+        if numeric_constraints:
+            numeric_rows = []
 
-    preconditions = result.get("preconditions", [])
+            for item in numeric_constraints:
+                value = item.get("value")
 
-    if preconditions:
-        for item in preconditions:
-            st.markdown(f"- {item}")
-    else:
-        st.info("暂未提取到前置条件。")
+                numeric_rows.append({
+                    "数值名称": str(item.get("name") or ""),
+                    # 展示层统一转换为字符串，避免 int / float / str 混合
+                    "数值": "" if value is None else str(value),
+                    "单位": str(item.get("unit") or ""),
+                    "说明": str(item.get("description") or ""),
+                })
 
-    st.markdown("#### 四、业务状态")
+            numeric_df = pd.DataFrame(
+                numeric_rows,
+                columns=["数值名称", "数值", "单位", "说明"],
+            )
 
-    states = result.get("states", [])
+            st.dataframe(
+                numeric_df,
+                width="stretch",
+                hide_index=True,
+            )
 
-    if states:
-        for item in states:
-            st.markdown(f"- {item}")
-    else:
-        st.info("暂未提取到业务状态。")
+        else:
+            st.info("暂未提取到数值约束。")
 
-    st.markdown("#### 五、数值约束")
 
-    numeric_constraints = result.get(
-        "numeric_constraints", []
-    )
+    # ==================================================
+    # 6. 异常场景
+    # ==================================================
 
-    if numeric_constraints:
-        numeric_rows = []
+    with st.container(border=True):
 
-        for item in numeric_constraints:
-            value = item.get("value")
+        st.markdown("**六、异常场景**")
 
-            numeric_rows.append({
-                "数值名称": str(item.get("name") or ""),
-                # 展示层统一转换为字符串，避免 int / float / str 混合
-                "数值": "" if value is None else str(value),
-                "单位": str(item.get("unit") or ""),
-                "说明": str(item.get("description") or ""),
-            })
-
-        numeric_df = pd.DataFrame(
-            numeric_rows,
-            columns=["数值名称", "数值", "单位", "说明"],
+        exception_cases = result.get(
+            "exception_cases", []
         )
 
-        st.dataframe(
-            numeric_df,
-            width="stretch",
-            hide_index=True,
-        )
+        if exception_cases:
+            for item in exception_cases:
+                st.markdown(f"- {item}")
+        else:
+            st.info("暂未提取到异常场景。")
 
-    else:
-        st.info("暂未提取到数值约束。")
 
-    st.markdown("#### 六、异常场景")
+    # ==================================================
+    # 7. 待策划确认的问题
+    # ==================================================
 
-    exception_cases = result.get(
-        "exception_cases", []
-    )
+    with st.container(border=True):
 
-    if exception_cases:
-        for item in exception_cases:
-            st.markdown(f"- {item}")
-    else:
-        st.info("暂未提取到异常场景。")
+        st.markdown("**七、待策划确认的问题**")
 
-    st.markdown("#### 七、待策划确认的问题")
+        questions = result.get("open_questions", [])
 
-    questions = result.get("open_questions", [])
+        if questions:
+            for index, question in enumerate(questions, 1):
+                st.warning(f"{index}. {question}")
+        else:
+            st.success("当前未发现需要确认的问题。")
 
-    if questions:
-        for index, question in enumerate(questions, 1):
-            st.warning(f"{index}. {question}")
-    else:
-        st.success("当前未发现需要确认的问题。")
 
-    st.divider()
-    st.markdown("#### 八、结构化数据")
+    # ==================================================
+    # 8. JSON 结构化数据
+    # ==================================================
+
+    st.markdown("""
+    <div class="gt-section">
+        <div class="gt-section-title">八、结构化数据</div>
+        <div class="gt-section-desc">
+            可查看完整 JSON 或下载分析结果。
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     with st.expander("查看完整 JSON"):
         st.json(result)
@@ -487,68 +705,81 @@ if is_current_analysis:
         mime="application/json",
     )
 
+
     # ==================================================
     # 十一、数据库持久化
     # ==================================================
 
     st.divider()
-    st.subheader("九、保存分析结果")
+
+    st.markdown("""
+    <div class="gt-section">
+        <div class="gt-section-title">九、保存分析结果</div>
+        <div class="gt-section-desc">
+            将当前结构化分析结果保存为项目分析记录。
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     if st.session_state.saved_analysis_id:
 
         st.success("当前分析结果已经保存到数据库。")
 
-        st.write(
-            f"**分析记录 ID：** "
-            f"`{st.session_state.saved_analysis_id}`"
-        )
+        with st.container(border=True):
 
-        st.write(
-            f"**创建时间：** "
-            f"{format_local_datetime(st.session_state.saved_analysis_created_at)}"
-        )
+            st.write(
+                f"**分析记录 ID：** "
+                f"`{st.session_state.saved_analysis_id}`"
+            )
+
+            st.write(
+                f"**创建时间：** "
+                f"{format_local_datetime(st.session_state.saved_analysis_created_at)}"
+            )
 
     else:
 
-        st.info(
-            "当前分析结果尚未保存。确认分析内容无误后，可以保存到数据库。"
-        )
+        with st.container(border=True):
 
-        if st.button(
-            "保存分析结果",
-            type="primary",
-            width="stretch",
-            key="save_requirement_analysis",
-        ):
+            st.info(
+                "当前分析结果尚未保存。确认分析内容无误后，可以保存到数据库。"
+            )
 
-            try:
-                with st.spinner("正在保存分析结果..."):
+            if st.button(
+                "保存分析结果",
+                type="primary",
+                width="stretch",
+                key="save_requirement_analysis",
+            ):
 
-                    saved_record = create_requirement_analysis(
-                        project_id=selected_project_id,
-                        document_id=selected_document_id,
-                        module=result["module"],
-                        summary=result["summary"],
-                        analysis_data=result,
+                try:
+                    with st.spinner("正在保存分析结果..."):
+
+                        saved_record = create_requirement_analysis(
+                            project_id=selected_project_id,
+                            document_id=selected_document_id,
+                            module=result["module"],
+                            summary=result["summary"],
+                            analysis_data=result,
+                        )
+
+                    st.session_state.saved_analysis_id = saved_record["id"]
+                    st.session_state.saved_analysis_created_at = saved_record["created_at"]
+
+                    st.success("分析结果已成功保存到数据库！")
+
+                    st.write(
+                        f"**分析记录 ID：** `{saved_record['id']}`"
                     )
 
-                st.session_state.saved_analysis_id = saved_record["id"]
-                st.session_state.saved_analysis_created_at = saved_record["created_at"]
+                    st.write(
+                        f"**创建时间：** "
+                        f"{format_local_datetime(saved_record.get('created_at'))}"
+                    )
 
-                st.success("分析结果已成功保存到数据库！")
-
-                st.write(
-                    f"**分析记录 ID：** `{saved_record['id']}`"
-                )
-
-                st.write(
-                    f"**创建时间：** "
-                    f"{format_local_datetime(saved_record.get('created_at'))}"
-                )
-
-            except Exception as e:
-                st.error("分析结果保存失败，请检查数据库记录和关联关系。")
-                st.exception(e)
+                except Exception as e:
+                    st.error("分析结果保存失败，请检查数据库记录和关联关系。")
+                    st.exception(e)
 
 else:
     st.info(
@@ -558,4 +789,3 @@ else:
 
 st.divider()
 st.caption("GameTest AI · 结构化需求分析")
-

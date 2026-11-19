@@ -13,6 +13,106 @@ from core.testpoint_generation_service import run_testpoint_generation
 
 
 # ============================================================
+# 页面专属样式
+# ============================================================
+
+st.html("""
+<style>
+.tp-page-intro {
+    padding: 18px 22px;
+    border: 1px solid #e8e5f5;
+    border-radius: 14px;
+    background: linear-gradient(120deg, #f7f6ff 0%, #fbfaff 100%);
+    margin-bottom: 20px;
+}
+
+.tp-step-label {
+    color: #6254c7;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+}
+
+.tp-section-note {
+    color: #77758a;
+    font-size: 13px;
+    margin-top: -8px;
+    margin-bottom: 16px;
+}
+
+.tp-info-card {
+    padding: 14px 16px;
+    border: 1px solid #ebe9f3;
+    border-radius: 12px;
+    background: #ffffff;
+    min-height: 88px;
+}
+
+.tp-info-label {
+    color: #858296;
+    font-size: 12px;
+    margin-bottom: 7px;
+}
+
+.tp-info-value {
+    color: #302d43;
+    font-size: 15px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.tp-result-card {
+    padding: 16px;
+    border: 1px solid #ebe9f3;
+    border-radius: 12px;
+    background: #ffffff;
+    min-height: 105px;
+}
+
+.tp-result-label {
+    color: #858296;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.tp-result-value {
+    color: #302d43;
+    font-size: 25px;
+    font-weight: 700;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.tp-result-hint {
+    color: #858296;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.tp-action-note {
+    padding: 15px 18px;
+    border-left: 4px solid #8275d5;
+    border-radius: 8px;
+    background: #f7f6fc;
+    color: #514d68;
+    line-height: 1.7;
+}
+
+@media (max-width: 768px) {
+    .tp-page-intro {
+        padding: 14px 16px;
+    }
+
+    .tp-result-card {
+        min-height: 85px;
+    }
+}
+</style>
+""")
+
+
+# ============================================================
 # 页面 Header
 # ============================================================
 
@@ -32,7 +132,6 @@ def to_display_data(value):
     将 Pydantic、Enum、日期时间等对象转换为可展示的数据。
     保留原有生成结果的数据结构。
     """
-
     if hasattr(value, "model_dump"):
         return to_display_data(value.model_dump(mode="json"))
 
@@ -94,6 +193,25 @@ def format_analysis(analysis):
     )
 
 
+def render_info_card(label, value):
+    st.html(f"""
+    <div class="tp-info-card">
+        <div class="tp-info-label">{label}</div>
+        <div class="tp-info-value">{value}</div>
+    </div>
+    """)
+
+
+def render_result_card(label, value, hint=""):
+    st.html(f"""
+    <div class="tp-result-card">
+        <div class="tp-result-label">{label}</div>
+        <div class="tp-result-value">{value}</div>
+        <div class="tp-result-hint">{hint}</div>
+    </div>
+    """)
+
+
 # ============================================================
 # Session State 初始化
 # 保留原有状态键，避免影响已有页面逻辑
@@ -104,10 +222,29 @@ if "testpoint_generation_result" not in st.session_state:
 
 
 # ============================================================
+# 页面说明
+# ============================================================
+
+st.html("""
+<div class="tp-page-intro">
+    <div class="tp-step-label">AI TEST POINT GENERATION</div>
+    <div style="font-size:17px;font-weight:700;color:#302d43;margin-bottom:6px;">
+        从结构化需求到游戏测试点
+    </div>
+    <div style="font-size:13px;color:#77758a;line-height:1.7;">
+        选择项目及已保存的结构化需求分析，启动 AI 测试点生成流程。
+        生成完成后，可查看生成统计、质量校验报告和测试点详情。
+    </div>
+</div>
+""")
+
+
+# ============================================================
 # 1. 项目选择
 # ============================================================
 
 st.subheader("第一步：选择项目")
+st.caption("选择需要生成测试点的游戏项目。")
 
 try:
     projects = list_projects()
@@ -141,7 +278,9 @@ project_id = st.selectbox(
 # ============================================================
 
 st.divider()
+
 st.subheader("第二步：选择结构化需求分析")
+st.caption("测试点将基于选中的需求分析结果生成。")
 
 try:
     analyses = list_requirement_analyses(
@@ -183,40 +322,46 @@ selected_analysis = analysis_options[analysis_id]
 # ============================================================
 
 st.divider()
+
 st.subheader("需求分析内容")
+st.caption("生成前请确认当前选择的项目和需求分析内容。")
 
-analysis_col1, analysis_col2 = st.columns(2)
+with st.container(border=True):
+    analysis_col1, analysis_col2 = st.columns(2)
 
-with analysis_col1:
+    with analysis_col1:
+        render_info_card(
+            "所属项目",
+            format_project(project_options[project_id]),
+        )
+
+        st.write("")
+        render_info_card(
+            "需求模块",
+            selected_analysis.get("module") or "未填写",
+        )
+
+    with analysis_col2:
+        render_info_card(
+            "需求分析 ID",
+            str(analysis_id),
+        )
+
+        st.write("")
+        render_info_card(
+            "创建时间",
+            str(
+                format_local_datetime(
+                    selected_analysis.get("created_at")
+                )
+            ),
+        )
+
+    st.markdown("**需求摘要**")
+
     st.write(
-        "**所属项目：**",
-        format_project(project_options[project_id]),
+        selected_analysis.get("summary") or "暂无需求摘要"
     )
-
-    st.write(
-        "**需求模块：**",
-        selected_analysis.get("module") or "未填写",
-    )
-
-with analysis_col2:
-    st.write(
-        "**需求分析 ID：**",
-        analysis_id,
-    )
-
-    st.write(
-        "**创建时间：**",
-        format_local_datetime(
-            selected_analysis.get("created_at")
-        ),
-    )
-
-
-st.markdown("**需求摘要**")
-
-st.write(
-    selected_analysis.get("summary") or "暂无需求摘要"
-)
 
 
 analysis_data = selected_analysis.get("analysis_data")
@@ -240,12 +385,33 @@ with st.expander("查看完整结构化需求数据", expanded=False):
 # ============================================================
 
 st.divider()
-st.subheader("第三步：生成测试点")
 
-st.info(
-    "生成操作将基于当前选择的项目和需求分析执行。"
-    "请确认需求内容无误后，再点击生成按钮。"
-)
+st.subheader("第三步：生成测试点")
+st.caption("确认需求内容无误后，启动 AI 测试点生成流程。")
+
+with st.container(border=True):
+    st.markdown("**本次生成任务**")
+
+    task_col1, task_col2 = st.columns(2)
+
+    with task_col1:
+        render_info_card(
+            "目标项目",
+            format_project(project_options[project_id]),
+        )
+
+    with task_col2:
+        render_info_card(
+            "需求模块",
+            selected_analysis.get("module") or "未填写",
+        )
+
+    st.write("")
+
+    st.info(
+        "生成操作将基于当前选择的项目和需求分析执行。"
+        "请确认需求内容无误后，再点击生成按钮。"
+    )
 
 
 # 判断已有结果是否属于当前项目和需求分析
@@ -300,6 +466,7 @@ if st.button(
 # ============================================================
 
 st.divider()
+
 st.subheader("生成结果")
 
 generation_state = st.session_state.get(
@@ -352,24 +519,34 @@ batch_id = result_data.get("batch_id")
 
 metric_col1, metric_col2, metric_col3 = st.columns(3)
 
-metric_col1.metric(
-    "生成测试点数量",
-    generated_count,
-)
+with metric_col1:
+    render_result_card(
+        "生成测试点数量",
+        str(generated_count),
+        "本次生成返回的测试点数量",
+    )
 
-metric_col2.metric(
-    "成功保存数量",
-    saved_count,
-)
+with metric_col2:
+    render_result_card(
+        "成功保存数量",
+        str(saved_count),
+        "成功写入的测试点数量",
+    )
 
-metric_col3.metric(
-    "最终状态",
-    str(final_status),
-)
+with metric_col3:
+    render_result_card(
+        "最终状态",
+        str(final_status),
+        "本次生成流程状态",
+    )
 
 
 if batch_id:
-    st.write("**生成批次 ID：**", batch_id)
+    st.write("")
+    render_info_card(
+        "生成批次 ID",
+        str(batch_id),
+    )
 
 
 # ------------------------------------------------------------
@@ -377,7 +554,9 @@ if batch_id:
 # ------------------------------------------------------------
 
 st.divider()
+
 st.subheader("质量检查报告")
+st.caption("查看 Python Validator 校验结果和 AI Reviewer 审核结果。")
 
 validation_report = result_data.get("validation_report")
 review_report = result_data.get("review_report")
@@ -411,6 +590,7 @@ with report_tab2:
 # ------------------------------------------------------------
 
 st.divider()
+
 st.subheader("本次生成的测试点")
 
 created_points = result_data.get("created_points")
@@ -451,9 +631,11 @@ else:
 
 st.divider()
 
-st.info(
-    "生成完成后，可以前往「测试点列表」查看测试点详情，"
-    "进行人工编辑、单条审核和批量审核；"
-    "也可以前往「测试点批次管理」查看批次详情、质量报告和操作历史。"
-)
-
+st.html("""
+<div class="tp-action-note">
+    <strong>下一步可以做什么？</strong><br>
+    生成完成后，可以前往「测试点列表」查看测试点详情，
+    进行人工编辑、单条审核和批量审核；
+    也可以前往「测试点批次管理」查看批次详情、质量报告和操作历史。
+</div>
+""")

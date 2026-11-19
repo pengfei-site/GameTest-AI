@@ -26,10 +26,117 @@ render_header(
 
 
 # ============================================================
+# 页面专属样式
+# ============================================================
+
+st.html("""
+<style>
+.gt-section {
+    margin: 1.5rem 0 0.8rem 0;
+}
+
+.gt-section-title {
+    font-size: 1.05rem;
+    font-weight: 650;
+    color: #292746;
+    margin-bottom: 0.25rem;
+}
+
+.gt-section-desc {
+    font-size: 0.84rem;
+    color: #85839a;
+    line-height: 1.6;
+}
+
+.gt-panel {
+    background: #ffffff;
+    border: 1px solid #eeeafd;
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+    margin: 0.7rem 0;
+}
+
+.gt-panel-title {
+    color: #39345f;
+    font-size: 0.98rem;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+}
+
+.gt-panel-desc {
+    color: #85839a;
+    font-size: 0.82rem;
+    line-height: 1.6;
+}
+
+.gt-filter-panel {
+    background: #f8f7ff;
+    border: 1px solid #ebe7fc;
+    border-radius: 14px;
+    padding: 1rem 1.2rem 0.4rem 1.2rem;
+    margin: 0.8rem 0;
+}
+
+.gt-version-header {
+    background: linear-gradient(120deg, #f4f1ff 0%, #faf9ff 100%);
+    border: 1px solid #e9e4ff;
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.gt-version-title {
+    color: #433b83;
+    font-size: 0.98rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+}
+
+.gt-version-desc {
+    color: #77728f;
+    font-size: 0.82rem;
+    line-height: 1.6;
+}
+
+.gt-action-panel {
+    background: #faf9ff;
+    border: 1px solid #eeeafd;
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    margin: 0.8rem 0;
+}
+
+.gt-content-panel {
+    background: #ffffff;
+    border: 1px solid #e9e5fc;
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+    .gt-panel,
+    .gt-action-panel,
+    .gt-content-panel {
+        padding: 0.85rem;
+    }
+}
+</style>
+""")
+
+
+# ============================================================
 # 一、选择项目
 # ============================================================
 
-st.subheader("一、选择项目")
+st.markdown("""
+<div class="gt-section">
+    <div class="gt-section-title">一、选择项目</div>
+    <div class="gt-section-desc">
+        选择需要管理需求文档版本的游戏项目。
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 try:
     projects = list_projects()
@@ -48,20 +155,27 @@ project_map = {
 
 project_ids = list(project_map.keys())
 
-selected_project_id = st.selectbox(
-    "选择所属游戏项目",
-    options=project_ids,
-    format_func=lambda project_id: project_map[project_id]["name"],
-    key="version_project_id",
-)
+with st.container(border=True):
+    selected_project_id = st.selectbox(
+        "选择所属游戏项目",
+        options=project_ids,
+        format_func=lambda project_id: project_map[project_id]["name"],
+        key="version_project_id",
+    )
 
 
 # ============================================================
 # 二、读取文档版本
 # ============================================================
 
-st.divider()
-st.subheader("二、需求文档版本")
+st.markdown("""
+<div class="gt-section">
+    <div class="gt-section-title">二、需求文档版本</div>
+    <div class="gt-section-desc">
+        查看当前项目下的需求文档及其全部历史版本。
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 try:
     saved_documents = list_documents(
@@ -115,34 +229,55 @@ total_active_versions = sum(
     if not doc["is_deleted"]
 )
 
-col1, col2, col3 = st.columns(3)
 
-col1.metric("需求文档数量", total_document_count)
-col2.metric("有效版本数量", total_active_versions)
-col3.metric("历史版本总数", total_history_versions)
+st.markdown("""
+<div class="gt-section">
+    <div class="gt-section-title">版本概览</div>
+    <div class="gt-section-desc">
+        当前项目需求文档及版本记录统计。
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+with st.container(border=True):
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric("需求文档数量", total_document_count)
+    col2.metric("有效版本数量", total_active_versions)
+    col3.metric("历史版本总数", total_history_versions)
 
 
 # ============================================================
 # 五、搜索与筛选
 # ============================================================
 
-st.divider()
+st.markdown("""
+<div class="gt-section">
+    <div class="gt-section-title">三、搜索与筛选</div>
+    <div class="gt-section-desc">
+        根据文档名称、文档标识和版本状态快速定位记录。
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-col1, col2 = st.columns([2, 1])
+with st.container(border=True):
 
-with col1:
-    search_keyword = st.text_input(
-        "搜索文档名称或标识",
-        placeholder="输入文档名称或 document_key",
-        key="version_search_keyword",
-    )
+    col1, col2 = st.columns([2, 1])
 
-with col2:
-    document_status_filter = st.selectbox(
-        "版本显示范围",
-        options=["有效版本", "全部版本"],
-        key="version_status_filter",
-    )
+    with col1:
+        search_keyword = st.text_input(
+            "搜索文档名称或标识",
+            placeholder="输入文档名称或 document_key",
+            key="version_search_keyword",
+        )
+
+    with col2:
+        document_status_filter = st.selectbox(
+            "版本显示范围",
+            options=["有效版本", "全部版本"],
+            key="version_status_filter",
+        )
 
 
 # ============================================================
@@ -205,6 +340,15 @@ st.caption(
 # 七、展示每份文档的版本历史
 # ============================================================
 
+st.markdown("""
+<div class="gt-section">
+    <div class="gt-section-title">四、文档版本历史</div>
+    <div class="gt-section-desc">
+        展开文档分组，可以查看版本记录、管理版本状态和查看文档内容。
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
 if not filtered_groups:
     st.warning("没有找到符合条件的需求文档。")
 
@@ -228,6 +372,19 @@ else:
             f"{display_document['document_name']}（{latest_label}）",
             key=f"version_expander_{key}",
         ):
+
+            # ====================================================
+            # 文档基本信息
+            # ====================================================
+
+            st.markdown("""
+            <div class="gt-version-header">
+                <div class="gt-version-title">文档基本信息</div>
+                <div class="gt-version-desc">
+                    当前文档的版本概况和基础属性。
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
             col1, col2, col3, col4 = st.columns(4)
 
@@ -254,14 +411,23 @@ else:
                 display_document["file_type"].upper(),
             )
 
-            st.write(f"**文档标识：** `{key}`")
-            st.write(f"**文档 ID：** `{display_document['id']}`")
-            st.write(
-                f"**创建时间：** "
-                f"{format_local_datetime(display_document.get('created_at'))}"
-            )
+            with st.container(border=True):
 
-            st.markdown("#### 历史版本列表")
+                st.write(f"**文档名称：** {display_document['document_name']}")
+                st.write(f"**文档标识：** `{key}`")
+                st.write(f"**文档 ID：** `{display_document['id']}`")
+
+                st.write(
+                    f"**创建时间：** "
+                    f"{format_local_datetime(display_document.get('created_at'))}"
+                )
+
+
+            # ====================================================
+            # 历史版本选择
+            # ====================================================
+
+            st.markdown("**历史版本列表**")
 
             version_options = {
                 (
@@ -289,130 +455,150 @@ else:
 
             st.divider()
 
+
             # ====================================================
             # 版本操作
             # ====================================================
 
-            if not selected_version_record["is_deleted"]:
+            st.markdown("**版本状态与操作**")
 
-                confirm_delete = st.checkbox(
-                    f"确认逻辑删除 V{selected_version_record['version']}？",
-                    key=f"confirm_version_delete_{selected_version_id}",
-                )
+            with st.container(border=True):
 
-                if st.button(
-                    "删除所选版本",
-                    key=f"delete_version_{selected_version_id}",
-                    type="secondary",
-                    disabled=not confirm_delete,
-                ):
-                    try:
-                        deleted = soft_delete_document(
-                            selected_version_id
-                        )
+                if not selected_version_record["is_deleted"]:
 
-                        if deleted:
-                            st.session_state[
-                                "document_version_action_message"
-                            ] = (
-                                f"V{selected_version_record['version']} "
-                                "已成功逻辑删除。"
-                            )
-                            st.rerun()
-                        else:
-                            st.warning(
-                                "删除未生效，该版本可能已经被删除。"
+                    st.success(
+                        f"当前选择：V{selected_version_record['version']} · 有效版本"
+                    )
+
+                    confirm_delete = st.checkbox(
+                        f"确认逻辑删除 V{selected_version_record['version']}？",
+                        key=f"confirm_version_delete_{selected_version_id}",
+                    )
+
+                    if st.button(
+                        "删除所选版本",
+                        key=f"delete_version_{selected_version_id}",
+                        type="secondary",
+                        disabled=not confirm_delete,
+                    ):
+                        try:
+                            deleted = soft_delete_document(
+                                selected_version_id
                             )
 
-                    except Exception as e:
-                        st.error(f"删除文档版本失败：{e}")
+                            if deleted:
+                                st.session_state[
+                                    "document_version_action_message"
+                                ] = (
+                                    f"V{selected_version_record['version']} "
+                                    "已成功逻辑删除。"
+                                )
+                                st.rerun()
+                            else:
+                                st.warning(
+                                    "删除未生效，该版本可能已经被删除。"
+                                )
 
-            else:
+                        except Exception as e:
+                            st.error(f"删除文档版本失败：{e}")
 
-                st.warning("该版本已逻辑删除。")
+                else:
 
-                if st.button(
-                    f"恢复 V{selected_version_record['version']}",
-                    key=f"restore_version_{selected_version_id}",
-                    type="primary",
-                ):
-                    try:
-                        restored = restore_document(
-                            selected_version_id
-                        )
+                    st.warning(
+                        f"当前选择：V{selected_version_record['version']} · 已逻辑删除"
+                    )
 
-                        if restored:
-                            st.session_state[
-                                "document_version_action_message"
-                            ] = (
-                                f"V{selected_version_record['version']} "
-                                "已成功恢复。"
+                    if st.button(
+                        f"恢复 V{selected_version_record['version']}",
+                        key=f"restore_version_{selected_version_id}",
+                        type="primary",
+                    ):
+                        try:
+                            restored = restore_document(
+                                selected_version_id
                             )
-                            st.rerun()
-                        else:
-                            st.warning(
-                                "恢复未生效，该版本可能已经恢复。"
-                            )
 
-                    except Exception as e:
-                        st.error(f"恢复文档版本失败：{e}")
+                            if restored:
+                                st.session_state[
+                                    "document_version_action_message"
+                                ] = (
+                                    f"V{selected_version_record['version']} "
+                                    "已成功恢复。"
+                                )
+                                st.rerun()
+                            else:
+                                st.warning(
+                                    "恢复未生效，该版本可能已经恢复。"
+                                )
+
+                        except Exception as e:
+                            st.error(f"恢复文档版本失败：{e}")
+
 
             # ====================================================
             # 查看版本内容
             # ====================================================
 
-            if st.button(
-                "查看该版本内容",
-                key=f"view_version_{selected_version_id}",
-            ):
-                try:
-                    selected_document = get_document(
-                        selected_version_id
+            st.markdown("**版本内容查看**")
+
+            with st.container(border=True):
+
+                st.caption(
+                    "选择版本后，可以读取该版本保存的完整需求文档内容。"
+                )
+
+                if st.button(
+                    "查看该版本内容",
+                    key=f"view_version_{selected_version_id}",
+                ):
+                    try:
+                        selected_document = get_document(
+                            selected_version_id
+                        )
+
+                        if selected_document is None:
+                            st.error("未找到该文档版本。")
+                        else:
+                            st.session_state[
+                                f"viewed_version_{key}"
+                            ] = selected_document
+
+                    except Exception as e:
+                        st.error(f"读取文档版本失败：{e}")
+
+                viewed_document = st.session_state.get(
+                    f"viewed_version_{key}"
+                )
+
+                if (
+                    viewed_document is not None
+                    and viewed_document["id"] == selected_version_id
+                ):
+                    st.divider()
+
+                    st.markdown(
+                        f"#### 当前查看版本：V{viewed_document['version']}"
                     )
 
-                    if selected_document is None:
-                        st.error("未找到该文档版本。")
-                    else:
-                        st.session_state[
-                            f"viewed_version_{key}"
-                        ] = selected_document
+                    col1, col2 = st.columns(2)
 
-                except Exception as e:
-                    st.error(f"读取文档版本失败：{e}")
+                    col1.metric(
+                        "文件类型",
+                        viewed_document["file_type"].upper(),
+                    )
 
-            viewed_document = st.session_state.get(
-                f"viewed_version_{key}"
-            )
+                    col2.metric(
+                        "字符数量",
+                        viewed_document["char_count"],
+                    )
 
-            if (
-                viewed_document is not None
-                and viewed_document["id"] == selected_version_id
-            ):
-                st.divider()
-
-                st.markdown(
-                    f"#### 当前查看版本：V{viewed_document['version']}"
-                )
-
-                col1, col2 = st.columns(2)
-
-                col1.metric(
-                    "文件类型",
-                    viewed_document["file_type"].upper(),
-                )
-
-                col2.metric(
-                    "字符数量",
-                    viewed_document["char_count"],
-                )
-
-                st.text_area(
-                    "需求文档完整内容",
-                    value=viewed_document["parsed_content"] or "",
-                    height=350,
-                    disabled=True,
-                    key=f"version_content_{selected_version_id}",
-                )
+                    st.text_area(
+                        "需求文档完整内容",
+                        value=viewed_document["parsed_content"] or "",
+                        height=350,
+                        disabled=True,
+                        key=f"version_content_{selected_version_id}",
+                    )
 
 
 st.divider()

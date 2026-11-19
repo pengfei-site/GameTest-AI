@@ -1,5 +1,5 @@
-﻿
-import json
+﻿import json
+import html
 import streamlit as st
 
 from components.header import render_header
@@ -22,6 +22,106 @@ from database.repositories.test_point_repository import (
     list_batch_test_point_history,
     list_test_points,
 )
+
+
+# ============================================================
+# 页面专属样式
+# ============================================================
+
+st.html("""
+<style>
+.tp-batch-intro {
+    padding: 18px 22px;
+    border: 1px solid #e8e5f5;
+    border-radius: 14px;
+    background: linear-gradient(120deg, #f7f6ff 0%, #fbfaff 100%);
+    margin-bottom: 20px;
+}
+
+.tp-batch-step {
+    color: #6254c7;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+}
+
+.tp-batch-stat {
+    padding: 16px;
+    border: 1px solid #ebe9f3;
+    border-radius: 12px;
+    background: #ffffff;
+    min-height: 100px;
+}
+
+.tp-batch-stat-label {
+    color: #858296;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.tp-batch-stat-value {
+    color: #302d43;
+    font-size: 25px;
+    font-weight: 700;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.tp-batch-stat-hint {
+    color: #858296;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.tp-batch-info {
+    padding: 13px 16px;
+    border: 1px solid #ebe9f3;
+    border-radius: 10px;
+    background: #ffffff;
+    margin-bottom: 8px;
+}
+
+.tp-batch-info-label {
+    color: #858296;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.tp-batch-info-value {
+    color: #302d43;
+    font-size: 14px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.tp-batch-note {
+    padding: 15px 18px;
+    border-left: 4px solid #8275d5;
+    border-radius: 8px;
+    background: #f7f6fc;
+    color: #514d68;
+    line-height: 1.7;
+}
+
+.tp-batch-section-caption {
+    color: #858296;
+    font-size: 13px;
+    margin-top: -8px;
+    margin-bottom: 14px;
+}
+
+@media (max-width: 768px) {
+    .tp-batch-intro {
+        padding: 14px 16px;
+    }
+
+    .tp-batch-stat {
+        min-height: 85px;
+    }
+}
+</style>
+""")
 
 
 # ============================================================
@@ -175,11 +275,49 @@ def show_status(status):
     )
 
 
+def render_stat_card(label, value, hint=""):
+    st.html(f"""
+    <div class="tp-batch-stat">
+        <div class="tp-batch-stat-label">{html.escape(str(label))}</div>
+        <div class="tp-batch-stat-value">{html.escape(str(value))}</div>
+        <div class="tp-batch-stat-hint">{html.escape(str(hint))}</div>
+    </div>
+    """)
+
+
+def render_info_card(label, value):
+    st.html(f"""
+    <div class="tp-batch-info">
+        <div class="tp-batch-info-label">{html.escape(str(label))}</div>
+        <div class="tp-batch-info-value">{html.escape(str(value))}</div>
+    </div>
+    """)
+
+
+# ============================================================
+# 页面说明
+# ============================================================
+
+st.html("""
+<div class="tp-batch-intro">
+    <div class="tp-batch-step">TEST POINT BATCH MANAGEMENT</div>
+    <div style="font-size:17px;font-weight:700;color:#302d43;margin-bottom:6px;">
+        测试点生成批次总览
+    </div>
+    <div style="font-size:13px;color:#77758a;line-height:1.7;">
+        按项目和需求分析查看历史生成批次，
+        追踪测试点数量、审核状态、质量报告和人工操作记录。
+    </div>
+</div>
+""")
+
+
 # ============================================================
 # 1. 项目选择
 # ============================================================
 
 st.subheader("一、选择项目")
+st.caption("选择需要查看测试点生成批次的项目。")
 
 try:
     projects = list_projects()
@@ -214,7 +352,9 @@ selected_project_id = st.selectbox(
 # ============================================================
 
 st.divider()
+
 st.subheader("二、需求分析筛选")
+st.caption("可以查看当前项目的全部批次，也可以按需求分析缩小范围。")
 
 try:
     requirement_analyses = list_requirement_analyses(
@@ -257,7 +397,9 @@ analysis_filter_id = analysis_filter_options[
 # ============================================================
 
 st.divider()
+
 st.subheader("三、生成批次列表")
+st.caption("以下批次根据当前项目和需求分析筛选条件查询。")
 
 try:
     batches = list_generation_batches(
@@ -337,20 +479,26 @@ for item in batch_statistics.values():
 
 metric_col1, metric_col2, metric_col3 = st.columns(3)
 
-metric_col1.metric(
-    "生成批次总数",
-    total_batches,
-)
+with metric_col1:
+    render_stat_card(
+        "生成批次总数",
+        total_batches,
+        "当前筛选范围内的批次",
+    )
 
-metric_col2.metric(
-    "有效测试点总数",
-    total_points,
-)
+with metric_col2:
+    render_stat_card(
+        "有效测试点总数",
+        total_points,
+        "不包含已删除记录",
+    )
 
-metric_col3.metric(
-    "待人工审核",
-    total_pending,
-)
+with metric_col3:
+    render_stat_card(
+        "待人工审核",
+        total_pending,
+        "当前批次的待审核数量",
+    )
 
 
 # ============================================================
@@ -358,7 +506,9 @@ metric_col3.metric(
 # ============================================================
 
 st.divider()
+
 st.subheader("批次列表")
+st.caption("查看各批次的生成时间、状态和测试点审核统计。")
 
 batch_rows = []
 
@@ -411,7 +561,9 @@ st.dataframe(
 # ============================================================
 
 st.divider()
+
 st.subheader("四、批次详情")
+st.caption("选择一个批次，查看其需求来源、质量报告和操作历史。")
 
 batch_map = {
     batch["id"]: batch
@@ -447,20 +599,28 @@ if not selected_batch:
 # 8. 批次基本信息
 # ============================================================
 
+st.divider()
+
 st.markdown("### 批次基本信息")
 
 basic_col1, basic_col2 = st.columns(2)
 
 with basic_col1:
-    st.write("**批次 ID：**", selected_batch.get("id"))
-    st.write(
-        "**所属项目：**",
+    render_info_card(
+        "批次 ID",
+        display_value(selected_batch.get("id")),
+    )
+
+    render_info_card(
+        "所属项目",
         format_project(project_map[selected_project_id]),
     )
-    st.write(
-        "**需求分析 ID：**",
-        selected_batch.get("requirement_analysis_id"),
+
+    render_info_card(
+        "需求分析 ID",
+        display_value(selected_batch.get("requirement_analysis_id")),
     )
+
 
 with basic_col2:
     batch_status = (
@@ -468,13 +628,13 @@ with basic_col2:
         or selected_batch.get("status")
     )
 
-    st.write(
-        "**批次状态：**",
+    render_info_card(
+        "批次状态",
         show_status(batch_status),
     )
 
-    st.write(
-        "**生成时间：**",
+    render_info_card(
+        "生成时间",
         format_local_datetime(
             selected_batch.get("generated_at")
             or selected_batch.get("created_at")
@@ -487,6 +647,7 @@ with basic_col2:
 # ============================================================
 
 st.divider()
+
 st.markdown("### 当前批次测试点及审核统计")
 
 try:
@@ -507,32 +668,36 @@ review_statistics = current_review_statistics or {}
 
 review_col1, review_col2, review_col3, review_col4 = st.columns(4)
 
-review_col1.metric(
-    "有效测试点",
-    len([
-        point
-        for point in current_batch_points
-        if not point.get("is_deleted")
-    ]),
-)
+with review_col1:
+    render_stat_card(
+        "有效测试点",
+        len([
+            point
+            for point in current_batch_points
+            if not point.get("is_deleted")
+        ]),
+    )
 
-review_col2.metric(
-    "待审核",
-    review_statistics.get("pending", 0)
-    or review_statistics.get("pending_count", 0),
-)
+with review_col2:
+    render_stat_card(
+        "待审核",
+        review_statistics.get("pending", 0)
+        or review_statistics.get("pending_count", 0),
+    )
 
-review_col3.metric(
-    "已通过",
-    review_statistics.get("approved", 0)
-    or review_statistics.get("approved_count", 0),
-)
+with review_col3:
+    render_stat_card(
+        "已通过",
+        review_statistics.get("approved", 0)
+        or review_statistics.get("approved_count", 0),
+    )
 
-review_col4.metric(
-    "已驳回",
-    review_statistics.get("rejected", 0)
-    or review_statistics.get("rejected_count", 0),
-)
+with review_col4:
+    render_stat_card(
+        "已驳回",
+        review_statistics.get("rejected", 0)
+        or review_statistics.get("rejected_count", 0),
+    )
 
 
 # ============================================================
@@ -540,7 +705,9 @@ review_col4.metric(
 # ============================================================
 
 st.divider()
+
 st.markdown("### 需求来源")
+st.caption("查看当前生成批次关联的结构化需求分析。")
 
 requirement_analysis_id = selected_batch.get(
     "requirement_analysis_id"
@@ -558,20 +725,24 @@ if requirement_analysis_id:
         st.error(f"读取需求分析来源失败：{exc}")
 
     if requirement_analysis:
-        st.write(
-            "**需求模块：**",
-            requirement_analysis.get("module") or "未填写",
-        )
+        with st.container(border=True):
+            st.markdown("**需求分析信息**")
 
-        st.write(
-            "**需求摘要：**",
-            requirement_analysis.get("summary") or "暂无摘要",
-        )
+            render_info_card(
+                "需求模块",
+                requirement_analysis.get("module") or "未填写",
+            )
 
-        st.write(
-            "**需求分析 ID：**",
-            requirement_analysis_id,
-        )
+            render_info_card(
+                "需求分析 ID",
+                requirement_analysis_id,
+            )
+
+            st.markdown("**需求摘要**")
+
+            st.write(
+                requirement_analysis.get("summary") or "暂无摘要"
+            )
 
         with st.expander("查看完整需求分析数据"):
             show_json(
@@ -591,7 +762,9 @@ else:
 # ============================================================
 
 st.divider()
+
 st.markdown("### 质量检查报告")
+st.caption("分别查看 Python 规则校验结果和 AI 审核结果。")
 
 validation_report = selected_batch.get(
     "validation_report"
@@ -614,6 +787,7 @@ with report_tab1:
     else:
         st.info("当前批次没有 Python Validator 报告。")
 
+
 with report_tab2:
     if review_report is not None:
         show_json(
@@ -629,7 +803,9 @@ with report_tab2:
 # ============================================================
 
 st.divider()
+
 st.markdown("### 当前批次测试点预览")
+st.caption("以下内容仅用于查看，不提供编辑或审核操作。")
 
 if not current_batch_points:
     st.info("当前批次暂无测试点。")
@@ -694,7 +870,9 @@ else:
 # ============================================================
 
 st.divider()
+
 st.markdown("### 批次操作历史")
+st.caption("追踪当前批次测试点的创建、编辑、审核、删除和恢复记录。")
 
 try:
     history_records = list_batch_test_point_history(
@@ -884,9 +1062,11 @@ else:
 
 st.divider()
 
-st.info(
-    "批次管理页面用于查看生成批次、需求来源、质量报告、"
-    "测试点预览及人工操作历史。"
-    "测试点编辑和人工审核请前往「测试点列表」页面操作。"
-)
-
+st.html("""
+<div class="tp-batch-note">
+    <strong>页面使用说明</strong><br>
+    批次管理页面用于查看生成批次、需求来源、质量报告、
+    测试点预览及人工操作历史。<br>
+    测试点编辑和人工审核请前往「测试点列表」页面操作。
+</div>
+""")

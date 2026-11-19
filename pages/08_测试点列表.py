@@ -29,6 +29,86 @@ from core.testpoint_review_service import (
 
 
 # ============================================================
+# 页面样式
+# ============================================================
+
+st.html("""
+<style>
+.tp-page-intro {
+    color: #77758b;
+    font-size: 0.88rem;
+    margin-top: -0.35rem;
+    margin-bottom: 1.2rem;
+}
+
+.tp-section-title {
+    font-size: 1.08rem;
+    font-weight: 700;
+    color: #29263d;
+    margin: 0.4rem 0 0.8rem 0;
+}
+
+.tp-stat-card {
+    background: linear-gradient(145deg, #ffffff, #f8f7ff);
+    border: 1px solid #e9e6f5;
+    border-radius: 13px;
+    padding: 15px 17px;
+    min-height: 100px;
+}
+
+.tp-stat-label {
+    color: #77758b;
+    font-size: 0.82rem;
+    margin-bottom: 8px;
+}
+
+.tp-stat-value {
+    color: #302b50;
+    font-size: 1.8rem;
+    font-weight: 750;
+    line-height: 1.2;
+}
+
+.tp-panel {
+    background: #ffffff;
+    border: 1px solid #e9e6f5;
+    border-radius: 13px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.tp-muted {
+    color: #858298;
+    font-size: 0.82rem;
+}
+
+.tp-status {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: #f0eef8;
+    color: #6254a4;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.tp-detail-label {
+    color: #858298;
+    font-size: 0.8rem;
+    margin-bottom: 3px;
+}
+
+.tp-detail-value {
+    color: #302d43;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+</style>
+""")
+
+
+# ============================================================
 # 页面 Header
 # ============================================================
 
@@ -37,6 +117,13 @@ render_header(
     description="统一查看、筛选和维护 AI 生成的游戏测试点，支持人工编辑、单条审核和批量审核。",
     breadcrumb=["测试点中心", "测试点列表"],
 )
+
+
+st.html("""
+<div class="tp-page-intro">
+    集中管理测试点记录，跟踪 AI 审核与人工审核状态，并保留完整操作历史。
+</div>
+""")
 
 
 # ============================================================
@@ -194,8 +281,6 @@ def render_test_point_history(test_point_id):
         st.info("该测试点暂无操作历史记录。")
         return
 
-    # Repository 按 created_at ASC、rowid ASC 返回。
-    # 反转后，最新操作显示在最上方。
     history_records = list(reversed(history_records))
 
     st.caption(
@@ -633,14 +718,17 @@ project_options = {
     for project in projects
 }
 
-selected_project_id = st.selectbox(
-    "选择项目",
-    options=list(project_options.keys()),
-    format_func=lambda x: format_project(
-        project_options[x]
-    ),
-    key="test_point_list_project",
-)
+st.subheader("查询条件")
+
+with st.container(border=True):
+    selected_project_id = st.selectbox(
+        "选择项目",
+        options=list(project_options.keys()),
+        format_func=lambda x: format_project(
+            project_options[x]
+        ),
+        key="test_point_list_project",
+    )
 
 
 # ============================================================
@@ -666,14 +754,15 @@ batch_options = {
     for batch in batches
 }
 
-selected_batch_id = st.selectbox(
-    "选择测试点生成批次",
-    options=list(batch_options.keys()),
-    format_func=lambda x: format_batch(
-        batch_options[x]
-    ),
-    key=f"test_point_list_batch_{selected_project_id}",
-)
+with st.container(border=True):
+    selected_batch_id = st.selectbox(
+        "选择测试点生成批次",
+        options=list(batch_options.keys()),
+        format_func=lambda x: format_batch(
+            batch_options[x]
+        ),
+        key=f"test_point_list_batch_{selected_project_id}",
+    )
 
 
 try:
@@ -717,39 +806,35 @@ statistics = calculate_statistics(
 st.divider()
 st.subheader("测试点统计")
 
-col1, col2, col3 = st.columns(3)
+stat_cards = st.columns(3)
 
-col1.metric(
-    "有效测试点总数",
-    statistics["total"],
-)
+stat_data = [
+    ("有效测试点总数", statistics["total"]),
+    ("待审核测试点", statistics["pending"]),
+    ("已删除测试点", statistics["deleted"]),
+]
 
-col2.metric(
-    "待审核测试点",
-    statistics["pending"],
-)
+for column, (label, value) in zip(stat_cards, stat_data):
+    with column:
+        st.html(f"""
+        <div class="tp-stat-card">
+            <div class="tp-stat-label">{label}</div>
+            <div class="tp-stat-value">{value}</div>
+        </div>
+        """)
 
-col3.metric(
-    "已删除测试点",
-    statistics["deleted"],
-)
 
 stat_cols = st.columns(3)
 
-stat_cols[0].metric(
-    "已通过",
-    statistics["approved"],
-)
+secondary_stats = [
+    ("已通过", statistics["approved"]),
+    ("已驳回", statistics["rejected"]),
+    ("其他状态", statistics["other"]),
+]
 
-stat_cols[1].metric(
-    "已驳回",
-    statistics["rejected"],
-)
-
-stat_cols[2].metric(
-    "其他状态",
-    statistics["other"],
-)
+for column, (label, value) in zip(stat_cols, secondary_stats):
+    with column:
+        st.metric(label, value)
 
 
 expected_total = (
@@ -782,28 +867,29 @@ if statistics["other"] > 0:
 st.divider()
 st.subheader("测试点列表")
 
-filter_col1, filter_col2 = st.columns(2)
+with st.container(border=True):
+    filter_col1, filter_col2 = st.columns(2)
 
-with filter_col1:
-    include_deleted = st.checkbox(
-        "显示已逻辑删除的测试点",
-        value=False,
-        key=f"test_point_include_deleted_{selected_batch_id}",
-    )
+    with filter_col1:
+        include_deleted = st.checkbox(
+            "显示已逻辑删除的测试点",
+            value=False,
+            key=f"test_point_include_deleted_{selected_batch_id}",
+        )
 
-with filter_col2:
-    status_options = {
-        "全部": None,
-        "待审核": "pending",
-        "已通过": "approved",
-        "已驳回": "rejected",
-    }
+    with filter_col2:
+        status_options = {
+            "全部": None,
+            "待审核": "pending",
+            "已通过": "approved",
+            "已驳回": "rejected",
+        }
 
-    selected_status_label = st.selectbox(
-        "人工审核状态筛选",
-        options=list(status_options.keys()),
-        key=f"test_point_status_filter_{selected_batch_id}",
-    )
+        selected_status_label = st.selectbox(
+            "人工审核状态筛选",
+            options=list(status_options.keys()),
+            key=f"test_point_status_filter_{selected_batch_id}",
+        )
 
 selected_status = status_options[
     selected_status_label
@@ -929,70 +1015,71 @@ else:
         # 基本信息和审核信息
         # ----------------------------------------------------
 
-        col1, col2 = st.columns(2)
+        with st.container(border=True):
+            col1, col2 = st.columns(2)
 
-        with col1:
-            st.subheader("基本信息")
+            with col1:
+                st.subheader("基本信息")
 
-            st.write(
-                "内部 ID：",
-                test_point.get("id"),
-            )
+                st.write(
+                    "内部 ID：",
+                    test_point.get("id"),
+                )
 
-            st.write(
-                "测试点编号：",
-                test_point.get("point_id"),
-            )
+                st.write(
+                    "测试点编号：",
+                    test_point.get("point_id"),
+                )
 
-            st.write(
-                "所属批次：",
-                test_point.get("batch_id"),
-            )
+                st.write(
+                    "所属批次：",
+                    test_point.get("batch_id"),
+                )
 
-            st.write(
-                "创建时间：",
-                format_local_datetime(
-                    test_point.get("created_at")
-                ),
-            )
+                st.write(
+                    "创建时间：",
+                    format_local_datetime(
+                        test_point.get("created_at")
+                    ),
+                )
 
-            st.write(
-                "更新时间：",
-                format_local_datetime(
-                    test_point.get("updated_at")
-                ),
-            )
+                st.write(
+                    "更新时间：",
+                    format_local_datetime(
+                        test_point.get("updated_at")
+                    ),
+                )
 
-        with col2:
-            st.subheader("审核信息")
+            with col2:
+                st.subheader("审核信息")
 
-            st.write(
-                "AI 审核状态：",
-                test_point.get(
-                    "ai_review_status",
-                    "未知",
-                ),
-            )
+                st.write(
+                    "AI 审核状态：",
+                    test_point.get(
+                        "ai_review_status",
+                        "未知",
+                    ),
+                )
 
-            st.write(
-                "人工审核状态：",
-                test_point.get(
-                    "manual_review_status",
-                    "未知",
-                ),
-            )
+                st.write(
+                    "人工审核状态：",
+                    test_point.get(
+                        "manual_review_status",
+                        "未知",
+                    ),
+                )
 
-            st.write(
-                "人工审核意见 / 驳回原因：",
-                test_point.get("manual_comment") or "暂无",
-            )
+                st.write(
+                    "人工审核意见 / 驳回原因：",
+                    test_point.get("manual_comment") or "暂无",
+                )
 
-            st.write(
-                "审核时间：",
-                format_local_datetime(
-                    test_point.get("reviewed_at")
-                ),
-            )
+                st.write(
+                    "审核时间：",
+                    format_local_datetime(
+                        test_point.get("reviewed_at")
+                    ),
+                )
 
         # ----------------------------------------------------
         # 删除状态
@@ -1010,33 +1097,38 @@ else:
         # ----------------------------------------------------
 
         st.divider()
-        render_single_review_actions(test_point)
+
+        with st.container(border=True):
+            render_single_review_actions(test_point)
 
         # ----------------------------------------------------
         # 当前内容
         # ----------------------------------------------------
 
-        show_content(
-            "当前测试点内容",
-            test_point.get("current_content"),
-        )
+        with st.container(border=True):
+            show_content(
+                "当前测试点内容",
+                test_point.get("current_content"),
+            )
 
         # ----------------------------------------------------
         # 人工编辑
         # ----------------------------------------------------
 
         st.divider()
-        st.subheader("人工编辑测试点")
 
-        render_edit_form(test_point)
+        with st.container(border=True):
+            st.subheader("人工编辑测试点")
+            render_edit_form(test_point)
 
         # ----------------------------------------------------
         # 操作历史
         # ----------------------------------------------------
 
-        render_test_point_history(
-            test_point["id"]
-        )
+        with st.container(border=True):
+            render_test_point_history(
+                test_point["id"]
+            )
 
         # ----------------------------------------------------
         # 原始内容
@@ -1070,4 +1162,3 @@ st.info(
     "人工审核独立于 AI 审核状态；编辑成功后人工审核状态重置为 pending，"
     "AI 审核状态保持不变。"
 )
-

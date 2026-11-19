@@ -1,7 +1,7 @@
-
 import json
 import sqlite3
 import tempfile
+import html
 from pathlib import Path
 
 import streamlit as st
@@ -51,6 +51,138 @@ from core.testcase_manual_review_service import (
     batch_reject_candidates,
 )
 from core.testcase_export_service import export_approved_testcases
+
+
+# ============================================================
+# 页面专属 UI
+# ============================================================
+
+def render_page_styles():
+    st.html("""
+    <style>
+    .tc-manage-hero {
+        padding: 22px 26px;
+        margin: 8px 0 24px 0;
+        border: 1px solid #e8e5f5;
+        border-radius: 16px;
+        background: linear-gradient(120deg, #f5f3ff 0%, #ffffff 85%);
+    }
+
+    .tc-manage-hero-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #302b55;
+        margin-bottom: 7px;
+    }
+
+    .tc-manage-hero-desc {
+        font-size: 14px;
+        line-height: 1.7;
+        color: #77728c;
+    }
+
+    .tc-manage-section {
+        font-size: 18px;
+        font-weight: 700;
+        color: #302b55;
+        padding: 4px 0 10px 0;
+        margin: 8px 0 14px 0;
+        border-bottom: 1px solid #eceaf3;
+    }
+
+    .tc-manage-stat {
+        padding: 16px 18px;
+        border: 1px solid #e9e7f1;
+        border-radius: 13px;
+        background: #ffffff;
+        min-height: 94px;
+    }
+
+    .tc-manage-stat-label {
+        color: #77728c;
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+
+    .tc-manage-stat-value {
+        color: #302b55;
+        font-size: 27px;
+        line-height: 1.2;
+        font-weight: 700;
+    }
+
+    .tc-manage-info {
+        padding: 15px 18px;
+        border: 1px solid #e9e7f1;
+        border-radius: 12px;
+        background: #ffffff;
+        min-height: 78px;
+    }
+
+    .tc-manage-info-label {
+        color: #858096;
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .tc-manage-info-value {
+        color: #38334f;
+        font-size: 16px;
+        font-weight: 650;
+        overflow-wrap: anywhere;
+    }
+
+    div[data-testid="stExpander"] {
+        border-radius: 12px;
+    }
+
+    @media (max-width: 768px) {
+        .tc-manage-hero {
+            padding: 18px;
+        }
+
+        .tc-manage-hero-title {
+            font-size: 19px;
+        }
+
+        .tc-manage-stat-value {
+            font-size: 23px;
+        }
+    }
+    </style>
+    """)
+
+
+def render_stat_card(label, value):
+    safe_label = html.escape(str(label))
+    safe_value = html.escape(str(value))
+
+    st.html(f"""
+    <div class="tc-manage-stat">
+        <div class="tc-manage-stat-label">{safe_label}</div>
+        <div class="tc-manage-stat-value">{safe_value}</div>
+    </div>
+    """)
+
+
+def render_info_card(label, value):
+    safe_label = html.escape(str(label))
+    safe_value = html.escape(str(value))
+
+    st.html(f"""
+    <div class="tc-manage-info">
+        <div class="tc-manage-info-label">{safe_label}</div>
+        <div class="tc-manage-info-value">{safe_value}</div>
+    </div>
+    """)
+
+
+def render_section(title):
+    safe_title = html.escape(str(title))
+    st.html(
+        f'<div class="tc-manage-section">{safe_title}</div>'
+    )
+
 
 # ============================================================
 # 通用辅助函数
@@ -122,9 +254,7 @@ def get_candidate_version(candidate):
 def get_current_version_record(candidate_id, candidate):
     """
     精确获取候选当前版本记录。
-
-    不使用版本列表中的最大值代替当前版本，
-    而是根据 candidate.current_version 精确匹配。
+    不使用版本列表中的最大值代替当前版本。
     """
     current_version_no = candidate.get("current_version")
 
@@ -279,14 +409,6 @@ def get_manual_review_history(candidate_id):
 # ============================================================
 
 def show_reviewer_confirmation(record):
-    """
-    展示指定 Reviewer 报告的人工确认状态、操作和历史。
-
-    每条 Reviewer 报告独立确认：
-    - 不覆盖 Reviewer 原始报告。
-    - 每次确认均追加历史。
-    - 不修改候选用例最终人工审核状态。
-    """
     reviewer_record_id = record.get("id")
     candidate_id = record.get("candidate_id")
     candidate_version_id = record.get("candidate_version_id")
@@ -417,7 +539,6 @@ def show_reviewer_confirmation(record):
             except Exception as exc:
                 st.error(f"人工确认提交失败：{exc}")
 
-        # 展示当前 Reviewer 报告的完整确认历史
         history = list_reviewer_confirmation_history(
             reviewer_record_id
         )
@@ -466,7 +587,7 @@ def show_reviewer_confirmation(record):
 # ============================================================
 
 def show_quality_reports(candidate_id, version_id):
-    st.markdown("### 当前版本质量报告")
+    render_section("当前版本质量报告")
 
     validation = get_latest_validation_record(
         candidate_id,
@@ -493,13 +614,8 @@ def show_quality_reports(candidate_id, version_id):
             else:
                 st.error("Validator：未通过")
 
-            st.write(
-                f"错误数：{validation.get('error_count', 0)}"
-            )
-            st.write(
-                f"警告数：{validation.get('warning_count', 0)}"
-            )
-
+            st.write(f"错误数：{validation.get('error_count', 0)}")
+            st.write(f"警告数：{validation.get('warning_count', 0)}")
             st.write(
                 f"检查时间：{format_time(validation.get('created_at'))}"
             )
@@ -522,12 +638,9 @@ def show_quality_reports(candidate_id, version_id):
             elif status == "needs_review":
                 st.warning("Reviewer：需要复核")
             else:
-                st.error(
-                    f"Reviewer：{get_status_label(status)}"
-                )
+                st.error(f"Reviewer：{get_status_label(status)}")
 
             st.write(reviewer.get("summary", ""))
-
             st.write(
                 f"复核时间：{format_time(reviewer.get('created_at'))}"
             )
@@ -561,9 +674,7 @@ def show_quality_reports(candidate_id, version_id):
                     elif confirmation_status == "recheck_required":
                         st.warning("要求重新复核")
                     else:
-                        st.info(
-                            get_status_label(confirmation_status)
-                        )
+                        st.info(get_status_label(confirmation_status))
 
                 except Exception as exc:
                     st.warning(f"读取人工确认状态失败：{exc}")
@@ -574,12 +685,7 @@ def show_quality_reports(candidate_id, version_id):
 # ============================================================
 
 def show_reviewer_history(candidate_id, version_id):
-    """
-    展示指定候选、指定版本的全部 Reviewer 历史记录。
-
-    每条历史记录均具有独立的人工确认状态和确认历史。
-    """
-    st.markdown("### AI Reviewer 复核历史")
+    render_section("AI Reviewer 复核历史")
 
     records = list_reviewer_records(
         candidate_id,
@@ -649,14 +755,9 @@ def show_reviewer_history(candidate_id, version_id):
                     st.markdown(f"**问题 {issue_index}**")
                     st.json(issue)
 
-            show_json(
-                "完整 Reviewer 报告",
-                report,
-            )
+            show_json("完整 Reviewer 报告", report)
 
             st.divider()
-
-            # 对每一条 Reviewer 报告单独进行人工确认
             show_reviewer_confirmation(record)
 
 
@@ -665,16 +766,12 @@ def show_reviewer_history(candidate_id, version_id):
 # ============================================================
 
 def show_reviewer_recheck(candidate):
-    """
-    只执行 AI Reviewer，不执行 Python Validator。
-    """
-    st.markdown("### 独立 AI Reviewer 复核")
+    render_section("独立 AI Reviewer 复核")
 
     st.caption(
         "仅针对候选当前版本执行 AI Reviewer。"
         "不会执行 Python Validator，不会修改用例正文、"
         "版本号或人工审核状态。每次复核都会新增历史记录。"
-        "新报告需要重新进行人工确认。"
     )
 
     if st.button(
@@ -682,9 +779,7 @@ def show_reviewer_recheck(candidate):
         key=f"reviewer_recheck_{candidate['id']}",
     ):
         try:
-            with st.spinner(
-                "AI Reviewer 正在复核当前版本..."
-            ):
+            with st.spinner("AI Reviewer 正在复核当前版本..."):
                 result = recheck_testcase_with_reviewer(
                     candidate["id"]
                 )
@@ -746,7 +841,7 @@ def show_reviewer_recheck(candidate):
 # ============================================================
 
 def show_source_point(candidate):
-    st.markdown("### 来源测试点快照")
+    render_section("来源测试点快照")
 
     batch_point_id = candidate.get("batch_point_id")
 
@@ -761,11 +856,7 @@ def show_source_point(candidate):
         return
 
     st.write(f"业务编号：{point.get('point_id', '-')}")
-    show_json(
-        "测试点快照内容",
-        point.get("point_content"),
-    )
-
+    show_json("测试点快照内容", point.get("point_content"))
     show_json(
         "测试点集合校验报告",
         point.get("collection_validation_report"),
@@ -777,7 +868,7 @@ def show_source_point(candidate):
 # ============================================================
 
 def show_version_history(candidate_id):
-    st.markdown("### 版本历史")
+    render_section("版本历史")
 
     versions = list_candidate_versions(candidate_id)
 
@@ -789,12 +880,8 @@ def show_version_history(candidate_id):
         version_no = version.get("version_no", "?")
 
         with st.expander(f"V{version_no}"):
-            st.write(
-                f"版本 ID：{version.get('id', '-')}"
-            )
-            st.write(
-                f"变更类型：{version.get('change_type', '-')}"
-            )
+            st.write(f"版本 ID：{version.get('id', '-')}")
+            st.write(f"变更类型：{version.get('change_type', '-')}")
             st.write(
                 f"创建时间：{format_time(version.get('created_at'))}"
             )
@@ -807,7 +894,7 @@ def show_version_history(candidate_id):
 # ============================================================
 
 def show_manual_review_history(candidate_id):
-    st.markdown("### 人工审核历史")
+    render_section("人工审核历史")
 
     history = get_manual_review_history(candidate_id)
 
@@ -821,12 +908,9 @@ def show_manual_review_history(candidate_id):
             f"| {record.get('created_at', '-')}"
         ):
             st.write(
-                f"版本 ID："
-                f"{record.get('candidate_version_id', '-')}"
+                f"版本 ID：{record.get('candidate_version_id', '-')}"
             )
-            st.write(
-                f"审核意见：{record.get('comment', '-')}"
-            )
+            st.write(f"审核意见：{record.get('comment', '-')}")
 
 
 # ============================================================
@@ -834,7 +918,7 @@ def show_manual_review_history(candidate_id):
 # ============================================================
 
 def edit_candidate_form(candidate):
-    st.markdown("### 编辑测试用例")
+    render_section("编辑测试用例")
 
     content = get_candidate_content(candidate)
     steps = content.get("steps", [])
@@ -959,7 +1043,7 @@ def edit_candidate_form(candidate):
 # ============================================================
 
 def show_manual_review_actions(candidate):
-    st.markdown("### 人工审核")
+    render_section("人工审核")
 
     status = candidate.get("manual_review_status")
 
@@ -989,10 +1073,7 @@ def show_manual_review_actions(candidate):
                 )
 
                 if result.get("manual_review_status") == "approved":
-                    st.toast(
-                        "审核通过！",
-                        icon="✅",
-                    )
+                    st.toast("审核通过！", icon="✅")
 
                     st.session_state[
                         "testcase_management_message"
@@ -1000,9 +1081,7 @@ def show_manual_review_actions(candidate):
 
                     st.rerun()
 
-                st.error(
-                    result.get("error", "审核未通过")
-                )
+                st.error(result.get("error", "审核未通过"))
 
             except Exception as exc:
                 st.error(f"审核失败：{exc}")
@@ -1014,8 +1093,8 @@ def show_manual_review_actions(candidate):
         )
 
         if st.button(
-                "驳回",
-                key=f"reject_{candidate['id']}",
+            "驳回",
+            key=f"reject_{candidate['id']}",
         ):
             if not reject_reason.strip():
                 st.warning("请填写驳回原因")
@@ -1027,10 +1106,7 @@ def show_manual_review_actions(candidate):
                     )
 
                     if result.get("manual_review_status") == "rejected":
-                        st.toast(
-                            "驳回成功！",
-                            icon="✅",
-                        )
+                        st.toast("驳回成功！", icon="✅")
 
                         st.session_state[
                             "testcase_management_message"
@@ -1049,12 +1125,13 @@ def show_manual_review_actions(candidate):
                 except Exception as exc:
                     st.error(f"驳回失败：{exc}")
 
+
 # ============================================================
 # 批量人工审核
 # ============================================================
 
 def show_batch_manual_review(candidates, batch_id):
-    st.markdown("### 批量人工审核")
+    render_section("批量人工审核")
 
     pending_candidates = [
         item for item in candidates
@@ -1162,7 +1239,6 @@ def show_batch_manual_review(candidates, batch_id):
                 except Exception as exc:
                     st.error(f"批量驳回执行失败：{exc}")
 
-    # 展示最近一次批量审核结果
     saved_result = st.session_state.get(
         f"batch_review_result_{batch_id}"
     )
@@ -1184,9 +1260,7 @@ def show_batch_manual_review(candidates, batch_id):
             success = item.get("success", False)
 
             if success:
-                st.success(
-                    f"候选 {candidate_id[:8]}：处理成功"
-                )
+                st.success(f"候选 {candidate_id[:8]}：处理成功")
             else:
                 st.error(
                     f"候选 {candidate_id[:8]}：处理失败。"
@@ -1209,17 +1283,13 @@ def show_batch_manual_review(candidates, batch_id):
 # ============================================================
 
 def show_batch_reviewer_confirmation(candidates, batch_id):
-    st.markdown("### 批量 AI Reviewer 人工复核")
+    render_section("批量 AI Reviewer 人工复核")
 
     st.caption(
         "仅处理候选当前版本最新的 needs_review Reviewer 报告。"
         "每条记录均调用单条人工确认 Service，"
         "独立保存确认历史，不修改 Reviewer 原始报告和候选最终审核状态。"
     )
-
-    # --------------------------------------------------------
-    # 1. 找出当前批次需要人工复核的最新 Reviewer 报告
-    # --------------------------------------------------------
 
     reviewable_items = []
 
@@ -1258,7 +1328,6 @@ def show_batch_reviewer_confirmation(candidates, batch_id):
         if not reviewer_record_id:
             continue
 
-        # 再次确认报告确实关联当前版本
         if reviewer.get("candidate_version_id") != version_id:
             continue
 
@@ -1287,18 +1356,10 @@ def show_batch_reviewer_confirmation(candidates, batch_id):
         })
 
     if not reviewable_items:
-        st.info(
-            "当前批次没有需要人工复核的最新 Reviewer 报告。"
-        )
+        st.info("当前批次没有需要人工复核的最新 Reviewer 报告。")
         return
 
-    st.write(
-        f"当前需要人工复核：{len(reviewable_items)} 条"
-    )
-
-    # --------------------------------------------------------
-    # 2. 多选和全选
-    # --------------------------------------------------------
+    st.write(f"当前需要人工复核：{len(reviewable_items)} 条")
 
     item_options = {
         item["label"]: item
@@ -1327,10 +1388,6 @@ def show_batch_reviewer_confirmation(candidates, batch_id):
 
     st.write(f"已选择：{len(selected_items)} 条")
 
-    # --------------------------------------------------------
-    # 3. 确认人和确认意见
-    # --------------------------------------------------------
-
     confirmed_by = st.text_input(
         "批量确认人",
         key=f"batch_reviewer_confirmed_by_{batch_id}",
@@ -1342,10 +1399,6 @@ def show_batch_reviewer_confirmation(candidates, batch_id):
         key=f"batch_reviewer_comment_{batch_id}",
         placeholder="填写本次批量确认的依据、问题说明或复核要求",
     )
-
-    # --------------------------------------------------------
-    # 4. 执行批量确认
-    # --------------------------------------------------------
 
     def execute_batch_confirmation(status):
         if not selected_items:
@@ -1413,10 +1466,6 @@ def show_batch_reviewer_confirmation(candidates, batch_id):
         ):
             execute_batch_confirmation("recheck_required")
 
-    # --------------------------------------------------------
-    # 5. 展示最近一次批量人工复核结果
-    # --------------------------------------------------------
-
     saved_result = st.session_state.get(
         f"batch_reviewer_confirmation_result_{batch_id}"
     )
@@ -1428,9 +1477,7 @@ def show_batch_reviewer_confirmation(candidates, batch_id):
         st.divider()
         st.markdown("#### 最近一次批量人工复核结果")
 
-        st.write(
-            f"本次操作：{get_status_label(status)}"
-        )
+        st.write(f"本次操作：{get_status_label(status)}")
 
         metric1, metric2, metric3 = st.columns(3)
 
@@ -1439,9 +1486,7 @@ def show_batch_reviewer_confirmation(candidates, batch_id):
         metric3.metric("失败", result.get("failed", 0))
 
         for item in result.get("results", []):
-            candidate_id = str(
-                item.get("candidate_id") or "-"
-            )
+            candidate_id = str(item.get("candidate_id") or "-")
 
             if item.get("success"):
                 st.success(
@@ -1463,30 +1508,20 @@ def show_batch_reviewer_confirmation(candidates, batch_id):
             )
             st.rerun()
 
+
 # ============================================================
 # 完整质量复检
 # ============================================================
 
 def show_quality_recheck(candidate):
-    """
-    执行完整质量复检，并在页面刷新后保留本次执行结果。
-
-    结果按 candidate_id 关联，避免切换候选后显示错误结果。
-    """
-    st.markdown("### 完整质量复检")
+    render_section("完整质量复检")
 
     st.caption(
         "完整质量复检会同时执行 Python Validator 和 AI Reviewer。"
     )
 
     candidate_id = candidate["id"]
-
-    # 使用固定 session key 保存最近一次完整质量复检结果。
     result_session_key = "testcase_quality_recheck_display"
-
-    # --------------------------------------------------------
-    # 1. 执行复检
-    # --------------------------------------------------------
 
     if st.button(
         "重新执行质量复检",
@@ -1507,19 +1542,15 @@ def show_quality_recheck(candidate):
                     "raw_result": str(result),
                 }
 
-            # 保存完整 Service 返回结果。
             st.session_state[result_session_key] = {
                 "candidate_id": candidate_id,
                 "result": result,
                 "exception": None,
             }
 
-            # 通过完整 rerun 重新读取当前版本质量报告。
-            # 结果已存入 session_state，不会因刷新丢失。
             st.rerun()
 
         except Exception as exc:
-            # 即使 Service 抛出异常，也保留异常信息。
             st.session_state[result_session_key] = {
                 "candidate_id": candidate_id,
                 "result": None,
@@ -1528,13 +1559,8 @@ def show_quality_recheck(candidate):
 
             st.rerun()
 
-    # --------------------------------------------------------
-    # 2. 展示本次执行结果
-    # --------------------------------------------------------
-
     saved_result = st.session_state.get(result_session_key)
 
-    # 只展示当前候选对应的复检结果。
     if (
         isinstance(saved_result, dict)
         and saved_result.get("candidate_id") == candidate_id
@@ -1577,9 +1603,7 @@ def show_quality_recheck(candidate):
                 stage = result.get("stage", "-")
                 error = result.get("error")
 
-                st.error(
-                    f"完整质量复检失败，阶段：{stage}"
-                )
+                st.error(f"完整质量复检失败，阶段：{stage}")
 
                 if error:
                     st.write(f"失败原因：{error}")
@@ -1596,24 +1620,18 @@ def show_quality_recheck(candidate):
                         "请检查数据库事务执行结果，不应存在单份报告被单独保存的情况。"
                     )
 
-            # 展示 Service 完整返回值，便于定位问题和验收。
             with st.expander("查看完整复检执行结果", expanded=True):
                 st.json(result)
 
         else:
             st.error("当前保存的复检结果格式不正确")
 
-        # 清除当前候选的本次执行结果。
         if st.button(
             "清除本次复检结果",
             key=f"clear_quality_recheck_{candidate_id}",
         ):
             st.session_state.pop(result_session_key, None)
             st.rerun()
-
-    # --------------------------------------------------------
-    # 3. 业务说明
-    # --------------------------------------------------------
 
     st.caption(
         "说明：复检成功只代表检查流程执行及报告保存成功，"
@@ -1648,12 +1666,18 @@ def show_candidate_statistics(candidates):
         if item.get("manual_review_status") == "rejected"
     ]
 
-    col1, col2, col3, col4 = st.columns(4)
+    columns = st.columns(4)
 
-    col1.metric("候选总数", len(active))
-    col2.metric("待审核", len(pending))
-    col3.metric("已通过", len(approved))
-    col4.metric("已驳回", len(rejected))
+    statistics = [
+        ("候选总数", len(active)),
+        ("待审核", len(pending)),
+        ("已通过", len(approved)),
+        ("已驳回", len(rejected)),
+    ]
+
+    for column, (label, value) in zip(columns, statistics):
+        with column:
+            render_stat_card(label, value)
 
 
 # ============================================================
@@ -1661,7 +1685,7 @@ def show_candidate_statistics(candidates):
 # ============================================================
 
 def show_export(batch_id):
-    st.markdown("### 已通过用例导出")
+    render_section("已通过用例导出")
 
     if st.button(
         "生成已通过用例 Excel",
@@ -1682,9 +1706,7 @@ def show_export(batch_id):
             )
 
             if not result.get("success"):
-                st.error(
-                    result.get("error", "导出失败")
-                )
+                st.error(result.get("error", "导出失败"))
                 return
 
             if not temp_file.exists():
@@ -1701,9 +1723,7 @@ def show_export(batch_id):
             st.download_button(
                 label="下载 Excel",
                 data=excel_data,
-                file_name=(
-                    f"approved_testcases_{batch_id[:8]}.xlsx"
-                ),
+                file_name=f"approved_testcases_{batch_id[:8]}.xlsx",
                 mime=(
                     "application/vnd.openxmlformats-officedocument."
                     "spreadsheetml.sheet"
@@ -1726,25 +1746,40 @@ def show_export(batch_id):
 # ============================================================
 
 def main():
+    render_page_styles()
+
     render_header(
-        title='测试用例管理',
-        description='管理 AI 生成的测试用例候选，执行质量复检、AI Reviewer 人工确认、人工编辑、审核和 Excel 导出。',
-        breadcrumb=['工作空间', 'AI 测试中心', '测试用例管理'],
+        title="测试用例管理",
+        description=(
+            "管理 AI 生成的测试用例候选，执行质量复检、"
+            "AI Reviewer 人工确认、人工编辑、审核和 Excel 导出。"
+        ),
+        breadcrumb=["工作空间", "AI 测试中心", "测试用例管理"],
     )
+
+    st.html("""
+    <div class="tc-manage-hero">
+        <div class="tc-manage-hero-title">测试用例工作台</div>
+        <div class="tc-manage-hero-desc">
+            集中查看生成批次、候选用例和质量报告。
+            通过独立的审核与复检区域管理用例质量及版本。
+        </div>
+    </div>
+    """)
+
     message = st.session_state.pop(
         "testcase_management_message",
         None,
     )
 
     if message:
-        st.success(
-            f"✓ {message}",
-            icon="✅",
-        )
+        st.success(f"✓ {message}", icon="✅")
 
     # --------------------------------------------------------
     # 1. 项目选择
     # --------------------------------------------------------
+
+    render_section("工作上下文")
 
     projects = list_projects()
 
@@ -1821,28 +1856,39 @@ def main():
     batch = batch_options[selected_batch_name]
     batch_id = batch["id"]
 
+    # --------------------------------------------------------
+    # 4. 批次信息
+    # --------------------------------------------------------
+
     st.divider()
+    render_section("生成批次信息")
 
-    st.markdown("### 生成批次信息")
+    batch_columns = st.columns(3)
 
-    col1, col2, col3 = st.columns(3)
+    with batch_columns[0]:
+        render_info_card(
+            "批次状态",
+            get_status_label(batch.get("status")),
+        )
 
-    col1.write(
-        f"批次状态：{get_status_label(batch.get('status'))}"
-    )
-    col2.write(
-        f"测试点数量：{batch.get('total_points', 0)}"
-    )
-    col3.write(
-        f"候选数量：{batch.get('total_candidates', 0)}"
-    )
+    with batch_columns[1]:
+        render_info_card(
+            "测试点数量",
+            batch.get("total_points", 0),
+        )
 
-    st.write(
+    with batch_columns[2]:
+        render_info_card(
+            "候选数量",
+            batch.get("total_candidates", 0),
+        )
+
+    st.caption(
         f"创建时间：{format_time(batch.get('created_at'))}"
     )
 
     # --------------------------------------------------------
-    # 4. 候选数据
+    # 5. 候选数据
     # --------------------------------------------------------
 
     candidates = list_candidates_by_batch(batch_id)
@@ -1858,12 +1904,11 @@ def main():
     ]
 
     st.divider()
-
-    st.markdown("### 候选用例统计")
+    render_section("候选用例统计")
     show_candidate_statistics(candidates)
 
     # --------------------------------------------------------
-    # 批量 AI Reviewer 人工复核
+    # 6. 批量 AI Reviewer 人工复核
     # --------------------------------------------------------
 
     with st.expander("批量 AI Reviewer 人工复核", expanded=True):
@@ -1873,11 +1918,11 @@ def main():
         )
 
     # --------------------------------------------------------
-    # 5. 候选筛选
+    # 7. 候选筛选
     # --------------------------------------------------------
 
     st.divider()
-    st.markdown("### 候选用例列表")
+    render_section("候选用例列表")
 
     status_options = [
         "全部",
@@ -1909,7 +1954,7 @@ def main():
         return
 
     # --------------------------------------------------------
-    # 批量人工审核
+    # 8. 批量人工审核
     # --------------------------------------------------------
 
     with st.expander("批量人工审核", expanded=True):
@@ -1937,7 +1982,7 @@ def main():
     ]
 
     # --------------------------------------------------------
-    # 6. 刷新候选详情
+    # 9. 刷新候选详情
     # --------------------------------------------------------
 
     candidate = get_candidate_by_id(
@@ -1949,35 +1994,41 @@ def main():
         return
 
     st.divider()
+    render_section("候选用例详情")
 
-    st.markdown("## 候选用例详情")
+    detail_columns = st.columns(3)
 
-    col1, col2, col3 = st.columns(3)
+    with detail_columns[0]:
+        render_info_card(
+            "候选编号",
+            candidate.get("candidate_no", "-"),
+        )
 
-    col1.write(
-        f"候选编号：{candidate.get('candidate_no', '-')}"
-    )
-    col2.write(
-        f"当前版本：V{get_candidate_version(candidate)}"
-    )
-    col3.write(
-        f"审核状态："
-        f"{get_status_label(candidate.get('manual_review_status'))}"
-    )
+    with detail_columns[1]:
+        render_info_card(
+            "当前版本",
+            f"V{get_candidate_version(candidate)}",
+        )
+
+    with detail_columns[2]:
+        render_info_card(
+            "审核状态",
+            get_status_label(candidate.get("manual_review_status")),
+        )
 
     show_candidate_content(
         get_candidate_content(candidate)
     )
 
     # --------------------------------------------------------
-    # 7. 来源测试点
+    # 10. 来源测试点
     # --------------------------------------------------------
 
     st.divider()
     show_source_point(candidate)
 
     # --------------------------------------------------------
-    # 8. 当前版本质量报告及 Reviewer 历史
+    # 11. 当前版本质量报告及 Reviewer 历史
     # --------------------------------------------------------
 
     st.divider()
@@ -2008,10 +2059,12 @@ def main():
         else:
             st.warning("当前版本记录缺少版本 ID")
     else:
-        st.warning("当前版本记录不存在或不唯一，无法读取质量报告")
+        st.warning(
+            "当前版本记录不存在或不唯一，无法读取质量报告"
+        )
 
     # --------------------------------------------------------
-    # 9. 独立 AI Reviewer 复核
+    # 12. 独立 AI Reviewer 复核
     # --------------------------------------------------------
 
     st.divider()
@@ -2019,17 +2072,19 @@ def main():
     if version_id:
         show_reviewer_recheck(candidate)
     else:
-        st.warning("无法确认当前版本，暂不可执行 Reviewer 复核")
+        st.warning(
+            "无法确认当前版本，暂不可执行 Reviewer 复核"
+        )
 
     # --------------------------------------------------------
-    # 10. 完整质量复检
+    # 13. 完整质量复检
     # --------------------------------------------------------
 
     st.divider()
     show_quality_recheck(candidate)
 
     # --------------------------------------------------------
-    # 11. 编辑
+    # 14. 编辑
     # --------------------------------------------------------
 
     st.divider()
@@ -2038,14 +2093,14 @@ def main():
         edit_candidate_form(candidate)
 
     # --------------------------------------------------------
-    # 12. 人工审核
+    # 15. 人工审核
     # --------------------------------------------------------
 
     st.divider()
     show_manual_review_actions(candidate)
 
     # --------------------------------------------------------
-    # 13. 版本历史
+    # 16. 版本历史
     # --------------------------------------------------------
 
     st.divider()
@@ -2054,7 +2109,7 @@ def main():
         show_version_history(candidate["id"])
 
     # --------------------------------------------------------
-    # 14. 人工审核历史
+    # 17. 人工审核历史
     # --------------------------------------------------------
 
     st.divider()
@@ -2063,7 +2118,7 @@ def main():
         show_manual_review_history(candidate["id"])
 
     # --------------------------------------------------------
-    # 15. Excel 导出
+    # 18. Excel 导出
     # --------------------------------------------------------
 
     st.divider()

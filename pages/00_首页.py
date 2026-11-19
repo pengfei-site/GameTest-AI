@@ -12,188 +12,256 @@ from components.header import render_header
 
 
 # ============================================================
-# 一、页面样式
+# 一、首页专属样式
 # ============================================================
 
-st.markdown(
-    """
-    <style>
-    /* 首页整体 */
-    .block-container {
-        padding-top: 1.5rem;
-        padding-bottom: 3rem;
-        max-width: 1500px;
-    }
+st.html("""
+<style>
+/* ------------------------------------------------------------
+   欢迎区域
+   ------------------------------------------------------------ */
 
-    /* 欢迎区域 */
+.home-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 34px 38px;
+    border-radius: 18px;
+    background: linear-gradient(
+        120deg,
+        #f0edff 0%,
+        #f8f7ff 65%,
+        #ffffff 100%
+    );
+    border: 1px solid #e8e3ff;
+    margin-bottom: 30px;
+}
+
+.hero-tag {
+    display: inline-block;
+    padding: 5px 11px;
+    border-radius: 20px;
+    background: #e7e2ff;
+    color: #6254c7;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    margin-bottom: 15px;
+}
+
+.hero-title {
+    color: #292746;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.7px;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.hero-desc {
+    color: #74728a;
+    font-size: 14px;
+    line-height: 1.9;
+    max-width: 760px;
+}
+
+.hero-highlight {
+    color: #6254c7;
+    font-weight: 700;
+}
+
+
+/* ------------------------------------------------------------
+   区域标题
+   ------------------------------------------------------------ */
+
+.section-title {
+    color: #29263e;
+    font-size: 18px;
+    font-weight: 750;
+    margin-top: 8px;
+    margin-bottom: 5px;
+}
+
+.section-desc {
+    color: #9292a5;
+    font-size: 12px;
+    line-height: 1.7;
+    margin-bottom: 17px;
+}
+
+
+/* ------------------------------------------------------------
+   统计卡片
+   ------------------------------------------------------------ */
+
+.metric-card {
+    background: #ffffff;
+    border: 1px solid #e9eaf2;
+    border-radius: 14px;
+    padding: 19px 20px;
+    min-height: 112px;
+    box-shadow: 0 2px 8px rgba(32, 35, 75, 0.035);
+    transition: all 0.18s ease;
+}
+
+.metric-card:hover {
+    border-color: #dcd7f7;
+    box-shadow: 0 5px 16px rgba(32, 35, 75, 0.06);
+}
+
+.metric-label {
+    color: #85869b;
+    font-size: 12px;
+    font-weight: 550;
+    margin-bottom: 13px;
+}
+
+.metric-value {
+    color: #302b54;
+    font-size: 29px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+
+/* ------------------------------------------------------------
+   项目卡片
+   ------------------------------------------------------------ */
+
+.project-name {
+    color: #302b54;
+    font-size: 16px;
+    font-weight: 750;
+    margin-bottom: 9px;
+}
+
+.project-description {
+    color: #77798d;
+    font-size: 13px;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+}
+
+.project-meta {
+    color: #999bad;
+    font-size: 11px;
+    line-height: 1.8;
+    margin-top: 12px;
+}
+
+
+/* ------------------------------------------------------------
+   工作流卡片
+   ------------------------------------------------------------ */
+
+.workflow-card {
+    background: #ffffff;
+    border: 1px solid #e9eaf2;
+    border-radius: 14px;
+    padding: 18px 16px;
+    min-height: 135px;
+    box-shadow: 0 2px 8px rgba(32, 35, 75, 0.035);
+    transition: all 0.18s ease;
+}
+
+.workflow-card:hover {
+    border-color: #dcd7f7;
+    transform: translateY(-2px);
+}
+
+.workflow-number {
+    color: #8c80ce;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.7px;
+    margin-bottom: 13px;
+}
+
+.workflow-name {
+    color: #302b54;
+    font-size: 14px;
+    font-weight: 750;
+    margin-bottom: 8px;
+}
+
+.workflow-desc {
+    color: #85869b;
+    font-size: 12px;
+    line-height: 1.8;
+}
+
+
+/* ------------------------------------------------------------
+   快捷入口
+   ------------------------------------------------------------ */
+
+.feature-icon {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0edff;
+    border-radius: 11px;
+    font-size: 22px;
+    margin-bottom: 14px;
+}
+
+.feature-name {
+    color: #302b54;
+    font-size: 15px;
+    font-weight: 750;
+    margin-bottom: 7px;
+}
+
+.feature-desc {
+    color: #85869b;
+    font-size: 12px;
+    line-height: 1.8;
+    min-height: 44px;
+    margin-bottom: 12px;
+}
+
+
+/* ------------------------------------------------------------
+   首页分隔线与页脚
+   ------------------------------------------------------------ */
+
+.home-footer {
+    text-align: center;
+    color: #a0a1b1;
+    font-size: 11px;
+    padding: 12px 0;
+}
+
+
+/* ------------------------------------------------------------
+   小屏适配
+   ------------------------------------------------------------ */
+
+@media (max-width: 700px) {
     .home-hero {
-        padding: 35px 38px;
-        border-radius: 22px;
-        background: linear-gradient(
-            120deg,
-            #6854d9 0%,
-            #8565e8 55%,
-            #a17bea 100%
-        );
-        color: #ffffff;
-        margin-bottom: 28px;
-        box-shadow: 0 12px 35px rgba(104, 84, 217, 0.16);
-    }
-
-    .hero-tag {
-        display: inline-block;
-        padding: 5px 13px;
-        border-radius: 20px;
-        background: rgba(255,255,255,0.17);
-        color: #ffffff;
-        font-size: 12px;
-        margin-bottom: 15px;
+        padding: 25px 22px;
     }
 
     .hero-title {
-        font-size: 29px;
-        font-weight: 800;
-        color: #ffffff;
-        margin-bottom: 12px;
-        line-height: 1.4;
+        font-size: 23px;
     }
 
-    .hero-desc {
-        font-size: 14px;
-        line-height: 1.9;
-        color: #f0ebff;
-        max-width: 760px;
-    }
-
-    /* 区域标题 */
-    .section-title {
-        font-size: 19px;
-        font-weight: 750;
-        color: #292448;
-        margin-top: 12px;
-        margin-bottom: 5px;
-    }
-
-    .section-desc {
-        font-size: 12px;
-        color: #9691a9;
-        margin-bottom: 18px;
-    }
-
-    /* 统计卡片 */
     .metric-card {
-        background: #ffffff;
-        border: 1px solid #eeeaf8;
-        border-radius: 15px;
-        padding: 19px 20px;
-        min-height: 112px;
-        box-shadow: 0 3px 14px rgba(49, 35, 96, 0.035);
-    }
-
-    .metric-label {
-        color: #89839f;
-        font-size: 12px;
-        margin-bottom: 12px;
+        padding: 15px;
     }
 
     .metric-value {
-        color: #30275c;
-        font-size: 29px;
-        font-weight: 800;
-    }
-
-    /* 项目卡片 */
-    .project-name {
-        color: #30275c;
-        font-size: 17px;
-        font-weight: 750;
-        margin-bottom: 8px;
-    }
-
-    .project-description {
-        color: #817c94;
-        font-size: 13px;
-        line-height: 1.7;
-    }
-
-    .project-meta {
-        color: #aaa5b8;
-        font-size: 11px;
-        margin-top: 12px;
-    }
-
-    /* 工作流卡片 */
-    .workflow-card {
-        background: #ffffff;
-        border: 1px solid #eeeaf8;
-        border-radius: 15px;
-        padding: 18px;
-        min-height: 125px;
-        box-shadow: 0 3px 14px rgba(49, 35, 96, 0.035);
-    }
-
-    .workflow-number {
-        color: #a49acb;
-        font-size: 11px;
-        font-weight: 700;
-        margin-bottom: 10px;
-    }
-
-    .workflow-name {
-        color: #30275c;
-        font-size: 15px;
-        font-weight: 750;
-        margin-bottom: 7px;
-    }
-
-    .workflow-desc {
-        color: #89839f;
-        font-size: 12px;
-        line-height: 1.7;
-    }
-
-    /* 功能卡片 */
-    .feature-icon {
         font-size: 25px;
-        margin-bottom: 10px;
     }
 
-    .feature-name {
-        color: #30275c;
-        font-size: 15px;
-        font-weight: 750;
-        margin-bottom: 7px;
+    .workflow-card {
+        padding: 15px;
     }
-
-    .feature-desc {
-        color: #89839f;
-        font-size: 12px;
-        line-height: 1.7;
-        min-height: 42px;
-        margin-bottom: 12px;
-    }
-
-    /* 按钮 */
-    div.stButton > button,
-    div.stPageLink > a {
-        border-radius: 9px;
-    }
-
-    div.stPageLink > a {
-        border: 1px solid #e8e1fb;
-        color: #6854d9;
-        background: #faf9ff;
-    }
-
-    div.stPageLink > a:hover {
-        border-color: #8c74e9;
-        color: #5942c8;
-        background: #f3efff;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+}
+</style>
+""")
 
 
 # ============================================================
@@ -225,7 +293,8 @@ st.html("""
         从游戏项目管理开始，逐步完成需求文档导入、
         结构化需求分析、AI 测试点生成、
         AI 测试用例生成与质量管理，
-        构建完整的智能游戏测试工作流。
+        构建完整的
+        <span class="hero-highlight">智能游戏测试工作流</span>。
     </div>
 </div>
 """)
@@ -426,7 +495,6 @@ workflow = [
     },
 ]
 
-
 workflow_cols = st.columns(4)
 
 for col, item in zip(workflow_cols, workflow):
@@ -448,6 +516,7 @@ for col, item in zip(workflow_cols, workflow):
             </div>
             """
         )
+
 
 st.divider()
 
@@ -534,15 +603,9 @@ st.divider()
 
 st.markdown(
     """
-    <div style="
-        text-align:center;
-        color:#aaa5b8;
-        font-size:12px;
-        padding:12px 0;
-    ">
+    <div class="home-footer">
         GameTest AI · AI 驱动的智能游戏测试平台
     </div>
     """,
     unsafe_allow_html=True,
 )
-

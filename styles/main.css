@@ -1,72 +1,538 @@
 
 /* ============================================================
    GameTest AI - Global Styles
+   STEP 8.1 - Modern SaaS Theme
    ============================================================ */
 
+/* ------------------------------------------------------------
+   1. 全局设计变量
+   ------------------------------------------------------------ */
+
+:root {
+    --gt-primary: #6254c7;
+    --gt-primary-hover: #5143b3;
+    --gt-primary-light: #f0edff;
+
+    --gt-sidebar-start: #25234a;
+    --gt-sidebar-end: #39336d;
+
+    --gt-bg: #f7f8fc;
+    --gt-surface: #ffffff;
+    --gt-surface-soft: #fafaff;
+
+    --gt-text: #25263a;
+    --gt-text-secondary: #73758a;
+    --gt-text-muted: #999bad;
+
+    --gt-border: #e9eaf2;
+    --gt-border-strong: #dcddec;
+
+    --gt-success: #16a36a;
+    --gt-warning: #d99524;
+    --gt-danger: #dc5555;
+
+    --gt-radius-sm: 8px;
+    --gt-radius-md: 12px;
+    --gt-radius-lg: 16px;
+
+    --gt-shadow-sm: 0 2px 8px rgba(32, 35, 75, 0.04);
+    --gt-shadow-md: 0 5px 18px rgba(32, 35, 75, 0.06);
+
+    --gt-transition: all 0.18s ease;
+}
+
+
+/* ------------------------------------------------------------
+   2. 页面基础布局
+   ------------------------------------------------------------ */
+
 .stApp {
-    background: #f7f6fc;
+    background: var(--gt-bg);
+    color: var(--gt-text);
 }
 
 .block-container {
-    padding-top: 1.5rem;
-    padding-bottom: 3rem;
     max-width: 1500px;
+    padding-top: 3.5rem;
+    padding-bottom: 3.5rem;
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
 }
 
-/* 侧边栏 */
+/* 正文基础字体 */
+
+.stApp,
+.stApp p,
+.stApp label,
+.stApp li {
+    color: var(--gt-text);
+}
+
+/* 标题层级 */
+
+.stApp h1 {
+    color: var(--gt-text);
+    font-weight: 750;
+    letter-spacing: -0.8px;
+}
+
+.stApp h2 {
+    color: var(--gt-text);
+    font-weight: 700;
+    letter-spacing: -0.4px;
+}
+
+.stApp h3 {
+    color: var(--gt-text);
+    font-weight: 650;
+}
+
+
+/* ------------------------------------------------------------
+   3. 侧边栏
+   ------------------------------------------------------------ */
+
 [data-testid="stSidebar"] {
     background: linear-gradient(
         180deg,
-        #25234a 0%,
-        #5144a0 100%
+        var(--gt-sidebar-start) 0%,
+        var(--gt-sidebar-end) 100%
     );
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-[data-testid="stSidebar"] * {
-    color: white;
+/* 侧边栏字体 */
+
+/* 侧边栏文字颜色修复 */
+[data-testid="stSidebar"],
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] a,
+[data-testid="stSidebar"] div,
+[data-testid="stSidebar"] svg {
+    color: #ffffff;
 }
+
+/* 导航文字 */
+[data-testid="stSidebar"] [data-testid="stPageLink"] p {
+    color: #ffffff !important;
+    font-weight: 550;
+    font-size: 14px;
+}
+
+/* 分组标题 */
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+    color: #ffffff;
+}
+
+/* 侧边栏分隔线 */
 
 [data-testid="stSidebar"] hr {
-    border-color: rgba(255,255,255,.15);
+    border-color: rgba(255, 255, 255, 0.13);
 }
 
-/* 导航链接 */
+/* 侧边栏导航区域 */
+
 [data-testid="stSidebar"] [data-testid="stPageLink"] {
-    border-radius: 10px;
-    transition: background .2s ease;
+    border-radius: var(--gt-radius-sm);
+    padding: 2px 8px;
+    margin: 2px 0;
+    transition: var(--gt-transition);
 }
+
+/* 导航悬停 */
 
 [data-testid="stSidebar"] [data-testid="stPageLink"]:hover {
-    background: rgba(255,255,255,.12);
+    background: rgba(255, 255, 255, 0.12);
 }
 
-/* 数据卡片 */
+/* 当前页面导航状态 */
+
+[data-testid="stSidebar"] [data-testid="stPageLink"][aria-current="page"] {
+    background: rgba(255, 255, 255, 0.17);
+    border-radius: var(--gt-radius-sm);
+}
+
+/* 导航文字 */
+
+[data-testid="stSidebar"] [data-testid="stPageLink"] p {
+    font-weight: 550;
+    font-size: 14px;
+}
+
+/* 侧边栏按钮 */
+
+[data-testid="stSidebar"] .stButton button {
+    border-radius: var(--gt-radius-sm);
+}
+
+
+/* ------------------------------------------------------------
+   4. 数据指标卡片 Metric
+   ------------------------------------------------------------ */
+
 div[data-testid="stMetric"] {
-    background: white;
-    border: 1px solid #eeebfa;
-    padding: 18px;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(80,60,150,.05);
+    background: var(--gt-surface);
+    border: 1px solid var(--gt-border);
+    border-radius: var(--gt-radius-lg);
+    padding: 18px 20px;
+    box-shadow: var(--gt-shadow-sm);
+    transition: var(--gt-transition);
 }
 
-/* 按钮 */
-.stButton button {
-    border-radius: 10px;
+div[data-testid="stMetric"]:hover {
+    border-color: var(--gt-border-strong);
+    box-shadow: var(--gt-shadow-md);
+}
+
+/* Metric 标签 */
+
+div[data-testid="stMetricLabel"] {
+    color: var(--gt-text-secondary);
+    font-size: 13px;
+    font-weight: 550;
+}
+
+/* Metric 数值 */
+
+div[data-testid="stMetricValue"] {
+    color: var(--gt-text);
+    font-weight: 750;
+}
+
+
+/* ------------------------------------------------------------
+   5. 按钮
+   ------------------------------------------------------------ */
+
+
+/* ------------------------------------------------------------
+   5. 全局按钮统一样式
+   ------------------------------------------------------------ */
+
+/* 所有按钮基础样式 */
+
+.stButton button,
+.stDownloadButton button,
+.stFormSubmitButton button {
+    border-radius: var(--gt-radius-sm);
+    font-weight: 600;
+    min-height: 40px;
+    transition: var(--gt-transition);
+    box-shadow: none;
+}
+
+
+/* Primary 主按钮 - 兼容 Streamlit 1.67 */
+
+.stButton button[data-testid="stBaseButton-primary"],
+.stFormSubmitButton button[data-testid="stBaseButton-primary"],
+.stButton button[kind="primary"],
+.stFormSubmitButton button[kind="primary"] {
+    background-color: #6254c7 !important;
+    background: #6254c7 !important;
+    border: 1px solid #6254c7 !important;
+    color: #ffffff !important;
+}
+
+/* 主按钮内部文字和图标 */
+
+.stButton button[data-testid="stBaseButton-primary"] *,
+.stFormSubmitButton button[data-testid="stBaseButton-primary"] *,
+.stButton button[kind="primary"] *,
+.stFormSubmitButton button[kind="primary"] * {
+    color: #ffffff !important;
+}
+
+/* 主按钮悬停 */
+
+.stButton button[data-testid="stBaseButton-primary"]:hover,
+.stFormSubmitButton button[data-testid="stBaseButton-primary"]:hover,
+.stButton button[kind="primary"]:hover,
+.stFormSubmitButton button[kind="primary"]:hover {
+    background-color: #5143b3 !important;
+    background: #5143b3 !important;
+    border-color: #5143b3 !important;
+    color: #ffffff !important;
+}
+
+/* 主按钮禁用 */
+
+.stButton button[data-testid="stBaseButton-primary"]:disabled,
+.stFormSubmitButton button[data-testid="stBaseButton-primary"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* Disabled 禁用状态 */
+
+.stButton button:disabled,
+.stDownloadButton button:disabled,
+.stFormSubmitButton button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* 键盘焦点状态 */
+
+.stButton button:focus-visible,
+.stDownloadButton button:focus-visible,
+.stFormSubmitButton button:focus-visible {
+    outline: 3px solid rgba(98, 84, 199, 0.2);
+    outline-offset: 2px;
+}
+
+
+/* ------------------------------------------------------------
+   5.1 页面导航链接 st.page_link 统一样式
+   ------------------------------------------------------------ */
+
+/* 页面主体中的导航链接 */
+
+[data-testid="stMain"] [data-testid="stPageLink"] a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 8px 16px;
+    border-radius: var(--gt-radius-sm);
+    background: #ffffff !important;
+    border: 1px solid var(--gt-border-strong) !important;
+    text-decoration: none !important;
+    transition: var(--gt-transition);
+}
+
+/* 导航链接文字 */
+
+[data-testid="stMain"] [data-testid="stPageLink"] a,
+[data-testid="stMain"] [data-testid="stPageLink"] a p,
+[data-testid="stMain"] [data-testid="stPageLink"] a span {
+    color: var(--gt-text) !important;
     font-weight: 600;
 }
 
-/* 输入框 */
-.stTextInput input,
-.stTextArea textarea,
-.stSelectbox div[data-baseweb="select"] {
-    border-radius: 10px;
+/* 鼠标悬停 */
+
+[data-testid="stMain"] [data-testid="stPageLink"] a:hover {
+    background: var(--gt-primary-light) !important;
+    border-color: var(--gt-primary) !important;
 }
 
-/* 内容卡片 */
+[data-testid="stMain"] [data-testid="stPageLink"] a:hover,
+[data-testid="stMain"] [data-testid="stPageLink"] a:hover p,
+[data-testid="stMain"] [data-testid="stPageLink"] a:hover span {
+    color: var(--gt-primary) !important;
+}
+
+
+/* ------------------------------------------------------------
+   表单提交按钮专用修复
+   兼容 Streamlit 1.67.0
+   ------------------------------------------------------------ */
+
+[data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primary"],
+[data-testid="stFormSubmitButton"] button {
+    background-color: #6254c7 !important;
+    background: #6254c7 !important;
+    border: 1px solid #6254c7 !important;
+    color: #ffffff !important;
+}
+
+/* 表单按钮内部文字 */
+
+[data-testid="stFormSubmitButton"] button *,
+[data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primary"] * {
+    color: #ffffff !important;
+}
+
+/* 表单按钮悬停 */
+
+[data-testid="stFormSubmitButton"] button:hover {
+    background-color: #5143b3 !important;
+    background: #5143b3 !important;
+    border-color: #5143b3 !important;
+    color: #ffffff !important;
+}
+
+/* 表单按钮禁用 */
+
+[data-testid="stFormSubmitButton"] button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+
+/* ------------------------------------------------------------
+   6. 输入框与选择器
+   ------------------------------------------------------------ */
+
+/* 文本输入框 */
+
+.stTextInput input,
+.stTextArea textarea,
+.stNumberInput input {
+    border-radius: var(--gt-radius-sm);
+    border: 1px solid var(--gt-border-strong);
+    background: var(--gt-surface);
+    transition: var(--gt-transition);
+}
+
+/* 输入框聚焦 */
+
+.stTextInput input:focus,
+.stTextArea textarea:focus,
+.stNumberInput input:focus {
+    border-color: var(--gt-primary);
+    box-shadow: 0 0 0 3px rgba(98, 84, 199, 0.12);
+}
+
+/* SelectBox */
+
+.stSelectbox div[data-baseweb="select"],
+.stMultiSelect div[data-baseweb="select"] {
+    border-radius: var(--gt-radius-sm);
+}
+
+/* 日期选择器 */
+
+.stDateInput input {
+    border-radius: var(--gt-radius-sm);
+}
+
+/* 输入标签 */
+
+.stTextInput label,
+.stTextArea label,
+.stSelectbox label,
+.stMultiSelect label,
+.stNumberInput label,
+.stDateInput label {
+    color: var(--gt-text-secondary);
+    font-weight: 550;
+    font-size: 13px;
+}
+
+
+/* ------------------------------------------------------------
+   7. 内容卡片
+   ------------------------------------------------------------ */
+
 .gt-card {
-    background: #ffffff;
-    border: 1px solid #eeebfa;
-    border-radius: 15px;
+    background: var(--gt-surface);
+    border: 1px solid var(--gt-border);
+    border-radius: var(--gt-radius-lg);
     padding: 20px;
-    box-shadow: 0 4px 15px rgba(80,60,150,.04);
+    box-shadow: var(--gt-shadow-sm);
+    transition: var(--gt-transition);
+}
+
+.gt-card:hover {
+    border-color: var(--gt-border-strong);
+    box-shadow: var(--gt-shadow-md);
+}
+
+
+/* ------------------------------------------------------------
+   8. 数据表格
+   ------------------------------------------------------------ */
+
+[data-testid="stDataFrame"],
+[data-testid="stTable"] {
+    border: 1px solid var(--gt-border);
+    border-radius: var(--gt-radius-md);
+    overflow: hidden;
+    background: var(--gt-surface);
+}
+
+/* 表格文字 */
+
+[data-testid="stDataFrame"] * {
+    font-size: 13px;
+}
+
+
+/* ------------------------------------------------------------
+   9. Expander 展开面板
+   ------------------------------------------------------------ */
+
+[data-testid="stExpander"] {
+    background: var(--gt-surface);
+    border: 1px solid var(--gt-border);
+    border-radius: var(--gt-radius-md);
+    overflow: hidden;
+}
+
+[data-testid="stExpander"] summary {
+    font-weight: 600;
+}
+
+
+/* ------------------------------------------------------------
+   10. Tabs 标签页
+   ------------------------------------------------------------ */
+
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+    border-bottom: 1px solid var(--gt-border);
+}
+
+.stTabs [data-baseweb="tab"] {
+    border-radius: var(--gt-radius-sm) var(--gt-radius-sm) 0 0;
+    font-weight: 550;
+}
+
+.stTabs [aria-selected="true"] {
+    color: var(--gt-primary);
+}
+
+
+/* ------------------------------------------------------------
+   11. 提示信息
+   ------------------------------------------------------------ */
+
+[data-testid="stAlert"] {
+    border-radius: var(--gt-radius-md);
+}
+
+
+/* ------------------------------------------------------------
+   12. 分隔线
+   ------------------------------------------------------------ */
+
+.stApp hr {
+    border-color: var(--gt-border);
+}
+
+
+/* ------------------------------------------------------------
+   13. 响应式布局
+   ------------------------------------------------------------ */
+
+@media (max-width: 900px) {
+    .block-container {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+        padding-top: 1.5rem;
+    }
+
+    .gt-card {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 600px) {
+    .block-container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-top: 1rem;
+        padding-bottom: 2rem;
+    }
+
+    div[data-testid="stMetric"] {
+        padding: 14px;
+    }
 }
