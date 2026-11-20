@@ -1,43 +1,68 @@
 
 /* ============================================================
-   GameTest AI - Global Styles
-   STEP 8.1 - Modern SaaS Theme
+   GameTest AI - Global Design System
+   STEP 13.1 - Blue SaaS Theme
+   Compatible with Streamlit 1.67.0
    ============================================================ */
+
 
 /* ------------------------------------------------------------
    1. 全局设计变量
    ------------------------------------------------------------ */
 
 :root {
-    --gt-primary: #6254c7;
-    --gt-primary-hover: #5143b3;
-    --gt-primary-light: #f0edff;
+    /* Brand */
+    --gt-primary: #3B82F6;
+    --gt-primary-hover: #2563EB;
+    --gt-primary-light: #EFF6FF;
+    --gt-primary-soft: rgba(59, 130, 246, 0.10);
 
-    --gt-sidebar-start: #25234a;
-    --gt-sidebar-end: #39336d;
+    /* Sidebar */
+    --gt-sidebar-start: #172033;
+    --gt-sidebar-end: #1E293B;
+    --gt-sidebar-text: #F8FAFC;
+    --gt-sidebar-muted: #94A3B8;
 
-    --gt-bg: #f7f8fc;
-    --gt-surface: #ffffff;
-    --gt-surface-soft: #fafaff;
+    /* Background */
+    --gt-bg: #F3F5F9;
+    --gt-surface: #FFFFFF;
+    --gt-surface-soft: #F8FAFC;
+    --gt-surface-hover: #F1F5F9;
 
-    --gt-text: #25263a;
-    --gt-text-secondary: #73758a;
-    --gt-text-muted: #999bad;
+    /* Text */
+    --gt-text: #1E293B;
+    --gt-text-secondary: #64748B;
+    --gt-text-muted: #94A3B8;
 
-    --gt-border: #e9eaf2;
-    --gt-border-strong: #dcddec;
+    /* Border */
+    --gt-border: #E2E8F0;
+    --gt-border-strong: #CBD5E1;
 
-    --gt-success: #16a36a;
-    --gt-warning: #d99524;
-    --gt-danger: #dc5555;
+    /* Status */
+    --gt-success: #16A34A;
+    --gt-success-light: #F0FDF4;
 
+    --gt-warning: #F59E0B;
+    --gt-warning-light: #FFFBEB;
+
+    --gt-danger: #EF4444;
+    --gt-danger-light: #FEF2F2;
+
+    --gt-info: #3B82F6;
+    --gt-info-light: #EFF6FF;
+
+    /* Radius */
     --gt-radius-sm: 8px;
     --gt-radius-md: 12px;
     --gt-radius-lg: 16px;
+    --gt-radius-xl: 20px;
 
-    --gt-shadow-sm: 0 2px 8px rgba(32, 35, 75, 0.04);
-    --gt-shadow-md: 0 5px 18px rgba(32, 35, 75, 0.06);
+    /* Shadow */
+    --gt-shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
+    --gt-shadow-md: 0 5px 18px rgba(15, 23, 42, 0.06);
+    --gt-shadow-lg: 0 10px 30px rgba(15, 23, 42, 0.08);
 
+    /* Transition */
     --gt-transition: all 0.18s ease;
 }
 
@@ -53,43 +78,46 @@
 
 .block-container {
     max-width: 1500px;
-    padding-top: 3.5rem;
-    padding-bottom: 3.5rem;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
     padding-left: 2.5rem;
     padding-right: 2.5rem;
 }
-
-/* 正文基础字体 */
 
 .stApp,
 .stApp p,
 .stApp label,
 .stApp li {
     color: var(--gt-text);
+    font-family: -apple-system, BlinkMacSystemFont,
+        "Segoe UI", "Microsoft YaHei", sans-serif;
 }
 
 /* 标题层级 */
 
 .stApp h1 {
     color: var(--gt-text);
+    font-size: 30px;
     font-weight: 750;
     letter-spacing: -0.8px;
 }
 
 .stApp h2 {
     color: var(--gt-text);
+    font-size: 22px;
     font-weight: 700;
     letter-spacing: -0.4px;
 }
 
 .stApp h3 {
     color: var(--gt-text);
+    font-size: 18px;
     font-weight: 650;
 }
 
 
 /* ------------------------------------------------------------
-   3. 侧边栏
+   3. 侧边栏基础样式
    ------------------------------------------------------------ */
 
 [data-testid="stSidebar"] {
@@ -101,67 +129,38 @@
     border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* 侧边栏字体 */
-
-/* 侧边栏文字颜色修复 */
-[data-testid="stSidebar"],
 [data-testid="stSidebar"] p,
-[data-testid="stSidebar"] span,
 [data-testid="stSidebar"] label,
 [data-testid="stSidebar"] a,
-[data-testid="stSidebar"] div,
-[data-testid="stSidebar"] svg {
-    color: #ffffff;
+[data-testid="stSidebar"] span {
+    color: var(--gt-sidebar-text);
 }
 
-/* 导航文字 */
 [data-testid="stSidebar"] [data-testid="stPageLink"] p {
-    color: #ffffff !important;
-    font-weight: 550;
+    color: var(--gt-sidebar-text) !important;
     font-size: 14px;
+    font-weight: 550;
 }
-
-/* 分组标题 */
-[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
-    color: #ffffff;
-}
-
-/* 侧边栏分隔线 */
 
 [data-testid="stSidebar"] hr {
     border-color: rgba(255, 255, 255, 0.13);
 }
 
-/* 侧边栏导航区域 */
-
 [data-testid="stSidebar"] [data-testid="stPageLink"] {
     border-radius: var(--gt-radius-sm);
     padding: 2px 8px;
-    margin: 2px 0;
+    margin: 3px 0;
     transition: var(--gt-transition);
 }
 
-/* 导航悬停 */
-
 [data-testid="stSidebar"] [data-testid="stPageLink"]:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.10);
 }
-
-/* 当前页面导航状态 */
 
 [data-testid="stSidebar"] [data-testid="stPageLink"][aria-current="page"] {
-    background: rgba(255, 255, 255, 0.17);
+    background: rgba(59, 130, 246, 0.25);
     border-radius: var(--gt-radius-sm);
 }
-
-/* 导航文字 */
-
-[data-testid="stSidebar"] [data-testid="stPageLink"] p {
-    font-weight: 550;
-    font-size: 14px;
-}
-
-/* 侧边栏按钮 */
 
 [data-testid="stSidebar"] .stButton button {
     border-radius: var(--gt-radius-sm);
@@ -169,7 +168,7 @@
 
 
 /* ------------------------------------------------------------
-   4. 数据指标卡片 Metric
+   4. Metric 数据指标卡片
    ------------------------------------------------------------ */
 
 div[data-testid="stMetric"] {
@@ -186,15 +185,11 @@ div[data-testid="stMetric"]:hover {
     box-shadow: var(--gt-shadow-md);
 }
 
-/* Metric 标签 */
-
 div[data-testid="stMetricLabel"] {
     color: var(--gt-text-secondary);
     font-size: 13px;
     font-weight: 550;
 }
-
-/* Metric 数值 */
 
 div[data-testid="stMetricValue"] {
     color: var(--gt-text);
@@ -203,15 +198,8 @@ div[data-testid="stMetricValue"] {
 
 
 /* ------------------------------------------------------------
-   5. 按钮
+   5. 全局按钮
    ------------------------------------------------------------ */
-
-
-/* ------------------------------------------------------------
-   5. 全局按钮统一样式
-   ------------------------------------------------------------ */
-
-/* 所有按钮基础样式 */
 
 .stButton button,
 .stDownloadButton button,
@@ -223,50 +211,51 @@ div[data-testid="stMetricValue"] {
     box-shadow: none;
 }
 
-
-/* Primary 主按钮 - 兼容 Streamlit 1.67 */
+/* Primary 按钮 */
 
 .stButton button[data-testid="stBaseButton-primary"],
 .stFormSubmitButton button[data-testid="stBaseButton-primary"],
 .stButton button[kind="primary"],
 .stFormSubmitButton button[kind="primary"] {
-    background-color: #6254c7 !important;
-    background: #6254c7 !important;
-    border: 1px solid #6254c7 !important;
-    color: #ffffff !important;
+    background: var(--gt-primary) !important;
+    border: 1px solid var(--gt-primary) !important;
+    color: #FFFFFF !important;
 }
-
-/* 主按钮内部文字和图标 */
 
 .stButton button[data-testid="stBaseButton-primary"] *,
 .stFormSubmitButton button[data-testid="stBaseButton-primary"] *,
 .stButton button[kind="primary"] *,
 .stFormSubmitButton button[kind="primary"] * {
-    color: #ffffff !important;
+    color: #FFFFFF !important;
 }
-
-/* 主按钮悬停 */
 
 .stButton button[data-testid="stBaseButton-primary"]:hover,
 .stFormSubmitButton button[data-testid="stBaseButton-primary"]:hover,
 .stButton button[kind="primary"]:hover,
 .stFormSubmitButton button[kind="primary"]:hover {
-    background-color: #5143b3 !important;
-    background: #5143b3 !important;
-    border-color: #5143b3 !important;
-    color: #ffffff !important;
+    background: var(--gt-primary-hover) !important;
+    border-color: var(--gt-primary-hover) !important;
+    color: #FFFFFF !important;
 }
 
-/* 主按钮禁用 */
+/* 表单提交按钮 */
 
-.stButton button[data-testid="stBaseButton-primary"]:disabled,
-.stFormSubmitButton button[data-testid="stBaseButton-primary"]:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+[data-testid="stFormSubmitButton"] button {
+    background: var(--gt-primary) !important;
+    border: 1px solid var(--gt-primary) !important;
+    color: #FFFFFF !important;
 }
 
+[data-testid="stFormSubmitButton"] button * {
+    color: #FFFFFF !important;
+}
 
-/* Disabled 禁用状态 */
+[data-testid="stFormSubmitButton"] button:hover {
+    background: var(--gt-primary-hover) !important;
+    border-color: var(--gt-primary-hover) !important;
+}
+
+/* 禁用状态 */
 
 .stButton button:disabled,
 .stDownloadButton button:disabled,
@@ -276,21 +265,19 @@ div[data-testid="stMetricValue"] {
     box-shadow: none;
 }
 
-/* 键盘焦点状态 */
+/* 键盘焦点 */
 
 .stButton button:focus-visible,
 .stDownloadButton button:focus-visible,
 .stFormSubmitButton button:focus-visible {
-    outline: 3px solid rgba(98, 84, 199, 0.2);
+    outline: 3px solid rgba(59, 130, 246, 0.22);
     outline-offset: 2px;
 }
 
 
 /* ------------------------------------------------------------
-   5.1 页面导航链接 st.page_link 统一样式
+   6. 页面导航链接
    ------------------------------------------------------------ */
-
-/* 页面主体中的导航链接 */
 
 [data-testid="stMain"] [data-testid="stPageLink"] a {
     display: flex;
@@ -299,13 +286,11 @@ div[data-testid="stMetricValue"] {
     min-height: 40px;
     padding: 8px 16px;
     border-radius: var(--gt-radius-sm);
-    background: #ffffff !important;
-    border: 1px solid var(--gt-border-strong) !important;
+    background: var(--gt-surface);
+    border: 1px solid var(--gt-border-strong);
     text-decoration: none !important;
     transition: var(--gt-transition);
 }
-
-/* 导航链接文字 */
 
 [data-testid="stMain"] [data-testid="stPageLink"] a,
 [data-testid="stMain"] [data-testid="stPageLink"] a p,
@@ -314,11 +299,9 @@ div[data-testid="stMetricValue"] {
     font-weight: 600;
 }
 
-/* 鼠标悬停 */
-
 [data-testid="stMain"] [data-testid="stPageLink"] a:hover {
-    background: var(--gt-primary-light) !important;
-    border-color: var(--gt-primary) !important;
+    background: var(--gt-primary-light);
+    border-color: var(--gt-primary);
 }
 
 [data-testid="stMain"] [data-testid="stPageLink"] a:hover,
@@ -329,48 +312,8 @@ div[data-testid="stMetricValue"] {
 
 
 /* ------------------------------------------------------------
-   表单提交按钮专用修复
-   兼容 Streamlit 1.67.0
+   7. 输入框与选择器
    ------------------------------------------------------------ */
-
-[data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primary"],
-[data-testid="stFormSubmitButton"] button {
-    background-color: #6254c7 !important;
-    background: #6254c7 !important;
-    border: 1px solid #6254c7 !important;
-    color: #ffffff !important;
-}
-
-/* 表单按钮内部文字 */
-
-[data-testid="stFormSubmitButton"] button *,
-[data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primary"] * {
-    color: #ffffff !important;
-}
-
-/* 表单按钮悬停 */
-
-[data-testid="stFormSubmitButton"] button:hover {
-    background-color: #5143b3 !important;
-    background: #5143b3 !important;
-    border-color: #5143b3 !important;
-    color: #ffffff !important;
-}
-
-/* 表单按钮禁用 */
-
-[data-testid="stFormSubmitButton"] button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-
-
-/* ------------------------------------------------------------
-   6. 输入框与选择器
-   ------------------------------------------------------------ */
-
-/* 文本输入框 */
 
 .stTextInput input,
 .stTextArea textarea,
@@ -381,29 +324,21 @@ div[data-testid="stMetricValue"] {
     transition: var(--gt-transition);
 }
 
-/* 输入框聚焦 */
-
 .stTextInput input:focus,
 .stTextArea textarea:focus,
 .stNumberInput input:focus {
     border-color: var(--gt-primary);
-    box-shadow: 0 0 0 3px rgba(98, 84, 199, 0.12);
+    box-shadow: 0 0 0 3px var(--gt-primary-soft);
 }
-
-/* SelectBox */
 
 .stSelectbox div[data-baseweb="select"],
 .stMultiSelect div[data-baseweb="select"] {
     border-radius: var(--gt-radius-sm);
 }
 
-/* 日期选择器 */
-
 .stDateInput input {
     border-radius: var(--gt-radius-sm);
 }
-
-/* 输入标签 */
 
 .stTextInput label,
 .stTextArea label,
@@ -418,7 +353,7 @@ div[data-testid="stMetricValue"] {
 
 
 /* ------------------------------------------------------------
-   7. 内容卡片
+   8. 通用内容卡片
    ------------------------------------------------------------ */
 
 .gt-card {
@@ -437,7 +372,7 @@ div[data-testid="stMetricValue"] {
 
 
 /* ------------------------------------------------------------
-   8. 数据表格
+   9. 数据表格
    ------------------------------------------------------------ */
 
 [data-testid="stDataFrame"],
@@ -448,15 +383,13 @@ div[data-testid="stMetricValue"] {
     background: var(--gt-surface);
 }
 
-/* 表格文字 */
-
 [data-testid="stDataFrame"] * {
     font-size: 13px;
 }
 
 
 /* ------------------------------------------------------------
-   9. Expander 展开面板
+   10. Expander 展开面板
    ------------------------------------------------------------ */
 
 [data-testid="stExpander"] {
@@ -472,7 +405,7 @@ div[data-testid="stMetricValue"] {
 
 
 /* ------------------------------------------------------------
-   10. Tabs 标签页
+   11. Tabs 标签页
    ------------------------------------------------------------ */
 
 .stTabs [data-baseweb="tab-list"] {
@@ -491,7 +424,7 @@ div[data-testid="stMetricValue"] {
 
 
 /* ------------------------------------------------------------
-   11. 提示信息
+   12. 提示信息
    ------------------------------------------------------------ */
 
 [data-testid="stAlert"] {
@@ -500,7 +433,7 @@ div[data-testid="stMetricValue"] {
 
 
 /* ------------------------------------------------------------
-   12. 分隔线
+   13. 分隔线
    ------------------------------------------------------------ */
 
 .stApp hr {
@@ -509,7 +442,7 @@ div[data-testid="stMetricValue"] {
 
 
 /* ------------------------------------------------------------
-   13. 响应式布局
+   14. 响应式布局
    ------------------------------------------------------------ */
 
 @media (max-width: 900px) {
@@ -534,5 +467,454 @@ div[data-testid="stMetricValue"] {
 
     div[data-testid="stMetric"] {
         padding: 14px;
+    }
+}
+
+
+/* ============================================================
+   STEP 13.2 - Sidebar Design
+   ============================================================ */
+
+/* 品牌区域 */
+
+.gt-sidebar-brand {
+    padding: 14px 5px 24px;
+}
+
+.gt-sidebar-brand-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #FFFFFF;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+}
+
+.gt-sidebar-brand-icon {
+    font-size: 25px;
+}
+
+.gt-sidebar-brand-subtitle {
+    margin-top: 8px;
+    color: #CBD5E1;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+/* 导航分组标题 */
+
+.gt-sidebar-group-title {
+    padding: 13px 8px 8px;
+    color: #94A3B8;
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: 0.8px;
+}
+
+/* 导航链接 */
+
+[data-testid="stSidebar"] [data-testid="stPageLink"] {
+    margin: 3px 0;
+    padding: 2px 7px;
+    border-radius: 9px;
+    transition: all 0.18s ease;
+}
+
+[data-testid="stSidebar"] [data-testid="stPageLink"] p {
+    color: #E2E8F0 !important;
+    font-size: 13px;
+    font-weight: 550;
+}
+
+[data-testid="stSidebar"] [data-testid="stPageLink"] svg {
+    color: #94A3B8 !important;
+}
+
+/* 导航悬停 */
+
+[data-testid="stSidebar"] [data-testid="stPageLink"]:hover {
+    background: rgba(255, 255, 255, 0.09);
+}
+
+/* 当前页面 */
+
+[data-testid="stSidebar"] [data-testid="stPageLink"][aria-current="page"] {
+    background: rgba(59, 130, 246, 0.22);
+    border: 1px solid rgba(96, 165, 250, 0.20);
+}
+
+[data-testid="stSidebar"] [data-testid="stPageLink"][aria-current="page"] p,
+[data-testid="stSidebar"] [data-testid="stPageLink"][aria-current="page"] svg {
+    color: #FFFFFF !important;
+    font-weight: 700;
+}
+
+/* 产品介绍卡片 */
+
+.gt-sidebar-product {
+    margin-top: 14px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 13px;
+}
+
+.gt-sidebar-product-title {
+    color: #FFFFFF;
+    font-size: 14px;
+    font-weight: 750;
+}
+
+.gt-sidebar-product-description {
+    margin-top: 8px;
+    color: #CBD5E1;
+    font-size: 11px;
+    line-height: 1.8;
+}
+
+/* 底部版本 */
+
+.gt-sidebar-footer {
+    margin-top: 24px;
+    padding: 10px 0 4px;
+    color: #94A3B8;
+    font-size: 11px;
+    text-align: center;
+}
+
+/* 侧边栏分隔线 */
+
+[data-testid="stSidebar"] hr {
+    border-color: rgba(255, 255, 255, 0.10);
+    margin-top: 18px;
+    margin-bottom: 12px;
+}
+
+
+/* ============================================================
+   STEP 13.3 - Unified Page Header
+   ============================================================ */
+
+/* 页面 Header 容器 */
+
+.gt-page-header {
+    margin-bottom: 28px;
+}
+
+/* 面包屑 */
+
+.gt-breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 11px;
+
+    color: var(--gt-text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.6;
+}
+
+.gt-breadcrumb-separator {
+    color: var(--gt-border-strong);
+    padding: 0 2px;
+}
+
+/* 页面标题 */
+
+.gt-page-title {
+    color: var(--gt-text);
+    font-size: 29px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+/* 页面描述 */
+
+.gt-page-description {
+    max-width: 900px;
+    margin-top: 9px;
+
+    color: var(--gt-text-secondary);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.8;
+}
+
+/* 小屏幕适配 */
+
+@media (max-width: 600px) {
+    .gt-page-header {
+        margin-bottom: 22px;
+    }
+
+    .gt-page-title {
+        font-size: 24px;
+        letter-spacing: -0.5px;
+    }
+
+    .gt-page-description {
+        font-size: 13px;
+    }
+}
+
+/* ============================================================
+   STEP 13.3 - Unified Basic UI Components
+   ============================================================ */
+
+
+/* ------------------------------------------------------------
+   1. Info 信息卡片
+   ------------------------------------------------------------ */
+
+.gt-info-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px 20px;
+    background: var(--gt-surface);
+    border: 1px solid var(--gt-border);
+    border-radius: var(--gt-radius-md);
+    box-shadow: var(--gt-shadow-sm);
+}
+
+.gt-info-card-title {
+    color: var(--gt-text);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.gt-info-card-description {
+    color: var(--gt-text-secondary);
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.gt-info-card-value {
+    color: var(--gt-text);
+    font-size: 24px;
+    font-weight: 750;
+    line-height: 1.4;
+}
+
+.gt-info-card-footer {
+    padding-top: 10px;
+    border-top: 1px solid var(--gt-border);
+    color: var(--gt-text-muted);
+    font-size: 12px;
+}
+
+
+/* ------------------------------------------------------------
+   2. Status 状态标签
+   ------------------------------------------------------------ */
+
+.gt-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 4px 10px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 650;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.gt-status-success {
+    color: #15803D;
+    background: #F0FDF4;
+    border-color: #BBF7D0;
+}
+
+.gt-status-warning {
+    color: #B45309;
+    background: #FFFBEB;
+    border-color: #FDE68A;
+}
+
+.gt-status-danger {
+    color: #B91C1C;
+    background: #FEF2F2;
+    border-color: #FECACA;
+}
+
+.gt-status-info {
+    color: #1D4ED8;
+    background: #EFF6FF;
+    border-color: #BFDBFE;
+}
+
+.gt-status-neutral {
+    color: #475569;
+    background: #F1F5F9;
+    border-color: #E2E8F0;
+}
+
+
+/* ------------------------------------------------------------
+   3. Alert 提示区域
+   ------------------------------------------------------------ */
+
+.gt-alert {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px 16px;
+    border: 1px solid var(--gt-border);
+    border-left-width: 4px;
+    border-radius: var(--gt-radius-md);
+    background: var(--gt-surface);
+}
+
+.gt-alert-title {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.gt-alert-description {
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.gt-alert-info {
+    background: #EFF6FF;
+    border-color: #BFDBFE;
+    border-left-color: #3B82F6;
+}
+
+.gt-alert-info .gt-alert-title,
+.gt-alert-info .gt-alert-description {
+    color: #1E40AF;
+}
+
+.gt-alert-success {
+    background: #F0FDF4;
+    border-color: #BBF7D0;
+    border-left-color: #16A34A;
+}
+
+.gt-alert-success .gt-alert-title,
+.gt-alert-success .gt-alert-description {
+    color: #166534;
+}
+
+.gt-alert-warning {
+    background: #FFFBEB;
+    border-color: #FDE68A;
+    border-left-color: #F59E0B;
+}
+
+.gt-alert-warning .gt-alert-title,
+.gt-alert-warning .gt-alert-description {
+    color: #92400E;
+}
+
+.gt-alert-danger {
+    background: #FEF2F2;
+    border-color: #FECACA;
+    border-left-color: #EF4444;
+}
+
+.gt-alert-danger .gt-alert-title,
+.gt-alert-danger .gt-alert-description {
+    color: #991B1B;
+}
+
+
+/* ------------------------------------------------------------
+   4. Section 区域标题
+   ------------------------------------------------------------ */
+
+.gt-section {
+    margin-top: 28px;
+    margin-bottom: 18px;
+}
+
+.gt-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.gt-section-title {
+    color: var(--gt-text);
+    font-size: 18px;
+    font-weight: 750;
+    letter-spacing: -0.3px;
+    line-height: 1.5;
+}
+
+.gt-section-description {
+    margin-top: 4px;
+    color: var(--gt-text-secondary);
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.gt-section-divider {
+    width: 100%;
+    height: 1px;
+    margin: 14px 0;
+    background: var(--gt-border);
+}
+
+
+/* ------------------------------------------------------------
+   5. 通用卡片增强
+   ------------------------------------------------------------ */
+
+.gt-card {
+    margin-bottom: 12px;
+}
+
+.gt-card-title {
+    margin-bottom: 10px;
+    color: var(--gt-text);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.gt-card-description {
+    color: var(--gt-text-secondary);
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+
+/* ------------------------------------------------------------
+   6. 响应式适配
+   ------------------------------------------------------------ */
+
+@media (max-width: 600px) {
+    .gt-info-card {
+        padding: 15px;
+    }
+
+    .gt-section {
+        margin-top: 22px;
+        margin-bottom: 14px;
+    }
+
+    .gt-section-title {
+        font-size: 16px;
+    }
+
+    .gt-alert {
+        padding: 12px;
     }
 }

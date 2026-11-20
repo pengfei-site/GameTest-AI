@@ -9,21 +9,12 @@ def render_sidebar(pages):
 
         # 品牌区域
         st.html("""
-        <div style="padding:12px 5px 22px;">
-            <div style="
-                font-size:25px;
-                font-weight:850;
-                letter-spacing:-1px;
-                color:#ffffff;
-            ">
-                🎮 GameTest AI
+        <div class="gt-sidebar-brand">
+            <div class="gt-sidebar-brand-title">
+                <span class="gt-sidebar-brand-icon">🎮</span>
+                <span>GameTest AI</span>
             </div>
-
-            <div style="
-                font-size:12px;
-                color:#d1cafa;
-                margin-top:7px;
-            ">
+            <div class="gt-sidebar-brand-subtitle">
                 AI 驱动的智能游戏测试平台
             </div>
         </div>
@@ -32,19 +23,11 @@ def render_sidebar(pages):
         # 导航区域
         for group_name, group_pages in pages.items():
 
-            st.markdown(
-                f"""
-                <div style="
-                    font-size:12px;
-                    font-weight:700;
-                    color:#c7c0f5;
-                    padding:10px 5px 8px;
-                ">
-                    {group_name}
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            st.html(f"""
+            <div class="gt-sidebar-group-title">
+                {group_name}
+            </div>
+            """)
 
             for page in group_pages:
                 st.page_link(
@@ -58,43 +41,17 @@ def render_sidebar(pages):
 
         # 产品介绍
         st.html("""
-        <div style="
-            background:rgba(255,255,255,.10);
-            padding:15px;
-            border-radius:13px;
-            margin-top:15px;
-        ">
-            <div style="
-                font-weight:800;
-                font-size:15px;
-                color:white;
-            ">
+        <div class="gt-sidebar-product">
+            <div class="gt-sidebar-product-title">
                 ✨ AI Testing
             </div>
-
-            <div style="
-                font-size:12px;
-                color:#d1cafa;
-                line-height:1.8;
-                margin-top:8px;
-            ">
+            <div class="gt-sidebar-product-description">
                 从项目管理、需求分析到测试点与测试用例，
                 构建完整的智能游戏测试工作流。
             </div>
         </div>
+
+        <div class="gt-sidebar-footer">
+            GameTest AI · V1.0
+        </div>
         """)
-
-        st.markdown(
-            """
-            <div style="
-                text-align:center;
-                color:#c7c0f5;
-                font-size:11px;
-                margin-top:35px;
-            ">
-                GameTest AI · V1.0
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-

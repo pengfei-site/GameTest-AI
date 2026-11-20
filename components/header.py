@@ -1,4 +1,5 @@
 
+import html
 
 import streamlit as st
 
@@ -6,37 +7,41 @@ import streamlit as st
 def render_header(title, description="", breadcrumb=None):
     """渲染 GameTest AI 统一业务页面标题。"""
 
+    safe_title = html.escape(str(title))
+    safe_description = html.escape(str(description))
+
+    # 面包屑
     if breadcrumb:
-        breadcrumb_text = " / ".join(breadcrumb)
+        breadcrumb_items = [
+            html.escape(str(item))
+            for item in breadcrumb
+        ]
+
+        breadcrumb_text = (
+            '<span class="gt-breadcrumb-separator">/</span>'
+        ).join(breadcrumb_items)
 
         st.html(f"""
-        <div style="
-            font-size:12px;
-            color:#928ba9;
-            margin-bottom:10px;
-        ">
+        <div class="gt-breadcrumb">
             {breadcrumb_text}
         </div>
         """)
 
-    st.html(f"""
-    <div style="margin-bottom:24px;">
-        <div style="
-            font-size:28px;
-            font-weight:800;
-            color:#292541;
-            letter-spacing:-0.5px;
-        ">
-            {title}
-        </div>
+    # 页面标题
+    description_html = ""
 
-        <div style="
-            font-size:14px;
-            color:#85819a;
-            margin-top:8px;
-            line-height:1.7;
-        ">
-            {description}
+    if description:
+        description_html = f"""
+        <div class="gt-page-description">
+            {safe_description}
         </div>
+        """
+
+    st.html(f"""
+    <div class="gt-page-header">
+        <div class="gt-page-title">
+            {safe_title}
+        </div>
+        {description_html}
     </div>
     """)
