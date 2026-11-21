@@ -160,17 +160,16 @@ else:
             st.switch_page("pages/05_需求文档.py")
     with action_cols[1]:
         if st.button("结构化需求分析", icon=":material/psychology:", width="stretch"):
-            st.session_state["project_detail_analysis_target_id"] = str(project_id)
+            st.session_state["analysis_project_selector"] = str(project_id)
             st.switch_page("pages/06_结构化需求分析.py")
     with action_cols[2]:
         if st.button("测试点管理", icon=":material/target:", width="stretch"):
-            st.session_state["project_detail_test_point_target_id"] = str(project_id)
+            st.session_state["test_point_list_project"] = str(project_id)
             st.switch_page("pages/08_测试点列表.py")
 
     case_col, edit_col = st.columns(2)
     with case_col:
         if st.button("测试用例管理", icon=":material/checklist:", width="stretch"):
-            st.session_state["project_detail_test_case_target_id"] = str(project_id)
             st.switch_page("pages/12_测试用例管理.py")
     with edit_col:
         if st.button("编辑项目信息", icon=":material/edit:", width="stretch"):
