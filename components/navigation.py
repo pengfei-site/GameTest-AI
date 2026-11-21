@@ -1,4 +1,4 @@
-
+ 
 import streamlit as st
 
 
@@ -92,6 +92,15 @@ def get_pages():
                 title="测试用例管理",
                 icon="📋",
                 url_path="test-case-management",
+            ),
+        ],
+
+        "隐藏页面": [
+            st.Page(
+                "pages/13_项目详情.py",
+                title="项目详情",
+                icon="📊",
+                url_path="project-detail",
             ),
         ],
     }
