@@ -106,16 +106,14 @@ render_header(
     breadcrumb=["项目中心", "项目列表", "项目详情"],
 )
 
-top_left, top_right = st.columns([5, 1])
-with top_left:
-    st.caption(f"项目 ID：{project.get('id', '-')}")
+_, top_right = st.columns([5, 1])
 with top_right:
     if st.button("返回项目列表", width="stretch"):
         st.switch_page("pages/01_项目列表.py")
 
 st.markdown(
-    '<div class="detail-section-title">📁 项目概览</div>'
-    '<div class="detail-section-desc">项目基础信息与当前状态</div>',
+    '<div class="detail-section-title">📁 项目基本信息</div>'
+    '<div class="detail-section-desc">项目身份信息、基础描述与当前状态</div>',
     unsafe_allow_html=True,
 )
 status_class = "status-active" if is_active else "status-archived"
@@ -132,6 +130,7 @@ st.html(f"""
   <div class="project-description">{project_description}</div>
   <div style="height:1px;background:#E2E8F0;margin:16px 0 12px"></div>
   <div class="project-meta" style="display:flex;gap:24px;flex-wrap:wrap">
+    <span>项目 ID：{html.escape(str(project.get("id", "-")))}</span>
     <span>创建时间：{created_at}</span><span>最近更新：{updated_at}</span>{archived_html}
   </div>
 </div>
