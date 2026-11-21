@@ -1,5 +1,6 @@
 ﻿
 import streamlit as st
+import html
 
 from database.repositories.project_repository import list_projects
 from components.header import render_header
@@ -9,10 +10,44 @@ from components.header import render_header
 # 一、页面初始化
 # ============================================================
 
+def render_project_actions():
+
+    search_col, filter_col = st.columns(
+        [5, 0.65],
+        vertical_alignment="center",
+        gap="small",
+    )
+
+    with search_col:
+        st.text_input(
+            "搜索项目",
+            placeholder="搜索项目名称、描述或 ID...",
+            key="project_search_keyword",
+            label_visibility="collapsed",
+        )
+
+    with filter_col:
+        with st.popover(
+            "",
+            icon=":material/filter_list:",
+            help="筛选项目",
+            use_container_width=False,
+        ):
+
+            st.markdown("**项目状态**")
+
+            st.radio(
+                "项目状态筛选",
+                options=["全部项目", "进行中", "已归档"],
+                key="project_status_filter",
+                label_visibility="collapsed",
+            )
+
 render_header(
     title="项目列表",
     description="查看和筛选工作空间中的游戏测试项目。",
     breadcrumb=["项目中心", "项目列表"],
+    actions=render_project_actions,
 )
 
 
@@ -28,22 +63,49 @@ st.html("""
 
 .project-card-title {
     font-size: 19px;
-    font-weight: 650;
-    color: #292746;
-    margin-bottom: 8px;
+    font-weight: 700;
+    color: #172033;
+    margin-bottom: 10px;
+    line-height: 1.5;
 }
 
 .project-card-description {
-    color: #626174;
     font-size: 14px;
+    color: #64748B;
     line-height: 1.7;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 }
 
 .project-card-meta {
-    color: #89879b;
+    display: inline-block;
     font-size: 12px;
-    line-height: 1.8;
+    color: #64748B;
+    background: #F3F5F9;
+    padding: 5px 10px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.project-status-active {
+    display: inline-block;
+    color: #15803D;
+    background: #DCFCE7;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+.project-status-archived {
+    display: inline-block;
+    color: #64748B;
+    background: #E2E8F0;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 650;
+    white-space: nowrap;
 }
 
 .project-section-caption {
@@ -51,26 +113,6 @@ st.html("""
     font-size: 13px;
     margin-top: -8px;
     margin-bottom: 16px;
-}
-
-.project-status-active {
-    display: inline-block;
-    background: #e8f6ed;
-    color: #21834b;
-    padding: 5px 11px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.project-status-archived {
-    display: inline-block;
-    background: #f0eff4;
-    color: #777487;
-    padding: 5px 11px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
 }
 </style>
 """)
@@ -102,10 +144,6 @@ archived_projects = [
 # ============================================================
 # 四、项目概览
 # ============================================================
-
-st.markdown("### 📊 项目概览")
-st.caption("快速了解当前工作空间中的项目情况。")
-
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -134,38 +172,40 @@ st.divider()
 # 五、项目筛选
 # ============================================================
 
-st.markdown("### 📚 全部项目")
-st.markdown(
-    '<div class="project-section-caption">'
-    '根据项目状态筛选和查看工作空间中的项目。'
-    '</div>',
-    unsafe_allow_html=True,
+status_filter = st.session_state.get(
+    "project_status_filter",
+    "全部项目",
 )
 
-filter_col, count_col = st.columns([3, 1])
+search_keyword = st.session_state.get(
+    "project_search_keyword",
+    "",
+)
 
-with filter_col:
-    status_filter = st.radio(
-        "项目状态",
-        options=["全部项目", "进行中", "已归档"],
-        horizontal=True,
-        key="project_status_filter",
-    )
-
+# 根据项目状态筛选
 if status_filter == "进行中":
     displayed_projects = active_projects
-
 elif status_filter == "已归档":
     displayed_projects = archived_projects
-
 else:
     displayed_projects = projects
 
-with count_col:
-    st.metric(
-        label="当前显示",
-        value=len(displayed_projects),
-    )
+# 根据关键词搜索
+if search_keyword.strip():
+
+    keyword = search_keyword.strip().lower()
+
+    displayed_projects = [
+        project
+        for project in displayed_projects
+        if keyword in str(project.get("name", "")).lower()
+        or keyword in str(project.get("description", "")).lower()
+        or keyword in str(project.get("id", "")).lower()
+    ]
+
+st.caption(f"当前显示 {len(displayed_projects)} 个项目")
+
+
 
 
 # ============================================================
@@ -184,60 +224,110 @@ if not displayed_projects:
 
 else:
 
-    for project in displayed_projects:
+    for start in range(0, len(displayed_projects), 2):
 
-        is_active = project["status"] == "active"
+        card_cols = st.columns(2, gap="medium")
+        row_projects = displayed_projects[start:start + 2]
 
-        project_name = project.get("name") or "未命名项目"
-        project_description = (
-            project.get("description") or "暂无项目描述"
-        )
+        for card_col, project in zip(card_cols, row_projects):
 
-        project_id = project.get("id", "未知")
-        created_at = project.get("created_at", "未知")
-        updated_at = project.get("updated_at", "未知")
+            is_active = project["status"] == "active"
 
-        with st.container(border=True):
-
-            col_info, col_status = st.columns(
-                [5, 1],
-                vertical_alignment="center",
+            project_name = html.escape(
+                str(project.get("name") or "未命名项目")
             )
 
-            with col_info:
+            project_description = html.escape(
+                str(project.get("description") or "暂无项目描述")
+            )
 
-                st.subheader(
-                    f"🎮 {project_name}"
-                )
+            project_id = html.escape(
+                str(project.get("id", "未知"))
+            )
 
-                st.write(project_description)
+            created_at = html.escape(
+                str(project.get("created_at", "未知"))
+            )
 
-                st.caption(
-                    f"项目 ID：{project_id}"
-                )
+            updated_at = html.escape(
+                str(project.get("updated_at", "未知"))
+            )
 
-                st.caption(
-                    f"创建时间：{created_at}  |  "
-                    f"最近更新：{updated_at}"
-                )
+            if is_active:
+                status_html = """
+                    <span class="gt-status gt-status-success">
+                        ● 进行中
+                    </span>
+                """
+            else:
+                status_html = """
+                    <span class="gt-status gt-status-neutral">
+                        ● 已归档
+                    </span>
+                """
 
-            with col_status:
+            with card_col:
 
-                if is_active:
-                    st.markdown(
-                        '<span class="project-status-active">'
-                        '● 进行中'
-                        '</span>',
-                        unsafe_allow_html=True,
+                card_key = f"project_card_{project['id']}"
+
+                with st.container(key=card_key):
+
+                    # 项目标题和状态
+                    st.html(
+                        f"""
+                        <div style="
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            gap: 12px;
+                            margin-bottom: 10px;
+                        ">
+                            <div class="gt-card-title" style="margin-bottom: 0;">
+                                🎮 {project_name}
+                            </div>
+                            {status_html}
+                        </div>
+
+                        <div class="gt-card-description">
+                            {project_description}
+                        </div>
+                        """
                     )
 
-                else:
-                    st.markdown(
-                        '<span class="project-status-archived">'
-                        '● 已归档'
-                        '</span>',
-                        unsafe_allow_html=True,
+                    # 卡片底部：日期信息 + 右侧按钮
+                    date_col, action_col = st.columns(
+                        [4, 1.5],
+                        vertical_alignment="bottom",
+                        gap="small",
                     )
+
+                    with date_col:
+                        st.html(
+                            f"""
+                            <div class="gt-info-card-footer">
+                                <div>项目 ID：{project_id}</div>
+                                <div>创建时间：{created_at}</div>
+                                <div>最近更新：{updated_at}</div>
+                            </div>
+                            """
+                        )
+
+                    with action_col:
+                        if is_active:
+                            if st.button(
+                                    "了解详情 >",
+                                    key=f"open_project_{project['id']}",
+                                    type="secondary",
+                                    width="stretch",
+                            ):
+                                st.session_state[
+                                    "edit_project_target_id"
+                                ] = str(project["id"])
+
+                                st.switch_page(
+                                    "pages/03_项目编辑.py"
+                                )
+
 
 
 # ============================================================

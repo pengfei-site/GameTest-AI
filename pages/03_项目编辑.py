@@ -97,6 +97,22 @@ else:
         for p in active_projects
     }
 
+    # 接收项目列表页传递的目标项目 ID
+    target_project_id = st.session_state.pop(
+        "edit_project_target_id",
+        None,
+    )
+
+    if target_project_id is not None:
+
+        # 使用字符串比较，兼容数据库 ID 类型
+        for project_id in edit_map:
+
+            if str(project_id) == str(target_project_id):
+                st.session_state["edit_project_selector"] = project_id
+                break
+
+
     st.markdown("#### 1. 选择项目")
 
     selected_edit_id = st.selectbox(

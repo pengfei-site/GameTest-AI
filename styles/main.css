@@ -918,3 +918,45 @@ div[data-testid="stMetricValue"] {
         padding: 12px;
     }
 }
+
+
+
+/* ============================================================
+   项目列表卡片 - 外层 Streamlit 容器
+   ============================================================ */
+
+[class*="st-key-project_card_"] {
+    background: var(--gt-surface);
+    border: 1px solid var(--gt-border);
+    border-radius: var(--gt-radius-lg);
+    padding: 20px;
+    box-shadow: var(--gt-shadow-sm);
+    transition: var(--gt-transition);
+    margin-bottom: 12px;
+}
+
+[class*="st-key-project_card_"]:hover {
+    border-color: var(--gt-border-strong);
+    box-shadow: var(--gt-shadow-md);
+}
+
+/* 项目卡片底部日期区域 */
+[class*="st-key-project_card_"] .gt-info-card-footer {
+    padding-top: 12px;
+    margin-top: 16px;
+    border-top: 1px solid var(--gt-border);
+    color: var(--gt-text-muted);
+    font-size: 12px;
+    line-height: 1.9;
+}
+
+/* 项目卡片底部按钮 */
+[class*="st-key-project_card_"] [data-testid="stButton"] {
+    margin-top: 16px;
+}
+
+[class*="st-key-project_card_"] [data-testid="stButton"] button {
+    white-space: nowrap;
+    min-height: 36px;
+    border-radius: 8px;
+}
