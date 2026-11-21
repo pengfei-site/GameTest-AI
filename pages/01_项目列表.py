@@ -1,4 +1,4 @@
-﻿
+﻿ 
 import streamlit as st
 import html
 
@@ -144,25 +144,17 @@ archived_projects = [
 # ============================================================
 # 四、项目概览
 # ============================================================
+
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.metric(
-        label="📁 项目总数",
-        value=len(projects),
-    )
+    st.metric(label="📁 项目总数", value=len(projects))
 
 with col2:
-    st.metric(
-        label="🚀 进行中项目",
-        value=len(active_projects),
-    )
+    st.metric(label="🚀 进行中项目", value=len(active_projects))
 
 with col3:
-    st.metric(
-        label="📦 已归档项目",
-        value=len(archived_projects),
-    )
+    st.metric(label="📦 已归档项目", value=len(archived_projects))
 
 
 st.divider()
@@ -182,7 +174,6 @@ search_keyword = st.session_state.get(
     "",
 )
 
-# 根据项目状态筛选
 if status_filter == "进行中":
     displayed_projects = active_projects
 elif status_filter == "已归档":
@@ -190,11 +181,8 @@ elif status_filter == "已归档":
 else:
     displayed_projects = projects
 
-# 根据关键词搜索
 if search_keyword.strip():
-
     keyword = search_keyword.strip().lower()
-
     displayed_projects = [
         project
         for project in displayed_projects
@@ -206,18 +194,13 @@ if search_keyword.strip():
 st.caption(f"当前显示 {len(displayed_projects)} 个项目")
 
 
-
-
 # ============================================================
 # 六、项目列表
 # ============================================================
 
 if not displayed_projects:
 
-    st.info(
-        "当前筛选条件下没有项目。",
-        icon="📭",
-    )
+    st.info("当前筛选条件下没有项目。", icon="📭")
 
     if not projects:
         st.caption("可以通过下方的创建项目入口，建立第一个游戏测试项目。")
@@ -236,43 +219,26 @@ else:
             project_name = html.escape(
                 str(project.get("name") or "未命名项目")
             )
-
             project_description = html.escape(
                 str(project.get("description") or "暂无项目描述")
             )
-
-            project_id = html.escape(
-                str(project.get("id", "未知"))
-            )
-
-            created_at = html.escape(
-                str(project.get("created_at", "未知"))
-            )
-
-            updated_at = html.escape(
-                str(project.get("updated_at", "未知"))
-            )
+            project_id = html.escape(str(project.get("id", "未知")))
+            created_at = html.escape(str(project.get("created_at", "未知")))
+            updated_at = html.escape(str(project.get("updated_at", "未知")))
 
             if is_active:
                 status_html = """
-                    <span class="gt-status gt-status-success">
-                        ● 进行中
-                    </span>
+                    <span class="gt-status gt-status-success">● 进行中</span>
                 """
             else:
                 status_html = """
-                    <span class="gt-status gt-status-neutral">
-                        ● 已归档
-                    </span>
+                    <span class="gt-status gt-status-neutral">● 已归档</span>
                 """
 
             with card_col:
-
                 card_key = f"project_card_{project['id']}"
 
                 with st.container(key=card_key):
-
-                    # 项目标题和状态
                     st.html(
                         f"""
                         <div style="
@@ -287,14 +253,12 @@ else:
                             </div>
                             {status_html}
                         </div>
-
                         <div class="gt-card-description">
                             {project_description}
                         </div>
                         """
                     )
 
-                    # 卡片底部：日期信息 + 右侧按钮
                     date_col, action_col = st.columns(
                         [4, 1.5],
                         vertical_alignment="bottom",
@@ -313,21 +277,16 @@ else:
                         )
 
                     with action_col:
-                        if is_active:
-                            if st.button(
-                                    "了解详情 >",
-                                    key=f"open_project_{project['id']}",
-                                    type="secondary",
-                                    width="stretch",
-                            ):
-                                st.session_state[
-                                    "edit_project_target_id"
-                                ] = str(project["id"])
-
-                                st.switch_page(
-                                    "pages/03_项目编辑.py"
-                                )
-
+                        if st.button(
+                            "了解详情 >",
+                            key=f"open_project_{project['id']}",
+                            type="secondary",
+                            width="stretch",
+                        ):
+                            st.session_state["project_detail_target_id"] = str(
+                                project["id"]
+                            )
+                            st.switch_page("pages/13_项目详情.py")
 
 
 # ============================================================
@@ -335,7 +294,6 @@ else:
 # ============================================================
 
 st.divider()
-
 st.markdown("### 🚀 项目操作")
 st.caption("通过以下入口管理项目的创建、编辑和归档。")
 
