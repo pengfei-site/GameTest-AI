@@ -1,4 +1,4 @@
-﻿
+﻿ 
 import streamlit as st
 
 
@@ -22,6 +22,9 @@ def render_sidebar(pages):
 
         # 导航区域
         for group_name, group_pages in pages.items():
+
+            if group_name == "隐藏页面":
+                continue
 
             st.html(f"""
             <div class="gt-sidebar-group-title">
