@@ -4,7 +4,7 @@ import streamlit as st
 
 def get_pages():
     pages = {
-        "工作空间": [
+        "" : [
             st.Page(
                 "pages/00_首页.py",
                 title="首页",
