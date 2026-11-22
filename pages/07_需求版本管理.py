@@ -46,24 +46,24 @@ div[data-testid="stVerticalBlock"].st-key-version_project_overview > div {
     display: inline-block; margin-top: 8px; padding: 4px 9px;
     color: #64748B; background: #F3F5F9; border-radius: 6px; font-size: 11px;
 }
-/* 整张项目卡片就是 Popover 触发器：点击卡片任意位置展开项目列表。 */
+/* 项目选择触发器沿用项目中心项目卡片的字体、留白、白底与圆角风格。 */
 div[data-testid="stPopover"].st-key-version_project_picker { width: 100%; }
 div[data-testid="stPopover"].st-key-version_project_picker > button {
-    width: 100%; min-height: 142px; height: auto;
+    width: 100%; min-height: 150px; height: auto;
     display: flex; align-items: center; justify-content: flex-start;
-    padding: 18px 20px; text-align: left; white-space: pre-line;
+    padding: 20px 22px; text-align: left; white-space: pre-line;
     color: #172033 !important; background: #FFFFFF !important;
-    border: 1px solid #E7EAF1 !important; border-radius: 14px !important;
+    border: 1px solid #E7EAF1 !important; border-radius: 12px !important;
     box-shadow: 0 2px 8px rgba(23, 32, 51, 0.04) !important;
     transition: border-color .15s, box-shadow .15s;
 }
 div[data-testid="stPopover"].st-key-version_project_picker > button:hover {
-    border-color: #B8AEF7 !important;
-    box-shadow: 0 4px 14px rgba(23, 32, 51, 0.08) !important;
+    border-color: #C9C4E8 !important;
+    box-shadow: 0 3px 10px rgba(23, 32, 51, 0.06) !important;
     background: #FFFFFF !important;
 }
 div[data-testid="stPopover"].st-key-version_project_picker > button p {
-    color: #172033 !important; font-size: 13px; line-height: 1.65;
+    color: #172033 !important; font-size: 14px; line-height: 1.7;
     font-weight: 500; white-space: pre-line; text-align: left;
 }
 div[data-testid="stPopover"].st-key-version_project_picker [data-testid="stPopoverBody"] {
@@ -156,9 +156,9 @@ overview_project_col, overview_stats_col = st.columns(
 with overview_project_col:
     project_status_label = "● 已归档" if project_status == "archived" else "● 进行中"
     project_picker_label = (
-        f"🎮 {selected_project.get('name') or '未命名项目'}  ·  {project_status_label}\n"
+        f"🎮 {selected_project.get('name') or '未命名项目'}    {project_status_label}\n"
         f"{selected_project.get('description') or '暂无项目描述'}\n"
-        f"项目 ID：{selected_project_id}                         ⌄"
+        f"项目 ID：{selected_project_id}                                      ﹀"
     )
     with st.popover(
         project_picker_label,
