@@ -493,15 +493,14 @@ if not filtered_requirements:
 else:
     st.html("""
     <style>
-    .gt-req-native-row { padding: 0 0.45rem; border-bottom: 1px solid #EEF0F4; }
+    .gt-req-native-row { padding: 0.45rem; border-bottom: 1px solid #EEF0F4; }
     .gt-req-native-row:hover { background: #FAFAFE; }
-    .gt-req-native-row [data-testid="stButton"] button {
-        justify-content: flex-start; text-align: left; white-space: normal;
-        color: #34305B; font-weight: 650; border: 0; background: transparent;
-        padding: 5px 0; min-height: 38px; box-shadow: none;
+    .gt-req-native-row a {
+        color: #34305B !important; font-weight: 650; text-decoration: none !important;
+        display: inline-block; padding: 5px 0;
     }
-    .gt-req-native-row [data-testid="stButton"] button:hover {
-        color: #6D5CE7; background: transparent; border: 0;
+    .gt-req-native-row a:hover {
+        color: #6D5CE7 !important; text-decoration: underline !important;
     }
     .gt-req-table-header {
         color: #64748B; font-size: 12px; font-weight: 650;
@@ -529,15 +528,14 @@ else:
         )
         with row_cols[0]:
             st.markdown('<div class="gt-req-native-row">', unsafe_allow_html=True)
-            if st.button(
-                name,
-                key=f"open_requirement_detail_{selected_project_id}_{doc.get('document_key')}_{index}",
-                help="点击需求名称进入详情",
-                use_container_width=True,
-            ):
-                st.session_state["requirement_detail_project_id"] = str(selected_project_id)
-                st.session_state["requirement_detail_document_key"] = str(doc.get("document_key") or "")
-                st.switch_page("pages/14_需求详情.py")
+            st.page_link(
+                "pages/14_需求详情.py",
+                label=name,
+                query_params={
+                    "project_id": str(selected_project_id),
+                    "document_key": str(doc.get("document_key") or ""),
+                },
+            )
             st.markdown("</div>", unsafe_allow_html=True)
         row_cols[1].write(f"V{doc.get('version') or 1}")
         row_cols[2].write(str(doc.get("file_type") or "未知").upper())
