@@ -84,14 +84,14 @@ st.html(f"""
 .gt-analysis-metric strong {{ display:block; color:#39356B; font-size:19px; line-height:1.3; }}
 .gt-analysis-metric span {{ color:#85899A; font-size:11px; }}
 /* 分类导航：明确的胶囊按钮外观 */
-div[data-testid="stRadio"] div[role="radiogroup"] {
+div[data-testid="stRadio"] div[role="radiogroup"] {{
   display:flex !important;
   flex-wrap:wrap !important;
   align-items:center !important;
   gap:10px !important;
   width:100% !important;
-}
-div[data-testid="stRadio"] div[role="radiogroup"] label {
+}}
+div[data-testid="stRadio"] div[role="radiogroup"] label {{
   display:inline-flex !important;
   align-items:center !important;
   justify-content:center !important;
@@ -106,32 +106,32 @@ div[data-testid="stRadio"] div[role="radiogroup"] label {
   box-shadow:none !important;
   cursor:pointer !important;
   transition:all .15s ease !important;
-}
-div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) {
+}}
+div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) {{
   border:1px solid #7968D8 !important;
   background:#7968D8 !important;
   color:#FFFFFF !important;
   box-shadow:0 2px 7px rgba(121,104,216,.20) !important;
-}
+}}
 div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) p,
-div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) span {
+div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) span {{
   color:#FFFFFF !important;
   font-weight:650 !important;
-}
-div[data-testid="stRadio"] div[role="radiogroup"] label:hover:not(:has(input:checked)) {
+}}
+div[data-testid="stRadio"] div[role="radiogroup"] label:hover:not(:has(input:checked)) {{
   border-color:#A99DE5 !important;
   background:#F5F3FF !important;
   color:#51449A !important;
-}
-div[data-testid="stRadio"] div[role="radiogroup"] label p {
+}}
+div[data-testid="stRadio"] div[role="radiogroup"] label p {{
   margin:0 !important;
   font-size:13px !important;
   line-height:1.3 !important;
   white-space:nowrap !important;
-}
-div[data-testid="stRadio"] div[role="radiogroup"] label > div:first-child {
+}}
+div[data-testid="stRadio"] div[role="radiogroup"] label > div:first-child {{
   display:none !important;
-}
+}}
 @media(max-width:700px) {{ .gt-analysis-metrics {{ grid-template-columns:repeat(2,minmax(0,1fr)); }} }}
 </style>
 <div class="gt-detail-hero">
