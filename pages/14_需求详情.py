@@ -52,16 +52,36 @@ if not versions:
     st.stop()
 
 active_versions = [item for item in versions if not item.get("is_deleted")]
-current = active_versions[0] if active_versions else versions[0]
-name = str(current.get("document_name") or "未命名文档")
+default_version = active_versions[0] if active_versions else versions[0]
+version_map = {
+    f"V{item.get('version', 1)} · {'已删除' if item.get('is_deleted') else '有效'} · {str(item.get('created_at') or '时间未知')}" : item
+    for item in versions
+}
+default_version_label = next(
+    label for label, item in version_map.items()
+    if str(item.get("id")) == str(default_version.get("id"))
+)
 project_name = str(project.get("name") or "未命名项目")
+
+with st.container(border=True):
+    title_col, version_col = st.columns([3, 2], vertical_alignment="center")
+    with title_col:
+        st.markdown(f"### ▤ {html.escape(str(default_version.get('document_name') or '未命名文档'))}")
+    with version_col:
+        selected_version_label = st.selectbox(
+            "当前版本",
+            options=list(version_map.keys()),
+            index=list(version_map.keys()).index(default_version_label),
+            key=f"requirement_detail_version_{project_id}_{document_key}",
+        )
+    current = version_map[selected_version_label]
+    name = str(current.get("document_name") or "未命名文档")
+    st.caption(
+        f"所属项目：{project_name}　·　创建时间：{current.get('created_at') or '暂无'}　·　历史版本：{len(versions)} 个"
+    )
+
 st.html(f"""
 <style>
-.gt-detail-hero {{ background:#fff; border:1px solid #E7EAF1; border-radius:14px; padding:20px 22px; margin:8px 0 18px; }}
-.gt-detail-title {{ font-size:22px; font-weight:750; color:#24213F; overflow-wrap:anywhere; }}
-.gt-detail-sub {{ color:#778196; font-size:13px; margin-top:7px; }}
-.gt-detail-current-version {{ color:#5D50A8; background:#F1EFFF; border:1px solid #E6E1FF; border-radius:20px; padding:5px 11px; font-size:12px; font-weight:700; white-space:nowrap; flex-shrink:0; }}
-.gt-detail-section {{ color:#292746; font-size:16px; font-weight:700; margin:22px 0 10px; }}
 .gt-detail-version {{ border:1px solid #E7EAF1; border-radius:10px; padding:12px 14px; margin:7px 0; background:#fff; }}
 .gt-analysis-module {{ display:flex; align-items:center; gap:10px; font-size:15px; font-weight:750; color:#37316F; background:linear-gradient(110deg,#F2F0FF,#FAF9FF); border:1px solid #E7E2FF; border-left:4px solid #7968D8; border-radius:10px; padding:13px 16px; margin:2px 0 16px; }}
 .gt-analysis-summary {{ background:#F8FAFF; border:1px solid #E5EAF5; border-radius:10px; padding:16px 18px; line-height:1.9; color:#30384B; font-size:14px; }}
