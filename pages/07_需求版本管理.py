@@ -46,6 +46,18 @@ div[data-testid="stVerticalBlock"].st-key-version_project_overview > div {
     display: inline-block; margin-top: 8px; padding: 4px 9px;
     color: #64748B; background: #F3F5F9; border-radius: 6px; font-size: 11px;
 }
+/* 紧凑、统一风格的项目选择下拉框。 */
+div[data-testid="stSelectbox"]:has(+ div) { margin-top: 2px; }
+div[data-testid="stSelectbox"] [data-baseweb="select"] > div {
+    min-height: 42px; border: 1px solid #DDE2EC; border-radius: 10px;
+    background: #F8F9FC; box-shadow: none; transition: border-color .15s, background .15s;
+}
+div[data-testid="stSelectbox"] [data-baseweb="select"] > div:hover {
+    border-color: #A79AF5; background: #FFFFFF;
+}
+div[data-testid="stSelectbox"] [data-baseweb="select"] [data-testid="stMarkdownContainer"] p {
+    color: #34415A; font-size: 13px; font-weight: 600;
+}
 .gt-version-project-stats {
     display: flex; gap: 0; align-items: stretch; flex: 0 1 auto;
 }
@@ -142,23 +154,25 @@ with overview_project_col:
             <div class="gt-version-project-id">项目 ID：{html.escape(selected_project_id)}</div>
         </div>
         """)
-        with st.popover("切换项目", icon=":material/swap_horiz:", use_container_width=True):
-            st.caption("选择项目后，将切换到该项目的需求版本数据。")
-            for project_id, project in project_map.items():
-                if project_id == selected_project_id:
-                    st.button(
-                        f"✓  {project.get('name') or '未命名项目'} · 当前项目",
-                        key=f"version_project_current_{project_id}",
-                        disabled=True,
-                        use_container_width=True,
-                    )
-                elif st.button(
-                    f"🎮  {project.get('name') or '未命名项目'}",
-                    key=f"version_project_option_{project_id}",
-                    use_container_width=True,
-                ):
-                    st.session_state["version_project_id"] = project_id
-                    st.rerun()
+        st.markdown("**切换项目**")
+        def format_project_option(project_id):
+            project = project_map[project_id]
+            name = project.get("name") or "未命名项目"
+            status = "已归档" if project.get("status") == "archived" else "进行中"
+            description = project.get("description") or "暂无项目描述"
+            return f"{name}  ·  {status}  ·  {description}"
+
+        project_selector_value = st.selectbox(
+            "选择项目",
+            options=project_ids,
+            index=project_ids.index(selected_project_id),
+            format_func=format_project_option,
+            key="version_project_selector",
+            label_visibility="collapsed",
+        )
+        if project_selector_value != selected_project_id:
+            st.session_state["version_project_id"] = project_selector_value
+            st.rerun()
 
 with overview_stats_col:
     stat_cols = st.columns(3, gap="small")
