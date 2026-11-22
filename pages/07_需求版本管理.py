@@ -66,6 +66,22 @@ div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell:hover {
     border-color: #C9C4E8 !important;
     box-shadow: 0 3px 10px rgba(23, 32, 51, 0.06);
 }
+/* 保留整卡透明点击层，同时在卡片右上角显示可展开箭头提示。 */
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell::after {
+    content: "⌄";
+    position: absolute;
+    top: 13px;
+    right: 16px;
+    z-index: 3;
+    color: #8490A3;
+    font-size: 22px;
+    line-height: 1;
+    font-weight: 600;
+    pointer-events: none;
+}
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell:hover::after {
+    color: #6D5CE7;
+}
 div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell > div {
     gap: 0;
 }
