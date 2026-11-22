@@ -66,7 +66,18 @@ st.html(f"""
 .gt-detail-sub {{ color:#778196; font-size:13px; margin-top:7px; }}
 .gt-detail-badge {{ display:inline-block; border-radius:20px; padding:4px 10px; color:{status_color}; background:{status_bg}; font-size:12px; font-weight:650; }}
 .gt-detail-section {{ color:#292746; font-size:16px; font-weight:700; margin:22px 0 10px; }}
-.gt-detail-version {{ border:1px solid #E7EAF1; border-radius:10px; padding:12px 14px; margin:7px 0; background:#fff; }}
+.gt-detail-version {{ border:1px solid #E7EAF1; border-radius:10px; padding:12px 14px; margin:7px 0; background:#fff; }
+.gt-analysis-module {{ font-size:15px; font-weight:700; color:#403B78; background:#F4F2FF; border-left:3px solid #8175D5; border-radius:7px; padding:10px 12px; margin:4px 0 14px; }}
+.gt-analysis-summary {{ background:#F8F9FC; border:1px solid #E9ECF3; border-radius:9px; padding:13px 15px; line-height:1.75; color:#34384A; }}
+.gt-analysis-item {{ background:#fff; border:1px solid #E8EAF1; border-radius:9px; padding:12px 14px; margin:8px 0; }}
+.gt-analysis-item-head {{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; color:#34324F; }}
+.gt-rule-id {{ color:#6558B5; background:#F1EFFF; border-radius:5px; padding:3px 7px; font-size:12px; font-weight:700; }}
+.gt-analysis-tag {{ color:#26734D; background:#EAF7EF; border-radius:20px; padding:3px 8px; font-size:11px; }}
+.gt-analysis-tag-warning {{ color:#A65B0B; background:#FFF3DF; }}
+.gt-analysis-item-body {{ color:#41465A; line-height:1.7; margin-top:8px; white-space:pre-wrap; }}
+.gt-analysis-source {{ color:#8790A2; font-size:12px; line-height:1.6; margin-top:7px; border-top:1px dashed #E7EAF1; padding-top:7px; }}
+.gt-analysis-question {{ display:flex; align-items:flex-start; gap:10px; background:#FFFAF1; border:1px solid #F5E5C8; border-radius:9px; padding:12px 14px; margin:8px 0; line-height:1.65; color:#65491F; }}
+}
 </style>
 <div class="gt-detail-hero">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
@@ -173,8 +184,58 @@ def render_original_preview(document: dict, key_suffix: str) -> None:
 
 
 
+def _display_value(value) -> str:
+    if isinstance(value, (dict, list)):
+        return str(value)
+    return str(value)
+
+
+def _render_analysis_items(values, label: str, item_prefix: str = "") -> None:
+    if not isinstance(values, list) or not values:
+        return
+    st.markdown(f"**{label}**")
+    for index, value in enumerate(values, start=1):
+        if isinstance(value, dict):
+            title = (
+                value.get("rule_id")
+                or value.get("name")
+                or value.get("title")
+                or f"{item_prefix}{index:03d}"
+            )
+            body = (
+                value.get("rule_text")
+                or value.get("description")
+                or value.get("text")
+                or value.get("question")
+                or ""
+            )
+            status_value = value.get("status")
+            status_html = (
+                f'<span class="gt-analysis-tag">{html.escape(str(status_value))}</span>'
+                if status_value else ""
+            )
+            st.markdown(
+                f"""
+                <div class="gt-analysis-item">
+                  <div class="gt-analysis-item-head">
+                    <strong>{html.escape(str(title))}</strong>{status_html}
+                  </div>
+                  {f'<div class="gt-analysis-item-body">{html.escape(str(body))}</div>' if body else ''}
+                  {f'<div class="gt-analysis-source">需求依据：{html.escape(str(value.get("source_text")))}</div>' if value.get("source_text") else ''}
+                  {f'<div class="gt-analysis-source">{html.escape(str(value.get("unit") or ""))}</div>' if value.get("unit") else ''}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f'<div class="gt-analysis-item">{html.escape(_display_value(value))}</div>',
+                unsafe_allow_html=True,
+            )
+
+
 def render_requirement_analysis(document: dict, section_title: str = "需求结构化分析") -> None:
-    """展示已保存的需求分析结果；这里只读数据库，不触发重新分析。"""
+    """展示当前文档版本已保存的分析结果，不触发重新分析。"""
     document_id = str(document.get("id") or "").strip()
     st.markdown(
         f'<div class="gt-detail-section">{html.escape(section_title)}</div>',
@@ -203,64 +264,98 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
             st.warning("该条分析记录的数据格式异常，暂时无法展示。")
             continue
 
-        created_at = str(analysis.get("created_at") or "创建时间未知")
         module = str(analysis.get("module") or analysis_data.get("module") or "未命名模块")
         summary = str(analysis.get("summary") or analysis_data.get("summary") or "")
-        with st.expander(
-            f"分析记录 {index} · {module} · {created_at}",
-            expanded=(index == 1),
-        ):
-            st.markdown(f"**功能模块：** {module}")
-            if summary:
-                st.markdown("**需求摘要**")
-                st.markdown(summary)
+        business_rules = analysis_data.get("business_rules") or []
+        preconditions = analysis_data.get("preconditions") or []
+        states = analysis_data.get("states") or []
+        constraints = analysis_data.get("numeric_constraints") or []
+        exceptions = analysis_data.get("exception_cases") or []
+        questions = analysis_data.get("open_questions") or []
 
-            business_rules = analysis_data.get("business_rules") or []
+        with st.expander(f"{module} · 分析记录 {index}", expanded=(index == 1)):
+            st.markdown(
+                f'<div class="gt-analysis-module">{html.escape(module)}</div>',
+                unsafe_allow_html=True,
+            )
+            if summary:
+                st.markdown("**需求概述**")
+                st.markdown(
+                    f'<div class="gt-analysis-summary">{html.escape(summary)}</div>',
+                    unsafe_allow_html=True,
+                )
+
             if business_rules:
                 st.markdown("**业务规则**")
-                for rule in business_rules:
-                    if not isinstance(rule, dict):
-                        st.markdown(f"- {rule}")
-                        continue
-                    rule_id = str(rule.get("rule_id") or "")
-                    rule_text = str(rule.get("rule_text") or "")
-                    status = str(rule.get("status") or "未标注")
-                    source_text = str(rule.get("source_text") or "")
-                    st.markdown(f"- **{rule_id}** {rule_text}（{status}）")
-                    if source_text:
-                        st.caption(f"需求依据：{source_text}")
+                for rule_index, rule in enumerate(business_rules, start=1):
+                    if isinstance(rule, dict):
+                        rule_id = str(rule.get("rule_id") or f"BR-{rule_index:03d}")
+                        rule_text = str(rule.get("rule_text") or "")
+                        rule_status = str(rule.get("status") or "")
+                        source_text = str(rule.get("source_text") or "")
+                    else:
+                        rule_id, rule_text, rule_status, source_text = f"BR-{rule_index:03d}", str(rule), "", ""
+                    status_html = (
+                        f'<span class="gt-analysis-tag">{html.escape(rule_status)}</span>'
+                        if rule_status else ""
+                    )
+                    st.markdown(
+                        f"""
+                        <div class="gt-analysis-item">
+                          <div class="gt-analysis-item-head">
+                            <span class="gt-rule-id">{html.escape(rule_id)}</span>
+                            {status_html}
+                          </div>
+                          <div class="gt-analysis-item-body">{html.escape(rule_text)}</div>
+                          {f'<div class="gt-analysis-source">需求依据：{html.escape(source_text)}</div>' if source_text else ''}
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
 
-            for field, label in (
-                ("preconditions", "前置条件"),
-                ("states", "涉及状态"),
-                ("exception_cases", "异常情况"),
-                ("open_questions", "待确认问题"),
-            ):
-                values = analysis_data.get(field) or []
-                if values:
-                    st.markdown(f"**{label}**")
-                    for value in values:
-                        st.markdown(f"- {value}")
+            _render_analysis_items(preconditions, "前置条件", "PRE-")
+            _render_analysis_items(states, "涉及状态", "STATE-")
 
-            constraints = analysis_data.get("numeric_constraints") or []
             if constraints:
                 st.markdown("**数值约束**")
+                rows = []
                 for item in constraints:
                     if isinstance(item, dict):
-                        name = str(item.get("name") or "未命名约束")
-                        value = item.get("value", "")
-                        unit = str(item.get("unit") or "")
-                        description = str(item.get("description") or "")
-                        st.markdown(f"- **{name}：** {value}{unit} {description}")
+                        rows.append({
+                            "参数": str(item.get("name") or "未命名约束"),
+                            "数值": _display_value(item.get("value", "")),
+                            "单位": str(item.get("unit") or ""),
+                            "说明": str(item.get("description") or ""),
+                        })
                     else:
-                        st.markdown(f"- {item}")
+                        rows.append({"参数": _display_value(item), "数值": "", "单位": "", "说明": ""})
+                st.dataframe(rows, hide_index=True, use_container_width=True)
+
+            _render_analysis_items(exceptions, "异常情况", "EX-")
+            if questions:
+                st.markdown("**待确认问题**")
+                for question_index, question in enumerate(questions, start=1):
+                    question_text = (
+                        question.get("question") or question.get("text") or question.get("description") or str(question)
+                        if isinstance(question, dict) else str(question)
+                    )
+                    st.markdown(
+                        f"""
+                        <div class="gt-analysis-question">
+                          <span class="gt-analysis-tag gt-analysis-tag-warning">待确认</span>
+                          <div>{html.escape(question_text)}</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
 
 
 render_requirement_analysis(current)
 
 
-st.markdown('<div class="gt-detail-section">需求正文</div>', unsafe_allow_html=True)
-render_original_preview(current, f"current_{current.get('id') or current.get('version') or 'latest'}")
+with st.expander("查看原始需求文档", expanded=False):
+    st.caption("这里展示上传时保存的原始文件；如需保留完整排版，可下载原文件查看。")
+    render_original_preview(current, f"current_{current.get('id') or current.get('version') or 'latest'}")
 
 st.markdown('<div class="gt-detail-section">版本历史</div>', unsafe_allow_html=True)
 for item in versions:
