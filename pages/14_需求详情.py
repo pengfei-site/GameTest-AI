@@ -78,13 +78,6 @@ meta[1].metric("文件类型", str(current.get("file_type") or "未知").upper()
 meta[2].metric("字符数", f'{(current.get("char_count") or 0):,}')
 meta[3].metric("版本数量", len(versions))
 
-with st.container(border=True):
-    info_cols = st.columns(2)
-    info_cols[0].caption("创建时间")
-    info_cols[0].write(str(current.get("created_at") or "暂无"))
-    info_cols[1].caption("文件名称")
-    info_cols[1].write(str(current.get("file_name") or current.get("file_path") or "暂无"))
-
 st.markdown('<div class="gt-detail-section">需求正文</div>', unsafe_allow_html=True)
 content = current.get("parsed_content") or ""
 if content:
