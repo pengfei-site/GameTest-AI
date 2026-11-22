@@ -53,7 +53,8 @@ div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell {
     min-height: 132px !important;
     max-height: 132px !important;
     box-sizing: border-box;
-    overflow: hidden;
+    /* Popover 浮层必须允许溢出卡片，否则标题和项目选择按钮会被裁切。 */
+    overflow: visible !important;
     background: #FFFFFF !important;
     border: 1px solid #E7EAF1 !important;
     border-radius: 12px !important;
@@ -72,15 +73,17 @@ div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell > div {
    触发按钮脱离文档流并铺满卡片；按钮本身完全透明，但仍保留点击能力。 */
 div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell {
     position: relative !important;
-    isolation: isolate;
+    overflow: visible !important;
+    z-index: 1;
 }
 div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] {
     position: static !important;
+    z-index: 2 !important;
 }
 div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] button {
     position: absolute !important;
     inset: 0 !important;
-    z-index: 20 !important;
+    z-index: 2 !important;
     display: block !important;
     width: 100% !important;
     height: 100% !important;
@@ -99,6 +102,7 @@ div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-tes
 }
 div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] [data-baseweb="popover"],
 div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] [role="dialog"] {
+    position: relative !important;
     z-index: 1000 !important;
 }
 .gt-version-project-stats {
