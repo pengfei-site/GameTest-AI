@@ -54,7 +54,7 @@ if not versions:
 active_versions = [item for item in versions if not item.get("is_deleted")]
 default_version = active_versions[0] if active_versions else versions[0]
 version_map = {
-    f"V{item.get('version', 1)} · {'已删除' if item.get('is_deleted') else '有效'} · {str(item.get('created_at') or '时间未知')}" : item
+    f"V{item.get('version', 1)}": item
     for item in versions
 }
 default_version_label = next(
