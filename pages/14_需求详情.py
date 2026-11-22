@@ -76,11 +76,6 @@ st.html(f"""
 </div>
 """)
 
-meta = st.columns(4)
-meta[0].metric("当前版本", f'V{current.get("version", 1)}')
-meta[1].metric("文件类型", str(current.get("file_type") or "未知").upper())
-meta[2].metric("字符数", f'{(current.get("char_count") or 0):,}')
-meta[3].metric("版本数量", len(versions))
 
 def render_original_preview(document: dict, key_suffix: str) -> None:
     """优先预览原始文件；旧版本没有原文件时回退到解析文本。"""
