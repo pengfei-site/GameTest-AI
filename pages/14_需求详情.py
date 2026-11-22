@@ -1,9 +1,7 @@
 import base64
 import html
-import json
 from io import BytesIO
 from pathlib import Path
-import pandas as pd
 import streamlit as st
 
 from core.document_storage import read_original_document
@@ -339,10 +337,7 @@ def render_unanalyzed_requirement(document: dict) -> None:
         st.warning("当前文档版本没有可用于分析的解析文本。")
         return
 
-    state_key = f"detail_structured_analysis_{document_id}"
     saved_key = f"detail_saved_analysis_{document_id}"
-    if state_key not in st.session_state:
-        st.session_state[state_key] = None
     if saved_key not in st.session_state:
         st.session_state[saved_key] = None
 
