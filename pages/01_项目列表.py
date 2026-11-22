@@ -53,13 +53,21 @@ def create_project_dialog():
                 st.error(f"创建项目失败：{exc}")
 
 def render_create_project_action():
-    if st.button(
-        "✨ 创建项目",
-        type="primary",
-        width="stretch",
-        key="open_create_project_dialog",
-    ):
-        create_project_dialog()
+    # 在标题栏操作区域内增加弹性留白，使按钮靠右并保持适中宽度。
+    _, button_col = st.columns(
+        [3, 1],
+        vertical_alignment="center",
+        gap="small",
+    )
+
+    with button_col:
+        if st.button(
+            "✨ 创建项目",
+            type="primary",
+            width="stretch",
+            key="open_create_project_dialog",
+        ):
+            create_project_dialog()
 
 
 def render_project_actions():
