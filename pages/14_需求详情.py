@@ -129,16 +129,35 @@ div[data-testid="stRadio"] div[role="radiogroup"] label p {{
   line-height:1.3 !important;
   white-space:nowrap !important;
 }}
-/* 胶囊已承担选中反馈，隐藏原生 radio 圆点及其图标容器 */
-div[data-testid="stRadio"] div[role="radiogroup"] input[type="radio"],
+/* 胶囊已承担选中反馈：彻底关闭 Streamlit 原生 radio 圆点 */
+div[data-testid="stRadio"] div[role="radiogroup"] input[type="radio"] {{
+  appearance:none !important;
+  -webkit-appearance:none !important;
+  opacity:0 !important;
+  width:0 !important;
+  height:0 !important;
+  position:absolute !important;
+  pointer-events:none !important;
+}}
 div[data-testid="stRadio"] div[role="radiogroup"] label > div:first-child,
-div[data-testid="stRadio"] div[role="radiogroup"] label svg {{
+div[data-testid="stRadio"] div[role="radiogroup"] label > div:first-child *,
+div[data-testid="stRadio"] div[role="radiogroup"] label svg,
+div[data-testid="stRadio"] div[role="radiogroup"] label [data-testid*="Radio"],
+div[data-testid="stRadio"] div[role="radiogroup"] label [class*="stRadio"] {{
   display:none !important;
   visibility:hidden !important;
   width:0 !important;
+  height:0 !important;
   min-width:0 !important;
+  min-height:0 !important;
   margin:0 !important;
   padding:0 !important;
+  border:0 !important;
+}}
+div[data-testid="stRadio"] div[role="radiogroup"] label::before,
+div[data-testid="stRadio"] div[role="radiogroup"] label::after {{
+  content:none !important;
+  display:none !important;
 }}
 @media(max-width:700px) {{ .gt-analysis-metrics {{ grid-template-columns:repeat(2,minmax(0,1fr)); }} }}
 </style>
