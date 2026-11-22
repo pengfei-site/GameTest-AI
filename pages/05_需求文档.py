@@ -401,18 +401,18 @@ with stats_col:
 
 
 
+
 # ============================================================
-# 二、需求列表
+# 二、需求列表（TAPD 风格）
 # ============================================================
 
 st.markdown("""
 <div class="gt-section">
     <div class="gt-section-title">需求列表</div>
-    <div class="gt-section-desc">当前项目已上传的需求文档。每份文档展示最新有效版本，可前往需求版本管理查看完整历史。</div>
+    <div class="gt-section-desc">集中查看当前项目的需求文档，支持关键词检索和状态筛选。</div>
 </div>
 """, unsafe_allow_html=True)
 
-# 按 document_key 聚合，每份文档优先展示最新有效版本。
 requirement_groups = {}
 for item in project_documents:
     requirement_groups.setdefault(item["document_key"], []).append(item)
@@ -427,26 +427,29 @@ for key, versions in requirement_groups.items():
         "active": bool(active_versions),
     })
 
-search_col, filter_col, count_col = st.columns([2.2, 1, 1], vertical_alignment="bottom")
+search_col, filter_col, count_col = st.columns([2.4, 1, 1], vertical_alignment="center")
 with search_col:
     requirement_search = st.text_input(
-        "搜索需求",
-        placeholder="搜索文档名称或标识…",
+        "搜索需求文档",
+        placeholder="搜索文档名称、标识…",
         key="requirement_list_search",
         label_visibility="collapsed",
     )
 with filter_col:
     requirement_filter = st.selectbox(
         "文档状态",
-        ["全部文档", "有效文档", "已删除"],
+        ["全部状态", "有效", "已删除"],
         key="requirement_list_filter",
         label_visibility="collapsed",
     )
 with count_col:
-    st.caption(f"共 {len(requirement_items)} 份需求文档")
+    st.markdown(
+        f'<div style="text-align:right;color:#64748B;font-size:13px;padding-top:8px;">共 {len(requirement_items)} 条</div>',
+        unsafe_allow_html=True,
+    )
 
-filtered_requirements = []
 search_text = requirement_search.strip().lower()
+filtered_requirements = []
 for entry in requirement_items:
     doc = entry["document"]
     matches_search = (
@@ -455,41 +458,67 @@ for entry in requirement_items:
         or search_text in str(doc.get("document_key") or "").lower()
     )
     matches_filter = (
-        requirement_filter == "全部文档"
-        or (requirement_filter == "有效文档" and entry["active"])
+        requirement_filter == "全部状态"
+        or (requirement_filter == "有效" and entry["active"])
         or (requirement_filter == "已删除" and not entry["active"])
     )
     if matches_search and matches_filter:
         filtered_requirements.append(entry)
 
+st.html("""
+<style>
+.gt-req-table { width:100%; border:1px solid #E7EAF1; border-radius:10px; overflow:hidden; background:#fff; }
+.gt-req-head, .gt-req-row { display:grid; grid-template-columns:minmax(190px,2.5fr) minmax(150px,1.7fr) 78px 86px 72px 100px 74px; align-items:center; column-gap:12px; padding:11px 14px; }
+.gt-req-head { background:#F7F8FA; color:#64748B; font-size:12px; font-weight:650; border-bottom:1px solid #E7EAF1; }
+.gt-req-row { min-height:62px; border-bottom:1px solid #EEF0F4; color:#334155; font-size:13px; }
+.gt-req-row:last-child { border-bottom:0; }
+.gt-req-row:hover { background:#FAFAFE; }
+.gt-req-name { color:#34305B; font-weight:650; font-size:13px; overflow-wrap:anywhere; }
+.gt-req-key { color:#8A91A1; font-size:11px; margin-top:4px; overflow-wrap:anywhere; }
+.gt-req-muted { color:#64748B; font-size:12px; }
+.gt-req-status { display:inline-block; padding:3px 9px; border-radius:12px; font-size:11px; font-weight:600; white-space:nowrap; }
+.gt-req-status-active { color:#15803D; background:#DCFCE7; }
+.gt-req-status-deleted { color:#B45309; background:#FEF3C7; }
+@media (max-width: 900px) {
+  .gt-req-head, .gt-req-row { grid-template-columns:minmax(160px,2fr) minmax(130px,1.4fr) 65px 70px 60px; }
+  .gt-req-head > :nth-child(6), .gt-req-row > :nth-child(6),
+  .gt-req-head > :nth-child(7), .gt-req-row > :nth-child(7) { display:none; }
+}
+</style>
+""")
+
 if not filtered_requirements:
-    st.info("暂无符合条件的需求文档。点击右上角「需求上传」即可添加。")
+    st.info("暂无符合条件的需求文档。点击右上角「需求上传」添加文档。")
 else:
+    rows_html = [
+        '<div class="gt-req-table">',
+        '<div class="gt-req-head"><div>文档名称</div><div>文档标识</div><div>最新版本</div><div>文件类型</div><div>版本数</div><div>字符数</div><div>状态</div></div>',
+    ]
     for entry in filtered_requirements:
         doc = entry["document"]
-        doc_name = html.escape(str(doc.get("document_name") or "未命名文档"))
-        doc_key = html.escape(str(doc.get("document_key") or "—"))
+        name = html.escape(str(doc.get("document_name") or "未命名文档"))
+        key = html.escape(str(doc.get("document_key") or "—"))
+        version = html.escape(str(doc.get("version") or 1))
         file_type = html.escape(str(doc.get("file_type") or "未知").upper())
-        version_label = f'V{doc.get("version", 1)}'
+        version_count = str(entry["version_count"])
+        char_count = f'{(doc.get("char_count") or 0):,}'
+        status_class = "gt-req-status-active" if entry["active"] else "gt-req-status-deleted"
         status_text = "有效" if entry["active"] else "已删除"
-        status_color = "#15803D" if entry["active"] else "#B45309"
-        status_bg = "#DCFCE7" if entry["active"] else "#FEF3C7"
-        char_count = doc.get("char_count") or 0
-        with st.container(border=True):
-            left, middle, right = st.columns([3.2, 1.3, 1.1], vertical_alignment="center")
-            with left:
-                st.markdown(f"**{doc_name}**")
-                st.caption(f"标识：{doc_key}")
-            with middle:
-                st.markdown(f"**{version_label}** · {file_type}")
-                st.caption(f"{entry['version_count']} 个版本 · {char_count:,} 字")
-            with right:
-                st.markdown(
-                    f'<div style="text-align:right;"><span style="display:inline-block;padding:4px 10px;border-radius:20px;background:{status_bg};color:{status_color};font-size:12px;font-weight:600;">{status_text}</span></div>',
-                    unsafe_allow_html=True,
-                )
+        rows_html.append(
+            '<div class="gt-req-row">'
+            f'<div><div class="gt-req-name">{name}</div><div class="gt-req-key">需求文档</div></div>'
+            f'<div class="gt-req-muted">{key}</div>'
+            f'<div>V{version}</div>'
+            f'<div class="gt-req-muted">{file_type}</div>'
+            f'<div>{version_count}</div>'
+            f'<div class="gt-req-muted">{char_count}</div>'
+            f'<div><span class="gt-req-status {status_class}">{status_text}</span></div>'
+            '</div>'
+        )
+    rows_html.append("</div>")
+    st.html("".join(rows_html))
 
-st.caption("提示：版本查看、恢复和删除操作请前往「需求版本管理」页面。")
+st.caption("提示：文档版本查看、恢复和删除操作请前往「需求版本管理」页面。")
 
 
 # ============================================================
