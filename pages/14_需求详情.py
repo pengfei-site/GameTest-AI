@@ -346,12 +346,13 @@ def render_unanalyzed_requirement(document: dict) -> None:
     if saved_key not in st.session_state:
         st.session_state[saved_key] = None
 
+    st.markdown("### 结构化需求")
+    st.caption("当前版本暂无已保存的需求分析结果。可以直接在此页面执行分析、查看结果并保存。")
+
     st.html("""
     <div class="gt-analysis-banner">
       <div class="gt-analysis-banner-title">AI 需求分析</div>
       <div class="gt-analysis-banner-desc">
-        当前版本暂无已保存的需求分析结果。可以直接在此页面执行分析、查看结果并保存。
-        <br><br>
         AI 将从当前文档版本中提取业务规则、前置条件、业务状态、
         数值约束、异常场景以及待策划确认的问题。
         分析结果经过 Pydantic 数据结构校验后展示。
