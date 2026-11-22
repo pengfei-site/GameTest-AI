@@ -67,7 +67,7 @@ st.html(f"""
     <div class="gt-detail-title">▤ {html.escape(name)}</div>
     <span class="gt-detail-badge">{status}</span>
   </div>
-  <div class="gt-detail-sub">所属项目：{html.escape(project_name)}　·　当前版本：V{current.get("version", 1)}　·　历史版本：{len(versions)} 个</div>
+  <div class="gt-detail-sub">所属项目：{html.escape(project_name)}　·　创建时间：{html.escape(str(current.get("created_at") or "暂无"))}　·　当前版本：V{current.get("version", 1)}　·　历史版本：{len(versions)} 个</div>
 </div>
 """)
 
