@@ -492,7 +492,7 @@ if not filtered_requirements:
 else:
     rows_html = [
         '<div class="gt-req-table">',
-        '<div class="gt-req-head"><div>文档名称</div><div>文档标识</div><div>最新版本</div><div>文件类型</div><div>版本数</div><div>字符数</div><div>状态</div></div>',
+        '<div class="gt-req-head"><div>文档名称</div><div>文档标识</div><div>当前版本</div><div>文件类型</div><div>版本数</div><div>字符数</div><div>状态</div></div>',
     ]
     for entry in filtered_requirements:
         doc = entry["document"]
@@ -506,7 +506,7 @@ else:
         status_text = "有效" if entry["active"] else "已删除"
         rows_html.append(
             '<div class="gt-req-row">'
-            f'<div><div class="gt-req-name">{name}</div><div class="gt-req-key">需求文档</div></div>'
+            f'<div><div class="gt-req-name">{name}</div></div>'
             f'<div class="gt-req-muted">{key}</div>'
             f'<div>V{version}</div>'
             f'<div class="gt-req-muted">{file_type}</div>'
