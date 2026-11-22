@@ -13,24 +13,33 @@ from components.header import render_header
 # 页面初始化
 # ============================================================
 
+def sync_document_name_from_file():
+    """选择文件后，自动使用不含扩展名的文件名填充文档名称。"""
+    selected = st.session_state.get("requirement_document_dialog")
+    if selected is not None:
+        import os
+        st.session_state["document_name"] = os.path.splitext(selected.name)[0]
+
+
 @st.dialog("上传游戏策划需求文档", width="large")
 def show_requirement_upload_dialog():
     st.caption("填写文档信息并选择文件，支持 DOCX、PDF、Markdown 和 TXT 格式。")
 
+    selected_file = st.file_uploader(
+        "选择需求文档",
+        type=["docx", "pdf", "md", "txt"],
+        key="requirement_document_dialog",
+        on_change=sync_document_name_from_file,
+    )
     document_name_input = st.text_input(
         "文档名称",
-        placeholder="例如：登录功能需求说明",
+        placeholder="选择文件后自动识别，也可手动修改",
         key="document_name",
     )
     document_key_input = st.text_input(
         "文档标识（document_key）",
         placeholder="例如：LOGIN_REQUIREMENT",
         key="document_key",
-    )
-    selected_file = st.file_uploader(
-        "选择需求文档",
-        type=["docx", "pdf", "md", "txt"],
-        key="requirement_document_dialog",
     )
 
     if st.button(
