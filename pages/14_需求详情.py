@@ -6,8 +6,6 @@ from database.repositories.project_repository import list_projects
 from database.repositories.document_repository import list_documents
 
 
-st.set_page_config(page_title="需求详情 · GameTest AI", layout="wide")
-
 project_id = st.query_params.get("project_id", "")
 document_key = st.query_params.get("document_key", "")
 
