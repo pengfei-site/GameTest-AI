@@ -18,7 +18,7 @@ document_key = st.session_state.get("requirement_detail_document_key") or st.que
 
 
 def render_back_action():
-    if st.button("← 返回需求列表", use_container_width=True):
+    if st.button("← 返回需求列表", width="stretch"):
         st.switch_page("pages/05_需求文档.py")
 
 
@@ -328,7 +328,7 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
                         })
                     else:
                         rows.append({"参数": _display_value(item), "数值": "", "单位": "", "说明": ""})
-                st.dataframe(rows, hide_index=True, use_container_width=True)
+                st.dataframe(rows, hide_index=True, width="stretch")
 
             _render_analysis_items(exceptions, "异常情况", "EX-")
             if questions:
