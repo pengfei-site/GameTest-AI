@@ -83,6 +83,17 @@ st.html(f"""
 .gt-analysis-metric {{ background:#FAFAFE; border:1px solid #ECEBF5; border-radius:9px; padding:10px 12px; }}
 .gt-analysis-metric strong {{ display:block; color:#39356B; font-size:19px; line-height:1.3; }}
 .gt-analysis-metric span {{ color:#85899A; font-size:11px; }}
+/* 需求详情顶部信息卡片：固定白色背景与卡片边界 */
+.st-key-requirement-detail-card {{
+  background: #FFFFFF !important;
+  border: 1px solid #E7EAF1 !important;
+  border-radius: 12px !important;
+  padding: 20px 22px !important;
+  box-shadow: 0 2px 8px rgba(31,41,55,.04) !important;
+}}
+.st-key-requirement-detail-card [data-testid="stVerticalBlock"] {{
+  background: transparent !important;
+}}
 /* 分类导航改用 Streamlit segmented_control，不再渲染 Radio 圆点 */
 div[data-testid="stSegmentedControl"] [role="group"] {{
   display:flex !important;
@@ -101,7 +112,7 @@ div[data-testid="stSegmentedControl"] button {{
 </style>
 """)
 
-with st.container(border=True):
+with st.container(border=True, key="requirement-detail-card"):
     title_col, version_col = st.columns([6, 0.85], vertical_alignment="center")
     with title_col:
         st.markdown(
