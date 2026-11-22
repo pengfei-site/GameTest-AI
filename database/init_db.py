@@ -50,6 +50,8 @@ def init_db():
             char_count INTEGER DEFAULT 0,
             is_deleted INTEGER NOT NULL DEFAULT 0
                 CHECK (is_deleted IN (0, 1)),
+            is_active INTEGER NOT NULL DEFAULT 0
+                CHECK (is_active IN (0, 1)),
             deleted_at TEXT,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -70,6 +72,8 @@ def init_db():
             module TEXT NOT NULL DEFAULT '',
             summary TEXT DEFAULT '',
             analysis_json TEXT NOT NULL,
+            is_active INTEGER NOT NULL DEFAULT 0
+                CHECK (is_active IN (0, 1)),
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
             FOREIGN KEY (project_id)
@@ -643,6 +647,20 @@ def init_db():
                 ADD COLUMN collection_validation_report_json TEXT
                 """
             )
+
+        document_columns = {
+            row["name"] for row in conn.execute("PRAGMA table_info(documents)").fetchall()
+        }
+        if "is_active" not in document_columns:
+            conn.execute("ALTER TABLE documents ADD COLUMN is_active INTEGER NOT NULL DEFAULT 0 CHECK (is_active IN (0, 1))")
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_documents_single_active ON documents(project_id, document_key) WHERE is_active = 1")
+
+        analysis_columns = {
+            row["name"] for row in conn.execute("PRAGMA table_info(requirement_analyses)").fetchall()
+        }
+        if "is_active" not in analysis_columns:
+            conn.execute("ALTER TABLE requirement_analyses ADD COLUMN is_active INTEGER NOT NULL DEFAULT 0 CHECK (is_active IN (0, 1))")
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_requirement_analyses_single_active ON requirement_analyses(document_id) WHERE is_active = 1")
 
         # 创建全部查询索引
         for sql in indexes:

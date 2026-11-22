@@ -136,6 +136,26 @@ def get_requirement_analysis(
     return result
 
 
+def set_active_requirement_analysis(analysis_id: str) -> bool:
+    """在同一需求文档版本的分析记录中设定唯一有效记录。"""
+    with get_connection(write=True) as conn:
+        row = conn.execute(
+            "SELECT id, document_id FROM requirement_analyses WHERE id = ?",
+            (analysis_id,),
+        ).fetchone()
+        if row is None:
+            raise ValueError("需求分析记录不存在")
+        conn.execute(
+            "UPDATE requirement_analyses SET is_active = 0 WHERE document_id = ?",
+            (row["document_id"],),
+        )
+        conn.execute(
+            "UPDATE requirement_analyses SET is_active = 1 WHERE id = ?",
+            (analysis_id,),
+        )
+    return True
+
+
 def list_requirement_analyses(
     project_id: str,
     document_id: str | None = None,

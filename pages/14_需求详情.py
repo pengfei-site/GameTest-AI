@@ -12,6 +12,7 @@ from database.repositories.document_repository import list_documents
 from database.repositories.requirement_repository import (
     list_requirement_analyses,
     create_requirement_analysis,
+    set_active_requirement_analysis,
 )
 from core.requirement_analyzer import analyze_requirement
 from core.time_utils import format_local_datetime
@@ -22,16 +23,10 @@ project_id = st.session_state.get("requirement_detail_project_id") or st.query_p
 document_key = st.session_state.get("requirement_detail_document_key") or st.query_params.get("document_key", "")
 
 
-def render_back_action():
-    if st.button("原始文档", width="stretch"):
-        st.session_state["show_original_document_dialog"] = True
-
-
 render_header(
     title="需求详情",
     description="查看需求文档信息与当前版本的结构化分析。",
     breadcrumb=["需求中心", "需求文档", "需求详情"],
-    actions=render_back_action,
 )
 
 if not project_id or not document_key:
@@ -56,7 +51,7 @@ if not versions:
     st.warning("未找到对应的需求文档版本。")
     st.stop()
 
-active_versions = [item for item in versions if not item.get("is_deleted")]
+active_versions = [item for item in versions if item.get("is_active") and not item.get("is_deleted")]
 default_version = active_versions[0] if active_versions else versions[0]
 version_map = {f"V{item.get('version', 1)}": item for item in versions}
 default_version_label = next(
@@ -138,10 +133,29 @@ with st.container(border=True, key="requirement-detail-card"):
     current = version_map[selected_version_label]
     name = str(current.get("document_name") or "未命名文档")
     st.caption(
-        f"所属项目：{project_name}　·　创建时间：{current.get('created_at') or '暂无'}　·　历史版本：{len(versions)} 个"
+        f"所属项目：{project_name}　·　版本状态：{'有效' if current.get('is_active') else ('已删除' if current.get('is_deleted') else '已废弃')}　·　创建时间：{current.get('created_at') or '暂无'}　·　历史版本：{len(versions)} 个"
     )
 
-st.caption(f"文档标识：{document_key}")
+doc_id_col, active_action_col, original_action_col = st.columns([5, 1.4, 1.4], vertical_alignment="center")
+with doc_id_col:
+    st.caption(f"文档标识：{document_key}")
+with original_action_col:
+    if st.button("查看原文", key="view_original_document", width="stretch"):
+        st.session_state["show_original_document_dialog"] = True
+current_analyses = list_requirement_analyses(
+    project_id=str(project_id), document_id=str(current.get("id"))
+)
+with active_action_col:
+    if current_analyses:
+        selected_analysis = current_analyses[0]
+        if not selected_analysis.get("is_active") and st.button(
+            "设为有效", key=f"header_activate_analysis_{selected_analysis['id']}", width="stretch"
+        ):
+            try:
+                set_active_requirement_analysis(selected_analysis["id"])
+                st.rerun()
+            except Exception as exc:
+                st.error(f"设定有效分析记录失败：{exc}")
 
 
 
@@ -430,6 +444,7 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
             continue
 
         module = str(analysis.get("module") or data.get("module") or "未命名模块")
+        st.caption("有效分析记录" if analysis.get("is_active") else "已废弃分析记录")
         summary = str(analysis.get("summary") or data.get("summary") or "")
         groups = {
             "summary": summary,

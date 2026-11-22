@@ -16,6 +16,7 @@ from core.requirement_analyzer import analyze_requirement
 
 from database.repositories.requirement_repository import (
     create_requirement_analysis,
+    set_active_requirement_analysis,
 )
 
 
@@ -260,7 +261,7 @@ st.markdown("""
 <div class="gt-section">
     <div class="gt-section-title">二、选择需求文档</div>
     <div class="gt-section-desc">
-        系统默认读取每个文档标识对应的最新有效版本。
+        仅读取每个文档标识下由用户手动设定的有效版本。
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -270,15 +271,7 @@ try:
         project_id=selected_project_id
     )
 
-    latest_documents = {}
-
-    for document in all_documents:
-        document_key = document["document_key"]
-
-        if document_key not in latest_documents:
-            latest_documents[document_key] = document
-
-    documents = list(latest_documents.values())
+    documents = [doc for doc in all_documents if doc.get("is_active")]
 
 except Exception as e:
     st.error("读取项目文档列表失败")
@@ -287,7 +280,7 @@ except Exception as e:
 
 if not documents:
     st.info(
-        "当前项目还没有可用的需求文档，请先前往「需求文档」页面导入文档。"
+        "当前项目没有已设为有效的需求版本，请前往「需求版本管理」设定有效版本。"
     )
     st.stop()
 
@@ -736,6 +729,12 @@ if is_current_analysis:
                 f"**创建时间：** "
                 f"{format_local_datetime(st.session_state.saved_analysis_created_at)}"
             )
+            if st.button("将此分析记录设为有效", key=f"activate_saved_analysis_{st.session_state.saved_analysis_id}"):
+                try:
+                    set_active_requirement_analysis(st.session_state.saved_analysis_id)
+                    st.success("已设为该需求版本的有效分析记录；原有效记录已废弃。")
+                except Exception as e:
+                    st.error(f"设定有效分析记录失败：{e}")
 
     else:
 

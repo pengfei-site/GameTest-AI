@@ -373,7 +373,7 @@ for item in project_documents:
     document_groups.setdefault(item["document_key"], []).append(item)
 
 total_document_count = len(document_groups)
-total_active_versions = sum(1 for item in project_documents if not item["is_deleted"])
+total_active_versions = sum(1 for item in project_documents if item.get("is_active") and not item["is_deleted"])
 total_history_versions = len(project_documents)
 
 project_name = html.escape(str(selected_project.get("name") or "未命名项目"))
@@ -454,12 +454,14 @@ for item in project_documents:
 
 requirement_items = []
 for key, versions in requirement_groups.items():
-    active_versions = [item for item in versions if not item["is_deleted"]]
-    display_version = active_versions[0] if active_versions else versions[0]
+    active_versions = [item for item in versions if item.get("is_active") and not item["is_deleted"]]
+    available_versions = [item for item in versions if not item["is_deleted"]]
+    display_version = active_versions[0] if active_versions else (available_versions[0] if available_versions else versions[0])
     requirement_items.append({
         "document": display_version,
         "version_count": len(versions),
         "active": bool(active_versions),
+        "has_available": bool(available_versions),
     })
 
 search_col, filter_col, count_col = st.columns([2.4, 1, 1], vertical_alignment="center")
@@ -473,7 +475,7 @@ with search_col:
 with filter_col:
     requirement_filter = st.selectbox(
         "文档状态",
-        ["全部状态", "有效", "已删除"],
+        ["全部状态", "有效版本", "暂无有效版本"],
         key="requirement_list_filter",
         label_visibility="collapsed",
     )
@@ -493,8 +495,8 @@ for entry in requirement_items:
     )
     matches_filter = (
         requirement_filter == "全部状态"
-        or (requirement_filter == "有效" and entry["active"])
-        or (requirement_filter == "已删除" and not entry["active"])
+        or (requirement_filter == "有效版本" and entry["active"])
+        or (requirement_filter == "暂无有效版本" and not entry["active"])
     )
     if matches_search and matches_filter:
         filtered_requirements.append(entry)
@@ -515,9 +517,11 @@ else:
             f"&document_key={__import__('urllib.parse', fromlist=['quote']).quote(document_key_value)}"
         )
         if entry["active"]:
-            status_html = '<span class="gt-tapd-status gt-tapd-status-active">有效</span>'
+            status_html = '<span class="gt-tapd-status gt-tapd-status-active">有效版本</span>'
+        elif entry["has_available"]:
+            status_html = '<span class="gt-tapd-status gt-tapd-status-deleted">暂无有效版本</span>'
         else:
-            status_html = '<span class="gt-tapd-status gt-tapd-status-deleted">已删除</span>'
+            status_html = '<span class="gt-tapd-status gt-tapd-status-deleted">版本均已删除</span>'
         table_rows.append(
             "<tr>"
             f'<td class="gt-tapd-name"><a href="{html.escape(detail_url, quote=True)}">{html.escape(name)}</a></td>'

@@ -135,6 +135,19 @@ def get_document(document_id: str) -> dict | None:
     return dict(row) if row else None
 
 
+def set_active_document_version(document_id: str) -> bool:
+    """手动设定文档组的唯一有效版本；原有效版本自动废弃。"""
+    with get_connection(write=True) as conn:
+        row = conn.execute("SELECT project_id, document_key, is_deleted FROM documents WHERE id = ?", (document_id,)).fetchone()
+        if row is None:
+            raise ValueError("需求文档版本不存在")
+        if row["is_deleted"]:
+            raise ValueError("已删除的版本不能设为有效版本")
+        conn.execute("UPDATE documents SET is_active = 0 WHERE project_id = ? AND document_key = ?", (row["project_id"], row["document_key"]))
+        conn.execute("UPDATE documents SET is_active = 1 WHERE id = ?", (document_id,))
+    return True
+
+
 def list_documents(
     project_id: str,
     document_key: str | None = None,
@@ -181,6 +194,7 @@ def soft_delete_document(document_id: str) -> bool:
             UPDATE documents
             SET
                 is_deleted = 1,
+                is_active = 0,
                 deleted_at = CURRENT_TIMESTAMP
             WHERE id = ?
               AND is_deleted = 0
