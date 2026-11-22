@@ -9,7 +9,6 @@ from database.repositories.document_repository import (
     get_document,
     soft_delete_document,
     restore_document,
-    set_effective_document_version,
 )
 
 
@@ -218,7 +217,7 @@ for document in saved_documents:
 
 total_document_count = len(document_groups)
 total_history_versions = len(saved_documents)
-total_active_versions = sum(1 for doc in saved_documents if not doc["is_deleted"] and doc.get("is_effective", 0))
+total_active_versions = sum(1 for doc in saved_documents if not doc["is_deleted"])
 
 # 项目卡片与统计指标并列：左侧独立项目卡片，右侧三项统计。
 overview_project_col, overview_stats_col = st.columns(
@@ -344,7 +343,7 @@ with left_col:
     filtered_groups = []
     keyword = search_keyword.strip().lower()
     for key, all_versions in document_groups.items():
-        active_versions = [doc for doc in all_versions if not doc["is_deleted"] and doc.get("is_effective", 0)]
+        active_versions = [doc for doc in all_versions if not doc["is_deleted"]]
         visible_versions = active_versions if document_status_filter == "有效版本" else all_versions
         if not visible_versions:
             continue
@@ -433,29 +432,11 @@ with right_col:
     version_meta = st.columns(3)
     version_meta[0].metric("版本号", f"V{selected_version['version']}")
     version_meta[1].metric("创建时间", format_local_datetime(selected_version.get("created_at")))
-    version_status = "已删除" if selected_version["is_deleted"] else ("有效" if selected_version.get("is_effective", 0) else "已废弃")
-    version_meta[2].metric("状态", version_status)
+    version_meta[2].metric("状态", "已删除" if selected_version["is_deleted"] else "有效")
 
     st.markdown("#### 版本管理")
     if not selected_version["is_deleted"]:
-        if selected_version.get("is_effective", 0):
-            st.success(f"V{selected_version['version']} · 当前有效版本")
-        else:
-            st.warning(f"V{selected_version['version']} · 已废弃（未设为有效版本）")
-            if st.button(
-                f"设 V{selected_version['version']} 为有效版本",
-                key=f"set_effective_version_{selected_version_id}",
-                type="primary",
-                width="stretch",
-            ):
-                try:
-                    set_effective_document_version(selected_version_id)
-                    st.session_state["document_version_action_message"] = (
-                        f"V{selected_version['version']} 已设为有效版本，原有效版本已自动废弃。"
-                    )
-                    st.rerun()
-                except Exception as exc:
-                    st.error(f"设定有效版本失败：{exc}")
+        st.success(f"V{selected_version['version']} · 有效版本")
         confirm_delete = st.checkbox(
             f"确认逻辑删除 V{selected_version['version']}？",
             key=f"confirm_version_delete_{selected_version_id}",
@@ -478,7 +459,7 @@ with right_col:
             except Exception as exc:
                 st.error(f"删除文档版本失败：{exc}")
     else:
-        st.warning(f"V{selected_version['version']} · 已删除")
+        st.warning(f"V{selected_version['version']} · 已逻辑删除")
         if st.button(
             f"恢复 V{selected_version['version']}",
             key=f"restore_version_{selected_version_id}",
