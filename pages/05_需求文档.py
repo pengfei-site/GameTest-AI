@@ -1,10 +1,11 @@
 ﻿
 import hashlib
+import html
 import streamlit as st
 
 from core.document_parser import parse_document
 from database.repositories.project_repository import list_projects
-from database.repositories.document_repository import create_document_version
+from database.repositories.document_repository import create_document_version, list_documents
 from components.header import render_header
 
 
@@ -131,6 +132,26 @@ st.html("""
     line-height: 1.6;
 }
 
+
+/* 项目选择与概览：与需求版本管理页面保持一致 */
+.gt-version-project-picker {
+    position: relative; height: 132px; box-sizing: border-box;
+    background: #FFFFFF; border: 1px solid #E7EAF1; border-radius: 12px;
+    padding: 12px 18px; box-shadow: 0 2px 8px rgba(23,32,51,.04);
+}
+.gt-version-project-picker::after {
+    content: "⌄"; position: absolute; right: 16px; bottom: 12px;
+    color: #8490A3; font-size: 20px; line-height: 1; font-weight: 600;
+    pointer-events: none;
+}
+.gt-version-project-title { color:#172033; font-size:19px; line-height:1.45; font-weight:750; margin-bottom:5px; }
+.gt-version-project-desc { color:#64748B; font-size:13px; line-height:1.6; }
+.gt-version-project-id { display:inline-block; margin-top:8px; padding:4px 9px; color:#64748B; background:#F3F5F9; border-radius:6px; font-size:11px; }
+div[data-testid="stVerticalBlock"].st-key-document_project_stats [data-testid="stMetric"] {
+    height:132px; min-height:132px; box-sizing:border-box;
+    display:flex; flex-direction:column; justify-content:center;
+}
+
 /* 小屏适配 */
 @media (max-width: 768px) {
     .gt-panel {
@@ -170,13 +191,86 @@ project_map = {
 }
 
 project_ids = list(project_map.keys())
+if st.session_state.get("document_project_id") not in project_map:
+    st.session_state["document_project_id"] = project_ids[0]
 
-selected_project_id = st.selectbox(
-    "选择所属游戏项目",
-    options=project_ids,
-    format_func=lambda project_id: project_map[project_id]["name"],
-    key="document_project_id",
-)
+selected_project_id = st.session_state["document_project_id"]
+selected_project = project_map[selected_project_id]
+
+try:
+    project_documents = list_documents(
+        project_id=selected_project_id,
+        include_deleted=True,
+    )
+except Exception as e:
+    st.error(f"项目需求文档概览加载失败：{e}")
+    st.stop()
+
+document_groups = {}
+for item in project_documents:
+    document_groups.setdefault(item["document_key"], []).append(item)
+
+total_document_count = len(document_groups)
+total_active_versions = sum(1 for item in project_documents if not item["is_deleted"])
+total_history_versions = len(project_documents)
+
+project_name = html.escape(str(selected_project.get("name") or "未命名项目"))
+project_description = html.escape(str(selected_project.get("description") or "暂无项目描述"))
+project_status = selected_project.get("status", "active")
+status_label = "已归档" if project_status == "archived" else "进行中"
+status_color = "#64748B" if project_status == "archived" else "#15803D"
+status_bg = "#F1F5F9" if project_status == "archived" else "#DCFCE7"
+
+project_col, stats_col = st.columns([1.53, 1.47], gap="medium", vertical_alignment="center")
+with project_col:
+    with st.container(key="document_project_picker_shell"):
+        st.html(f"""
+        <div class="gt-version-project-picker">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">
+                <div class="gt-version-project-title">🎮 {project_name}</div>
+                <span style="white-space:nowrap;border-radius:20px;padding:3px 8px;color:{status_color};background:{status_bg};font-size:11px;">● {status_label}</span>
+            </div>
+            <div class="gt-version-project-desc">{project_description}</div>
+            <div class="gt-version-project-id">项目 ID：{html.escape(str(selected_project_id))}</div>
+        </div>
+        """)
+        with st.popover("切换项目", use_container_width=True):
+            for project_id in project_ids:
+                project = project_map[project_id]
+                is_current = project_id == selected_project_id
+                option_name = html.escape(str(project.get("name") or "未命名项目"))
+                option_desc = html.escape(str(project.get("description") or "暂无项目描述"))
+                option_id = html.escape(str(project_id))
+                option_status = "已归档" if project.get("status") == "archived" else "进行中"
+                option_color = "#64748B" if project.get("status") == "archived" else "#15803D"
+                option_bg = "#F1F5F9" if project.get("status") == "archived" else "#DCFCE7"
+                border = "#8B7CF6" if is_current else "#E5E7EB"
+                bg = "#F8F7FF" if is_current else "#FFFFFF"
+                with st.container():
+                    st.html(f"""
+                    <div style="border:1px solid {border};background:{bg};border-radius:11px;padding:13px 15px 10px;margin:5px 0 0;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                            <strong style="font-size:14px;color:#172033;">🎮 {option_name}</strong>
+                            <span style="white-space:nowrap;border-radius:20px;padding:3px 8px;color:{option_color};background:{option_bg};font-size:11px;">{option_status}</span>
+                        </div>
+                        <div style="color:#64748B;font-size:12px;line-height:1.55;margin-top:7px;">{option_desc}</div>
+                        <div style="color:#94A3B8;font-size:10px;margin-top:7px;">项目 ID：{option_id}</div>
+                    </div>
+                    """)
+                    if not is_current and st.button("选择此项目", key=f"choose_document_project_{project_id}", use_container_width=True):
+                        st.session_state["document_project_id"] = project_id
+                        st.rerun()
+
+with stats_col:
+    with st.container(key="document_project_stats"):
+        metric_cols = st.columns(3, gap="small")
+        for col, value, label in zip(
+            metric_cols,
+            [total_document_count, total_active_versions, total_history_versions],
+            ["需求文档", "有效版本", "历史版本"],
+        ):
+            with col:
+                st.metric(label, value)
 
 
 # ============================================================
