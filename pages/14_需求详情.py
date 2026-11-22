@@ -84,6 +84,19 @@ st.html(f"""
 .gt-analysis-metric strong {{ display:block; color:#39356B; font-size:19px; line-height:1.3; }}
 .gt-analysis-metric span {{ color:#85899A; font-size:11px; }}
 /* 分类导航改用 Streamlit segmented_control，不再渲染 Radio 圆点 */
+div[data-testid="stSegmentedControl"] [role="group"] {{
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  width:100% !important;
+  gap:4px !important;
+}}
+div[data-testid="stSegmentedControl"] button {{
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  white-space:nowrap !important;
+  padding-left:8px !important;
+  padding-right:8px !important;
+}}
 @media(max-width:700px) {{ .gt-analysis-metrics {{ grid-template-columns:repeat(2,minmax(0,1fr)); }} }}
 </style>
 <div class="gt-detail-hero">
@@ -307,12 +320,6 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
         "exception_cases": "异常情况",
         "open_questions": "待确认问题",
     }
-    category_icons = {
-        "summary": "📝", "business_rules": "📋", "preconditions": "🔑",
-        "states": "🔄", "numeric_constraints": "🔢",
-        "exception_cases": "⚠️", "open_questions": "❓",
-    }
-
     for record_index, analysis in enumerate(analyses, start=1):
         data = analysis.get("analysis_data") or {}
         if not isinstance(data, dict):
@@ -356,10 +363,7 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
             st.info("该分析记录暂无可展示内容。")
             continue
 
-        nav_labels = [
-            f'{category_icons[key]} {category_labels[key]} · {counts[key]}'
-            for key in available
-        ]
+        nav_labels = [category_labels[key] for key in available]
         selected_label = st.segmented_control(
             "分析内容导航",
             options=nav_labels,
