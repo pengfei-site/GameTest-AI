@@ -247,7 +247,7 @@ with st.container(border=True, key=f"project_detail_card_{project_id}"):
                 if st.button("📦 项目归档", key="detail_archive_project", width="stretch"):
                     archive_project_dialog(project)
         else:
-            restore_col, _ = st.columns(2, gap="small")
+            _, restore_col = st.columns(2, gap="small")
             with restore_col:
                 if st.button("♻️ 恢复项目", key="detail_restore_project", width="stretch"):
                     restore_project_dialog(project)
