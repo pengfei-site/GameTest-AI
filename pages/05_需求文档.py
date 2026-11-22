@@ -464,27 +464,31 @@ for key, versions in requirement_groups.items():
         "has_available": bool(available_versions),
     })
 
-search_col, filter_col, count_col = st.columns([2.4, 1, 1], vertical_alignment="center")
+search_col, filter_col = st.columns(
+    [12, 1], vertical_alignment="center", gap="small"
+)
 with search_col:
     requirement_search = st.text_input(
         "搜索需求文档",
         placeholder="搜索文档名称…",
         key="requirement_list_search",
         label_visibility="collapsed",
+        width="stretch",
     )
 with filter_col:
-    requirement_filter = st.selectbox(
-        "文档状态",
-        ["全部状态", "有效版本", "暂无有效版本"],
-        key="requirement_list_filter",
-        label_visibility="collapsed",
-    )
-with count_col:
-    st.markdown(
-        f'<div style="text-align:right;color:#64748B;font-size:13px;padding-top:8px;">共 {len(requirement_items)} 条</div>',
-        unsafe_allow_html=True,
-    )
-
+    with st.popover(
+        "筛选",
+        icon=":material/filter_list:",
+        help="筛选需求文档",
+        width="stretch",
+    ):
+        st.markdown("**文档状态**")
+        requirement_filter = st.radio(
+            "需求文档状态筛选",
+            options=["全部状态", "有效版本", "暂无有效版本"],
+            key="requirement_list_filter",
+            label_visibility="collapsed",
+        )
 search_text = requirement_search.strip().lower()
 filtered_requirements = []
 for entry in requirement_items:
@@ -508,7 +512,7 @@ else:
     for entry in filtered_requirements:
         doc = entry["document"]
         name = str(doc.get("document_name") or "未命名文档")
-        version = f"V{doc.get('version') or 1}"
+        version = f"Ver. {doc.get('version') or 1}"
         file_type = str(doc.get("file_type") or "未知").upper()
         document_key_value = str(doc.get("document_key") or "")
         detail_url = (
@@ -568,13 +572,13 @@ else:
     .gt-tapd-table tbody tr:last-child td { border-bottom: 0; }
     .gt-tapd-table tbody tr:hover td { background: #F8FAFD; }
     .gt-tapd-table thead th:nth-child(1),
-    .gt-tapd-table tbody td:nth-child(1) { width: 65%; }
+    .gt-tapd-table tbody td:nth-child(1) { width: 60%; }
     .gt-tapd-table thead th:nth-child(2),
     .gt-tapd-table tbody td:nth-child(2) { width: 12%; color: #606266; }
     .gt-tapd-table thead th:nth-child(3),
     .gt-tapd-table tbody td:nth-child(3) { width: 12%; color: #606266; }
     .gt-tapd-table thead th:nth-child(4),
-    .gt-tapd-table tbody td:nth-child(4) { width: 11%; }
+    .gt-tapd-table tbody td:nth-child(4) { width: 16%; }
     .gt-tapd-table .gt-tapd-name a {
         color: #303133;
         text-decoration: none;

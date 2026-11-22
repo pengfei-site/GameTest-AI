@@ -17,6 +17,7 @@ from database.repositories.requirement_repository import (
     list_requirement_analyses,
     create_requirement_analysis,
     set_active_requirement_analysis,
+    deactivate_requirement_analysis,
 )
 from core.requirement_analyzer import analyze_requirement
 from core.time_utils import format_local_datetime
@@ -35,7 +36,7 @@ render_header(
 
 if not project_id or not document_key:
     st.warning("缺少需求文档定位信息，请从需求文档列表重新进入。")
-    if st.button("返回需求列表"):
+    if st.button("返回需求列表", type="primary", width="stretch"):
         st.switch_page("pages/05_需求文档.py")
     st.stop()
 
@@ -57,12 +58,19 @@ if not versions:
 
 active_versions = [item for item in versions if item.get("is_active") and not item.get("is_deleted")]
 default_version = active_versions[0] if active_versions else versions[0]
-version_map = {f"V{item.get('version', 1)}": item for item in versions}
+version_map = {f"Ver. {item.get('version', 1)}": item for item in versions}
 default_version_label = next(
     label for label, item in version_map.items()
     if str(item.get("id")) == str(default_version.get("id"))
 )
 project_name = str(project.get("name") or "未命名项目")
+
+
+def _save_document_version_checkbox_state(document_id: str, checkbox_key: str) -> None:
+    if st.session_state.get(checkbox_key):
+        set_active_document_version(document_id)
+    else:
+        deactivate_document_version(document_id)
 
 st.html(f"""
 <style>
@@ -71,7 +79,18 @@ st.html(f"""
 .gt-detail-current-version {{ flex-shrink:0; color:#5D50A8; background:#F1EFFF; border:1px solid #E6E1FF; border-radius:999px; padding:6px 12px; font-size:12px; font-weight:700; white-space:nowrap; }}
 .gt-detail-sub {{ color:#8490A3; font-size:12px; line-height:1.7; margin-top:10px; }}
 .gt-detail-version {{ border:1px solid #E7EAF1; border-radius:10px; padding:12px 14px; margin:7px 0; background:#fff; }}
-.gt-analysis-module {{ display:flex; align-items:center; gap:10px; font-size:15px; font-weight:750; color:#37316F; background:linear-gradient(110deg,#F2F0FF,#FAF9FF); border:1px solid #E7E2FF; border-left:4px solid #7968D8; border-radius:10px; padding:13px 16px; margin:2px 0 16px; }}
+.gt-analysis-module {{ display:flex; align-items:center; gap:10px; height:42px; box-sizing:border-box; font-size:15px !important; line-height:20px !important; font-weight:700; color:#37316F; background:transparent; border:0; border-radius:0; padding:0 10px; margin:0; }}
+.gt-analysis-index {{ position:static; display:inline-flex; align-items:center; margin-left:0; transform:none; font-size:15px; line-height:20px; color:#85899A; font-weight:500; }}
+.gt-analysis-title {{ position:relative; top:-6px; }}
+.gt-analysis-index {{ position:relative; top:-6px; }}
+.stHorizontalBlock:has(.gt-analysis-module) {{ min-height:48px; box-sizing:border-box; background:linear-gradient(110deg,#F7F5FF,#FCFBFF); border:1px solid #E7E2FF; border-radius:10px; padding:2px 0 2px 12px; margin:2px 0 14px; box-shadow:0 1px 3px rgba(55,49,111,.04); }}
+.stHorizontalBlock:has(.gt-analysis-module) [data-testid="column"] {{ align-self:center !important; }}
+.stHorizontalBlock:has(.gt-analysis-module) [data-testid="stCheckbox"] {{ margin:0 !important; transform:translateX(36px); }}
+.stHorizontalBlock:has(.gt-analysis-module) [data-testid="column"]:last-child [data-testid="stCheckbox"] {{ width:100%; display:flex; justify-content:flex-end; transform:translateX(10px); }}
+.stHorizontalBlock:has(.gt-analysis-module) [data-testid="column"]:last-child [data-testid="stCheckbox"] label {{ margin-left:auto !important; }}
+.stHorizontalBlock:has(.gt-analysis-module) [data-testid="stCheckbox"] label {{ display:flex !important; align-items:center !important; gap:7px; margin:0 !important; }}
+.stHorizontalBlock:has(.gt-analysis-module) [data-testid="stCheckbox"] label p {{ font-size:13px !important; line-height:18px !important; font-weight:650 !important; color:#4B5563; margin:0 !important; }}
+.stHorizontalBlock:has(.gt-analysis-module) .gt-analysis-module {{ border:0 !important; background:transparent; padding:0 4px 0 10px; margin:0; }}
 .gt-analysis-banner {{ background:linear-gradient(120deg,#F4F1FF 0%,#FAF9FF 100%); border:1px solid #E9E4FF; border-radius:14px; padding:20px 22px; margin:12px 0 16px; }}
 .gt-analysis-banner-title {{ color:#433B83; font-size:16px; font-weight:750; margin-bottom:7px; }}
 .gt-analysis-banner-desc {{ color:#77728F; font-size:13px; line-height:1.8; }}
@@ -120,7 +139,7 @@ div[data-testid="stSegmentedControl"] button {{
 """)
 
 with st.container(border=True, key="requirement-detail-card"):
-    title_col, version_col = st.columns([6, 0.85], vertical_alignment="center")
+    title_col, version_col = st.columns([6, 0.7], vertical_alignment="center")
     with title_col:
         st.markdown(
             f'<div class="gt-detail-title">▤ {html.escape(str(default_version.get("document_name") or "未命名文档"))}</div>',
@@ -136,36 +155,61 @@ with st.container(border=True, key="requirement-detail-card"):
         )
     current = version_map[selected_version_label]
     name = str(current.get("document_name") or "未命名文档")
-    st.caption(
-        f"所属项目：{project_name}　·　版本状态：{'有效' if current.get('is_active') else ('已删除' if current.get('is_deleted') else '已废弃')}　·　创建时间：{current.get('created_at') or '暂无'}　·　历史版本：{len(versions)} 个"
-    )
+    info_col, state_col = st.columns([5, 1], vertical_alignment="bottom")
+    with info_col:
+        st.caption(
+            f"所属项目：{project_name}　·　版本状态：{'有效' if current.get('is_active') else ('已删除' if current.get('is_deleted') else '已废弃')}　·　创建时间：{current.get('created_at') or '暂无'}　·　历史版本：{len(versions)} 个"
+        )
+    with state_col:
+        state_spacer, state_checkbox_col = st.columns([0.55, 1])
+        with state_checkbox_col:
+            status_key = f"document_version_status_{current['id']}"
+            is_current_active = bool(current.get("is_active")) and not bool(current.get("is_deleted"))
+            st.session_state[status_key] = is_current_active
+            st.checkbox(
+                "使用中" if is_current_active else ("已删除" if current.get("is_deleted") else "已废弃"),
+                disabled=bool(current.get("is_deleted")),
+                key=status_key,
+                on_change=_save_document_version_checkbox_state,
+                args=(str(current["id"]), status_key),
+            )
 
-doc_id_col, active_action_col, original_action_col = st.columns([5, 1.4, 1.4], vertical_alignment="center")
+doc_id_col, analysis_action_col, original_action_col = st.columns([5, 2, 1.5], vertical_alignment="center")
 with doc_id_col:
     st.caption(f"文档标识：{document_key}")
-with original_action_col:
-    if st.button("查看原文", key="view_original_document", width="stretch"):
-        st.session_state["show_original_document_dialog"] = True
-with active_action_col:
-    if current.get("is_deleted"):
-        st.button("已删除", disabled=True, key=f"deleted_document_version_{current['id']}", width="stretch")
-    elif current.get("is_active"):
-        if st.button("取消使用", key=f"deactivate_document_version_{current['id']}", width="stretch"):
-            try:
-                deactivate_document_version(str(current["id"]))
-                st.rerun()
-            except Exception as exc:
-                st.error(f"取消使用需求文档版本失败：{exc}")
-    elif st.button("使用此版本", key=f"activate_document_version_{current['id']}", width="stretch"):
+current_analyses = list_requirement_analyses(
+    project_id=str(project_id), document_id=str(current.get("id"))
+)
+with analysis_action_col:
+    analysis_button_label = "重新结构化分析" if current_analyses else "开始结构化分析"
+    if st.button(
+        analysis_button_label,
+        type="primary",
+        width="stretch",
+        key=f"detail_run_analysis_{current.get('id')}",
+        disabled=not str(current.get("parsed_content") or "").strip(),
+    ):
         try:
-            set_active_document_version(str(current["id"]))
+            with st.spinner("AI 正在分析当前版本的策划需求，请稍候..."):
+                result = analyze_requirement(str(current.get("parsed_content") or ""))
+                analysis_data = result.model_dump(mode="json")
+                if not isinstance(analysis_data, dict):
+                    raise ValueError("分析结果格式异常，未生成有效的结构化数据。")
+            with st.spinner("分析成功，正在自动保存结果..."):
+                create_requirement_analysis(
+                    project_id=str(project_id),
+                    document_id=str(current["id"]),
+                    module=analysis_data.get("module") or "未命名模块",
+                    summary=analysis_data.get("summary") or "",
+                    analysis_data=analysis_data,
+                )
+            st.toast("需求分析结果已成功保存。", icon="✅")
             st.rerun()
         except Exception as exc:
-            st.error(f"设定需求文档有效版本失败：{exc}")
-
-
-
-
+            st.error(f"需求分析或自动保存失败：{exc}")
+with original_action_col:
+    if st.button("查看原文", key="view_original_document", type="primary", width="stretch"):
+        st.session_state["show_original_document_dialog"] = True
 def render_original_preview(document: dict, key_suffix: str) -> None:
     """优先预览原始文件；旧版本没有原文件时回退到解析文本。"""
     file_path = document.get("file_path")
@@ -347,7 +391,7 @@ def _render_analysis_card(title: str, body: str, status: str = "", source: str =
 
 
 def render_unanalyzed_requirement(document: dict) -> None:
-    """当前版本没有已保存分析时，提供原结构化需求分析页的分析、展示和保存流程。"""
+    """当前文档版本没有分析记录时显示提示。"""
     document_id = str(document.get("id") or "").strip()
     content = str(document.get("parsed_content") or "")
     if not document_id:
@@ -357,50 +401,12 @@ def render_unanalyzed_requirement(document: dict) -> None:
         st.warning("当前文档版本没有可用于分析的解析文本。")
         return
 
-    saved_key = f"detail_saved_analysis_{document_id}"
-    if saved_key not in st.session_state:
-        st.session_state[saved_key] = None
-
-
-    with st.expander("查看当前版本的文档解析内容", expanded=False):
-        st.text_area(
-            "文档解析文本",
-            value=content,
-            height=280,
-            disabled=True,
-            label_visibility="collapsed",
-            key=f"detail_analysis_source_{document_id}",
-        )
-
-    if st.button(
-        "开始结构化需求分析",
-        type="primary",
-        width="stretch",
-        key=f"detail_run_analysis_{document_id}",
-    ):
-        st.session_state[saved_key] = None
-        try:
-            with st.spinner("AI 正在分析当前版本的策划需求，请稍候..."):
-                result = analyze_requirement(content)
-                analysis_data = result.model_dump(mode="json")
-                if not isinstance(analysis_data, dict):
-                    raise ValueError("分析结果格式异常，未生成有效的结构化数据。")
-
-            with st.spinner("分析成功，正在自动保存结果..."):
-                saved_record = create_requirement_analysis(
-                    project_id=str(project_id),
-                    document_id=document_id,
-                    module=analysis_data.get("module") or "未命名模块",
-                    summary=analysis_data.get("summary") or "",
-                    analysis_data=analysis_data,
-                )
-            st.session_state[saved_key] = saved_record or {"saved": True}
-            st.toast("需求分析结果已成功保存。", icon="✅")
-            st.rerun()
-        except Exception as exc:
-            st.session_state[saved_key] = None
-            st.error(f"需求分析或自动保存失败：{exc}")
-
+def _save_analysis_checkbox_state(analysis_id: str, checkbox_key: str) -> None:
+    """将复选框状态写入数据库；该文档版本同一时刻最多一条有效记录。"""
+    if st.session_state.get(checkbox_key):
+        set_active_requirement_analysis(analysis_id)
+    else:
+        deactivate_requirement_analysis(analysis_id)
 
 
 def render_requirement_analysis(document: dict, section_title: str = "需求结构化分析") -> None:
@@ -432,6 +438,7 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
         "exception_cases": "异常情况",
         "open_questions": "待确认问题",
     }
+
     for record_index, analysis in enumerate(analyses, start=1):
         data = analysis.get("analysis_data") or {}
         if not isinstance(data, dict):
@@ -440,8 +447,6 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
 
         module = str(analysis.get("module") or data.get("module") or "未命名模块")
         analysis_is_active = bool(analysis.get("is_active"))
-        status_color = "#22C55E" if analysis_is_active else "#9CA3AF"
-        status_label = "有效" if analysis_is_active else "无效"
         summary = str(analysis.get("summary") or data.get("summary") or "")
         groups = {
             "summary": summary,
@@ -457,13 +462,24 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
             for key, value in groups.items()
         }
 
-        st.markdown(
-            f'<div class="gt-analysis-module">{html.escape(module)}'
-            f'<span style="margin-left:auto;font-size:11px;color:#85899A;font-weight:500;">分析记录 {record_index}</span>'
-            f'<span style="display:inline-flex;align-items:center;gap:6px;margin-left:12px;font-size:11px;color:#64748B;font-weight:600;">'
-            f'<span style="width:8px;height:8px;border-radius:50%;background:{status_color};display:inline-block;"></span>{status_label}</span></div>',
-            unsafe_allow_html=True,
-        )
+        header_cols = st.columns([6, 1.2], vertical_alignment="center")
+        with header_cols[0]:
+            st.markdown(
+                    f'<div class="gt-analysis-module"><span class="gt-analysis-index">分析记录 {record_index}</span></div>',
+                unsafe_allow_html=True,
+            )
+        with header_cols[1]:
+            checkbox_key = f"analysis_active_checkbox_{analysis['id']}"
+            # Streamlit 会保留 widget 的旧值；每次渲染前按数据库同步，
+            # 避免切换有效记录后旧记录仍显示为勾选。
+            st.session_state[checkbox_key] = analysis_is_active
+            st.checkbox(
+                    "使用中" if analysis_is_active else "已废弃",
+                key=checkbox_key,
+                    disabled=not bool(current.get("is_active")) or bool(current.get("is_deleted")),
+                on_change=_save_analysis_checkbox_state,
+                args=(analysis["id"], checkbox_key),
+            )
         metric_cols = st.columns(4)
         metric_items = [
             ("open_questions", "待确认问题"),
@@ -478,6 +494,7 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
         available = [key for key in category_labels if counts[key] > 0]
         if not available:
             st.info("该分析记录暂无可展示内容。")
+            st.markdown('<div style="height:16px"></div>', unsafe_allow_html=True)
             continue
 
         nav_labels = [category_labels[key] for key in available]
@@ -576,6 +593,9 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
                 status = _analysis_text(item, "status") if isinstance(item, dict) else ""
                 source = _analysis_text(item, "source_text") if isinstance(item, dict) else ""
                 _render_analysis_card(title, body, status, source, title)
+
+        st.markdown('<div style="height:16px"></div>', unsafe_allow_html=True)
+
 
 
 render_requirement_analysis(current)

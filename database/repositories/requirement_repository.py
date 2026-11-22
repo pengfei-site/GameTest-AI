@@ -156,6 +156,16 @@ def set_active_requirement_analysis(analysis_id: str) -> bool:
     return True
 
 
+def deactivate_requirement_analysis(analysis_id: str) -> bool:
+    """取消指定分析记录的有效状态，不自动启用其他记录。"""
+    with get_connection(write=True) as conn:
+        cursor = conn.execute(
+            "UPDATE requirement_analyses SET is_active = 0 WHERE id = ? AND is_active = 1",
+            (analysis_id,),
+        )
+    return cursor.rowcount > 0
+
+
 def list_requirement_analyses(
     project_id: str,
     document_id: str | None = None,
