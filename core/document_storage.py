@@ -1,5 +1,6 @@
 from pathlib import Path
 from uuid import uuid4
+import re
 
 from database.connection import BASE_DIR
 
@@ -17,7 +18,9 @@ def save_original_document(project_id: str, document_id: str, file_name: str, fi
 
     target_dir = DOCUMENT_STORAGE_DIR / str(project_id)
     target_dir.mkdir(parents=True, exist_ok=True)
-    target_path = target_dir / f"{document_id}{suffix}"
+    original_name = Path(file_name).name
+    safe_name = re.sub(r"[^\\w.()\\-]+", "_", original_name).strip("._") or f"document{suffix}"
+    target_path = target_dir / f"{document_id}_{safe_name}"
     temp_path = target_path.with_suffix(target_path.suffix + f".{uuid4().hex}.tmp")
     try:
         temp_path.write_bytes(file_bytes)
