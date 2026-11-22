@@ -26,11 +26,12 @@ def render_sidebar(pages):
             if group_name == "隐藏页面":
                 continue
 
-            st.html(f"""
-            <div class="gt-sidebar-group-title">
-                {group_name}
-            </div>
-            """)
+            if group_name:
+                st.html(f"""
+                <div class="gt-sidebar-group-title">
+                    {group_name}
+                </div>
+                """)
 
             for page in group_pages:
                 st.page_link(
