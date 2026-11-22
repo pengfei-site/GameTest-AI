@@ -67,7 +67,7 @@ project_name = str(project.get("name") or "未命名项目")
 _, version_col = st.columns([3, 2], vertical_alignment="center")
 with version_col:
     selected_version_label = st.selectbox(
-        "当前版本",
+        "切换版本",
         options=list(version_map.keys()),
         index=list(version_map.keys()).index(default_version_label),
         key=f"requirement_detail_version_{project_id}_{document_key}",
@@ -111,7 +111,10 @@ div[data-testid="stSegmentedControl"] button {{
 @media(max-width:700px) {{ .gt-analysis-metrics {{ grid-template-columns:repeat(2,minmax(0,1fr)); }} }}
 </style>
 <div class="gt-detail-hero">
-  <div class="gt-detail-title">▤ {html.escape(name)}</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+    <div class="gt-detail-title">▤ {html.escape(name)}</div>
+    <span class="gt-detail-current-version">当前版本 V{current.get("version", 1)}</span>
+  </div>
   <div class="gt-detail-sub">所属项目：{html.escape(project_name)}　·　创建时间：{html.escape(str(current.get("created_at") or "暂无"))}　·　历史版本：{len(versions)} 个</div>
 </div>
 """)
