@@ -76,7 +76,7 @@ default_version_label = next(
 project_name = str(project.get("name") or "未命名项目")
 
 with st.container(border=True, key="requirement-detail-card"):
-    title_col, version_col = st.columns([4, 1.5], vertical_alignment="center")
+    title_col, version_col = st.columns([6, 0.85], vertical_alignment="center")
     with title_col:
         st.markdown(
             f'<div class="gt-detail-title">▤ {html.escape(str(default_version.get("document_name") or "未命名文档"))}</div>',
