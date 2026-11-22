@@ -12,20 +12,11 @@ def get_pages():
                 default=True,
                 url_path="home",
             ),
-        ],
-
-        "项目中心": [
             st.Page(
                 "pages/01_项目列表.py",
-                title="项目列表",
+                title="项目中心",
                 icon="📚",
-                url_path="project-list",
-            ),
-            st.Page(
-                "pages/02_项目创建.py",
-                title="创建项目",
-                icon="✨",
-                url_path="project-create",
+                url_path="project-center",
             ),
         ],
 
