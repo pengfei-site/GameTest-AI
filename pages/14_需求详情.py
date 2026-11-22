@@ -8,7 +8,10 @@ from core.document_storage import read_original_document
 
 from components.header import render_header
 from database.repositories.project_repository import list_projects
-from database.repositories.document_repository import list_documents
+from database.repositories.document_repository import (
+    list_documents,
+    set_active_document_version,
+)
 from database.repositories.requirement_repository import (
     list_requirement_analyses,
     create_requirement_analysis,
@@ -25,7 +28,7 @@ document_key = st.session_state.get("requirement_detail_document_key") or st.que
 
 render_header(
     title="需求详情",
-    description="查看需求文档信息与当前版本的结构化分析。",
+    description="AI 从当前文档版本中提取业务规则、前置条件、业务状态、数值约束、异常场景以及待策划确认的问题。",
     breadcrumb=["需求中心", "需求文档", "需求详情"],
 )
 
@@ -142,20 +145,17 @@ with doc_id_col:
 with original_action_col:
     if st.button("查看原文", key="view_original_document", width="stretch"):
         st.session_state["show_original_document_dialog"] = True
-current_analyses = list_requirement_analyses(
-    project_id=str(project_id), document_id=str(current.get("id"))
-)
 with active_action_col:
-    if current_analyses:
-        selected_analysis = current_analyses[0]
-        if not selected_analysis.get("is_active") and st.button(
-            "设为有效", key=f"header_activate_analysis_{selected_analysis['id']}", width="stretch"
-        ):
-            try:
-                set_active_requirement_analysis(selected_analysis["id"])
-                st.rerun()
-            except Exception as exc:
-                st.error(f"设定有效分析记录失败：{exc}")
+    if current.get("is_deleted"):
+        st.button("已删除", disabled=True, key=f"deleted_document_version_{current['id']}", width="stretch")
+    elif current.get("is_active"):
+        st.button("当前使用", disabled=True, key=f"active_document_version_{current['id']}", width="stretch")
+    elif st.button("使用此版本", key=f"activate_document_version_{current['id']}", width="stretch"):
+        try:
+            set_active_document_version(str(current["id"]))
+            st.rerun()
+        except Exception as exc:
+            st.error(f"设定需求文档有效版本失败：{exc}")
 
 
 
@@ -403,17 +403,6 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
     if not document_id:
         st.info("当前文档版本缺少关联 ID，无法定位已保存的分析结果。")
         return
-
-    st.html("""
-    <div class="gt-analysis-banner">
-      <div class="gt-analysis-banner-title">AI 需求分析</div>
-      <div class="gt-analysis-banner-desc">
-        AI 将从当前文档版本中提取业务规则、前置条件、业务状态、
-        数值约束、异常场景以及待策划确认的问题。
-        分析结果经过 Pydantic 数据结构校验后展示。
-      </div>
-    </div>
-    """)
 
     try:
         analyses = list_requirement_analyses(

@@ -338,6 +338,7 @@ with left_col:
     document_status_filter = st.selectbox(
         "版本显示范围",
         options=["有效版本", "全部版本"],
+        index=1,
         key="version_status_filter",
     )
 
