@@ -400,8 +400,100 @@ with stats_col:
                 st.metric(label, value)
 
 
+
 # ============================================================
-# 二、读取上传弹窗中的文档信息
+# 二、需求列表
+# ============================================================
+
+st.markdown("""
+<div class="gt-section">
+    <div class="gt-section-title">需求列表</div>
+    <div class="gt-section-desc">当前项目已上传的需求文档。每份文档展示最新有效版本，可前往需求版本管理查看完整历史。</div>
+</div>
+""", unsafe_allow_html=True)
+
+# 按 document_key 聚合，每份文档优先展示最新有效版本。
+requirement_groups = {}
+for item in project_documents:
+    requirement_groups.setdefault(item["document_key"], []).append(item)
+
+requirement_items = []
+for key, versions in requirement_groups.items():
+    active_versions = [item for item in versions if not item["is_deleted"]]
+    display_version = active_versions[0] if active_versions else versions[0]
+    requirement_items.append({
+        "document": display_version,
+        "version_count": len(versions),
+        "active": bool(active_versions),
+    })
+
+search_col, filter_col, count_col = st.columns([2.2, 1, 1], vertical_alignment="bottom")
+with search_col:
+    requirement_search = st.text_input(
+        "搜索需求",
+        placeholder="搜索文档名称或标识…",
+        key="requirement_list_search",
+        label_visibility="collapsed",
+    )
+with filter_col:
+    requirement_filter = st.selectbox(
+        "文档状态",
+        ["全部文档", "有效文档", "已删除"],
+        key="requirement_list_filter",
+        label_visibility="collapsed",
+    )
+with count_col:
+    st.caption(f"共 {len(requirement_items)} 份需求文档")
+
+filtered_requirements = []
+search_text = requirement_search.strip().lower()
+for entry in requirement_items:
+    doc = entry["document"]
+    matches_search = (
+        not search_text
+        or search_text in str(doc.get("document_name") or "").lower()
+        or search_text in str(doc.get("document_key") or "").lower()
+    )
+    matches_filter = (
+        requirement_filter == "全部文档"
+        or (requirement_filter == "有效文档" and entry["active"])
+        or (requirement_filter == "已删除" and not entry["active"])
+    )
+    if matches_search and matches_filter:
+        filtered_requirements.append(entry)
+
+if not filtered_requirements:
+    st.info("暂无符合条件的需求文档。点击右上角「需求上传」即可添加。")
+else:
+    for entry in filtered_requirements:
+        doc = entry["document"]
+        doc_name = html.escape(str(doc.get("document_name") or "未命名文档"))
+        doc_key = html.escape(str(doc.get("document_key") or "—"))
+        file_type = html.escape(str(doc.get("file_type") or "未知").upper())
+        version_label = f'V{doc.get("version", 1)}'
+        status_text = "有效" if entry["active"] else "已删除"
+        status_color = "#15803D" if entry["active"] else "#B45309"
+        status_bg = "#DCFCE7" if entry["active"] else "#FEF3C7"
+        char_count = doc.get("char_count") or 0
+        with st.container(border=True):
+            left, middle, right = st.columns([3.2, 1.3, 1.1], vertical_alignment="center")
+            with left:
+                st.markdown(f"**{doc_name}**")
+                st.caption(f"标识：{doc_key}")
+            with middle:
+                st.markdown(f"**{version_label}** · {file_type}")
+                st.caption(f"{entry['version_count']} 个版本 · {char_count:,} 字")
+            with right:
+                st.markdown(
+                    f'<div style="text-align:right;"><span style="display:inline-block;padding:4px 10px;border-radius:20px;background:{status_bg};color:{status_color};font-size:12px;font-weight:600;">{status_text}</span></div>',
+                    unsafe_allow_html=True,
+                )
+
+st.caption("提示：版本查看、恢复和删除操作请前往「需求版本管理」页面。")
+
+
+# ============================================================
+# 三、读取上传弹窗中的文档信息
 # ============================================================
 
 document_name = st.session_state.get("document_upload_document_name", "")
@@ -409,7 +501,7 @@ document_key = st.session_state.get("document_upload_document_key", "")
 
 
 # ============================================================
-# 三、上传文档
+# 四、上传文档
 # ============================================================
 
 uploaded_file_name = st.session_state.get("document_upload_name")
@@ -434,12 +526,12 @@ with st.container(border=True):
 
 
 # ============================================================
-# 四、解析文档
+# 五、解析文档
 # ============================================================
 
 st.markdown("""
 <div class="gt-section">
-    <div class="gt-section-title">四、解析文档</div>
+    <div class="gt-section-title">五、解析文档</div>
     <div class="gt-section-desc">
         提取上传文件中的文本内容，供后续结构化需求分析使用。
     </div>
@@ -489,7 +581,7 @@ with st.container(border=True):
 
 
 # ============================================================
-# 五、展示解析结果
+# 六、展示解析结果
 # ============================================================
 
 parsed_document = st.session_state.get("parsed_document")
@@ -517,7 +609,7 @@ if is_current_parse:
 
     st.markdown("""
     <div class="gt-section">
-        <div class="gt-section-title">五、解析结果预览</div>
+        <div class="gt-section-title">六、解析结果预览</div>
         <div class="gt-section-desc">
             查看文件解析信息和提取出的文档文本。
         </div>
@@ -553,12 +645,12 @@ if is_current_parse:
         )
 
     # ========================================================
-    # 六、保存文档
+    # 七、保存文档
     # ========================================================
 
     st.markdown("""
     <div class="gt-section">
-        <div class="gt-section-title">六、保存需求文档</div>
+        <div class="gt-section-title">七、保存需求文档</div>
         <div class="gt-section-desc">
             将解析结果保存到当前项目的文档库。
         </div>
