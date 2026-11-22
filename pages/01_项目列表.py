@@ -72,36 +72,38 @@ def render_create_project_action():
 
 def render_project_actions():
 
-    search_col, filter_col = st.columns(
-        [5, 0.65],
-        vertical_alignment="center",
-        gap="small",
-    )
-
-    with search_col:
-        st.text_input(
-            "搜索项目",
-            placeholder="搜索项目名称、描述或 ID...",
-            key="project_search_keyword",
-            label_visibility="collapsed",
+    with st.container(width="stretch"):
+        search_col, filter_col = st.columns(
+            [12, 1],
+            vertical_alignment="center",
+            gap="small",
         )
 
-    with filter_col:
-        with st.popover(
-            "",
-            icon=":material/filter_list:",
-            help="筛选项目",
-            use_container_width=False,
-        ):
-
-            st.markdown("**项目状态**")
-
-            st.radio(
-                "项目状态筛选",
-                options=["全部项目", "进行中", "已归档"],
-                key="project_status_filter",
+        with search_col:
+            st.text_input(
+                "搜索项目",
+                placeholder="搜索项目名称、描述或 ID...",
+                key="project_search_keyword",
                 label_visibility="collapsed",
+                width="stretch",
             )
+
+        with filter_col:
+            with st.popover(
+                "筛选",
+                icon=":material/filter_list:",
+                help="筛选项目",
+                use_container_width=True,
+            ):
+
+                st.markdown("**项目状态**")
+
+                st.radio(
+                    "项目状态筛选",
+                    options=["全部项目", "进行中", "已归档"],
+                    key="project_status_filter",
+                    label_visibility="collapsed",
+                )
 
 render_header(
     title="项目中心",
