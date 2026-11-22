@@ -66,7 +66,7 @@ st.html(f"""
 .gt-detail-sub {{ color:#778196; font-size:13px; margin-top:7px; }}
 .gt-detail-badge {{ display:inline-block; border-radius:20px; padding:4px 10px; color:{status_color}; background:{status_bg}; font-size:12px; font-weight:650; }}
 .gt-detail-section {{ color:#292746; font-size:16px; font-weight:700; margin:22px 0 10px; }}
-.gt-detail-version {{ border:1px solid #E7EAF1; border-radius:10px; padding:12px 14px; margin:7px 0; background:#fff; }
+.gt-detail-version {{ border:1px solid #E7EAF1; border-radius:10px; padding:12px 14px; margin:7px 0; background:#fff; }}
 .gt-analysis-module {{ font-size:15px; font-weight:700; color:#403B78; background:#F4F2FF; border-left:3px solid #8175D5; border-radius:7px; padding:10px 12px; margin:4px 0 14px; }}
 .gt-analysis-summary {{ background:#F8F9FC; border:1px solid #E9ECF3; border-radius:9px; padding:13px 15px; line-height:1.75; color:#34384A; }}
 .gt-analysis-item {{ background:#fff; border:1px solid #E8EAF1; border-radius:9px; padding:12px 14px; margin:8px 0; }}
@@ -77,7 +77,6 @@ st.html(f"""
 .gt-analysis-item-body {{ color:#41465A; line-height:1.7; margin-top:8px; white-space:pre-wrap; }}
 .gt-analysis-source {{ color:#8790A2; font-size:12px; line-height:1.6; margin-top:7px; border-top:1px dashed #E7EAF1; padding-top:7px; }}
 .gt-analysis-question {{ display:flex; align-items:flex-start; gap:10px; background:#FFFAF1; border:1px solid #F5E5C8; border-radius:9px; padding:12px 14px; margin:8px 0; line-height:1.65; color:#65491F; }}
-}
 </style>
 <div class="gt-detail-hero">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
