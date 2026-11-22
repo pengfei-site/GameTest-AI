@@ -214,18 +214,46 @@ with overview_project_col:
             for project_id in project_ids:
                 project = project_map[project_id]
                 option_status = "已归档" if project.get("status") == "archived" else "进行中"
-                option_name = project.get("name") or "未命名项目"
-                option_description = project.get("description") or "暂无项目描述"
-                st.markdown(f"**🎮 {option_name} · {option_status}**")
-                st.caption(option_description)
-                if st.button(
-                    "当前项目" if project_id == selected_project_id else "切换到此项目",
-                    key=f"choose_version_project_{project_id}",
-                    use_container_width=True,
-                    type="primary" if project_id == selected_project_id else "secondary",
-                ):
-                    st.session_state["version_project_id"] = project_id
-                    st.rerun()
+                option_name = html.escape(str(project.get("name") or "未命名项目"))
+                option_description = html.escape(str(project.get("description") or "暂无项目描述"))
+                option_id = html.escape(str(project_id))
+                is_current = project_id == selected_project_id
+                status_color = "#64748B" if project.get("status") == "archived" else "#15803D"
+                status_bg = "#F1F5F9" if project.get("status") == "archived" else "#DCFCE7"
+                card_border = "#8B7CF6" if is_current else "#E5E7EB"
+                card_bg = "#F8F7FF" if is_current else "#FFFFFF"
+                with st.container(key=f"version_project_option_{project_id}"):
+                    st.html(f"""
+                    <div style="
+                        border: 1px solid {card_border};
+                        background: {card_bg};
+                        border-radius: 11px;
+                        padding: 13px 15px 10px;
+                        margin: 5px 0 0;
+                    ">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                            <strong style="font-size:14px;color:#172033;">🎮 {option_name}</strong>
+                            <span style="
+                                white-space:nowrap;border-radius:20px;padding:3px 8px;
+                                color:{status_color};background:{status_bg};font-size:11px;
+                            ">{option_status}</span>
+                        </div>
+                        <div style="color:#64748B;font-size:12px;line-height:1.55;margin-top:7px;">
+                            {option_description}
+                        </div>
+                        <div style="color:#94A3B8;font-size:10px;margin-top:7px;">
+                            项目 ID：{option_id}
+                        </div>
+                    </div>
+                    """)
+                    if st.button(
+                        "✓ 当前项目" if is_current else "选择此项目",
+                        key=f"choose_version_project_{project_id}",
+                        use_container_width=True,
+                        type="primary" if is_current else "secondary",
+                    ):
+                        st.session_state["version_project_id"] = project_id
+                        st.rerun()
 
 
 with overview_stats_col:
