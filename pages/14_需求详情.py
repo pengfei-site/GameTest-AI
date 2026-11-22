@@ -63,22 +63,17 @@ default_version_label = next(
 )
 project_name = str(project.get("name") or "未命名项目")
 
-with st.container(border=True):
-    title_col, version_col = st.columns([3, 2], vertical_alignment="center")
-    with title_col:
-        st.markdown(f"### ▤ {html.escape(str(default_version.get('document_name') or '未命名文档'))}")
-    with version_col:
-        selected_version_label = st.selectbox(
-            "当前版本",
-            options=list(version_map.keys()),
-            index=list(version_map.keys()).index(default_version_label),
-            key=f"requirement_detail_version_{project_id}_{document_key}",
-        )
-    current = version_map[selected_version_label]
-    name = str(current.get("document_name") or "未命名文档")
-    st.caption(
-        f"所属项目：{project_name}　·　创建时间：{current.get('created_at') or '暂无'}　·　历史版本：{len(versions)} 个"
+# 版本选择器独立放置，不再增加第二张边框卡片；下方继续使用原有详情 Hero 卡片。
+_, version_col = st.columns([3, 2], vertical_alignment="center")
+with version_col:
+    selected_version_label = st.selectbox(
+        "当前版本",
+        options=list(version_map.keys()),
+        index=list(version_map.keys()).index(default_version_label),
+        key=f"requirement_detail_version_{project_id}_{document_key}",
     )
+current = version_map[selected_version_label]
+name = str(current.get("document_name") or "未命名文档")
 
 st.html(f"""
 <style>
@@ -116,10 +111,7 @@ div[data-testid="stSegmentedControl"] button {{
 @media(max-width:700px) {{ .gt-analysis-metrics {{ grid-template-columns:repeat(2,minmax(0,1fr)); }} }}
 </style>
 <div class="gt-detail-hero">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-    <div class="gt-detail-title">▤ {html.escape(name)}</div>
-    <span class="gt-detail-current-version">当前版本 V{current.get("version", 1)}</span>
-  </div>
+  <div class="gt-detail-title">▤ {html.escape(name)}</div>
   <div class="gt-detail-sub">所属项目：{html.escape(project_name)}　·　创建时间：{html.escape(str(current.get("created_at") or "暂无"))}　·　历史版本：{len(versions)} 个</div>
 </div>
 """)
