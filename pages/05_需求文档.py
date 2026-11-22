@@ -16,12 +16,13 @@ from components.header import render_header
 def render_upload_action():
     """在页面标题右侧提供游戏策划需求文档上传入口。"""
     global uploaded_file
-    uploaded_file = st.file_uploader(
-        "",
-        type=["docx", "pdf", "md", "txt"],
-        key="requirement_document",
-        label_visibility="visible",
-    )
+    with st.container(key="document_header_upload"):
+        uploaded_file = st.file_uploader(
+            "",
+            type=["docx", "pdf", "md", "txt"],
+            key="requirement_document",
+            label_visibility="collapsed",
+        )
 
 
 uploaded_file = None
@@ -40,6 +41,34 @@ render_header(
 
 st.html("""
 <style>
+/* 页面标题右侧：紧凑单行文件选择器 */
+div[data-testid="stVerticalBlock"].st-key-document_header_upload [data-testid="stFileUploader"] {
+    width: 100%;
+}
+div[data-testid="stVerticalBlock"].st-key-document_header_upload [data-testid="stFileUploaderDropzone"] {
+    min-height: 42px !important;
+    height: 42px !important;
+    padding: 4px 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+}
+div[data-testid="stVerticalBlock"].st-key-document_header_upload [data-testid="stFileUploaderDropzone] > div {
+    display: flex !important;
+    align-items: center !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+}
+div[data-testid="stVerticalBlock"].st-key-document_header_upload [data-testid="stFileUploaderDropzone] small {
+    display: inline !important;
+    white-space: nowrap !important;
+}
+div[data-testid="stVerticalBlock"].st-key-document_header_upload [data-testid="stFileUploaderDropzone] button {
+    white-space: nowrap !important;
+    flex: 0 0 auto !important;
+}
+
 /* 页面区块 */
 .gt-section {
     margin: 1.5rem 0 0.8rem 0;
