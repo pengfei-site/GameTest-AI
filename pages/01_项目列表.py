@@ -93,7 +93,7 @@ def render_project_actions():
                 "筛选",
                 icon=":material/filter_list:",
                 help="筛选项目",
-                use_container_width=True,
+                width="stretch",
             ):
 
                 st.markdown("**项目状态**")
