@@ -295,22 +295,11 @@ else:
 
 st.divider()
 st.markdown("### 🚀 项目操作")
-st.caption("通过以下入口管理项目的创建和归档；项目编辑请进入项目详情页。")
+st.caption("创建项目或进入项目详情页管理项目；项目归档与恢复操作已整合至项目详情页。")
 
-col_create, col_archive = st.columns(2)
-
-with col_create:
-    st.page_link(
-        "pages/02_项目创建.py",
-        label="创建项目",
-        icon="✨",
-        width="stretch",
-    )
-
-with col_archive:
-    st.page_link(
-        "pages/04_项目归档.py",
-        label="归档管理",
-        icon="📦",
-        width="stretch",
-    )
+st.page_link(
+    "pages/02_项目创建.py",
+    label="创建项目",
+    icon="✨",
+    width="stretch",
+)
