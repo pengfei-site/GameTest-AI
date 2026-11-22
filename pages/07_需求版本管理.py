@@ -60,24 +60,24 @@ with st.popover(
     use_container_width=True,
 ):
     st.markdown("#### 切换工作项目")
-    st.caption("点击项目即可直接切换。")
+    st.caption("选择一个项目卡片，即可直接切换。")
     for project_id in project_ids:
         project = project_map[project_id]
         is_current = project_id == selected_project_id
-        button_label = (
-            f"✓  {project['name']}  ·  {project_id}"
-            if is_current
-            else f"　 {project['name']}  ·  {project_id}"
-        )
-        if st.button(
-            button_label,
-            key=f"version_project_option_{project_id}",
-            use_container_width=True,
-            disabled=is_current,
-            type="secondary",
-        ):
-            st.session_state["version_project_id"] = project_id
-            st.rerun()
+        with st.container(border=True):
+            if is_current:
+                st.markdown(f"**✓  {project['name']}**")
+                st.caption(f"当前项目 · {project_id}")
+            else:
+                if st.button(
+                    f"🎮  {project['name']}",
+                    key=f"version_project_option_{project_id}",
+                    use_container_width=True,
+                    type="secondary",
+                ):
+                    st.session_state["version_project_id"] = project_id
+                    st.rerun()
+                st.caption(f"项目 ID：{project_id}")
 
 try:
     saved_documents = list_documents(
