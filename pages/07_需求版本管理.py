@@ -123,13 +123,15 @@ total_document_count = len(document_groups)
 total_history_versions = len(saved_documents)
 total_active_versions = sum(1 for doc in saved_documents if not doc["is_deleted"])
 
-# 项目信息独立成卡片：名称、状态、描述和项目 ID 不与统计指标混排。
-with st.container(border=True, key="version_project_overview"):
-    project_info_col, project_switch_col = st.columns(
-        [5, 1.25],
-        vertical_alignment="center",
-    )
-    with project_info_col:
+# 项目卡片与统计指标并列：左侧独立项目卡片，右侧三项统计。
+overview_project_col, overview_stats_col = st.columns(
+    [1.15, 1.85],
+    gap="medium",
+    vertical_alignment="center",
+)
+
+with overview_project_col:
+    with st.container(border=True, key="version_project_overview"):
         st.html(f"""
         <div class="gt-version-project-main">
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -140,7 +142,6 @@ with st.container(border=True, key="version_project_overview"):
             <div class="gt-version-project-id">项目 ID：{html.escape(selected_project_id)}</div>
         </div>
         """)
-    with project_switch_col:
         with st.popover("切换项目", icon=":material/swap_horiz:", use_container_width=True):
             st.caption("选择项目后，将切换到该项目的需求版本数据。")
             for project_id, project in project_map.items():
@@ -159,15 +160,15 @@ with st.container(border=True, key="version_project_overview"):
                     st.session_state["version_project_id"] = project_id
                     st.rerun()
 
-# 统计指标作为独立区域展示，不再放进项目信息卡片。
-stat_cols = st.columns(3)
-for col, value, label in zip(
-    stat_cols,
-    [total_document_count, total_active_versions, total_history_versions],
-    ["需求文档", "有效版本", "历史版本"],
-):
-    with col:
-        st.metric(label, value)
+with overview_stats_col:
+    stat_cols = st.columns(3, gap="small")
+    for col, value, label in zip(
+        stat_cols,
+        [total_document_count, total_active_versions, total_history_versions],
+        ["需求文档", "有效版本", "历史版本"],
+    ):
+        with col:
+            st.metric(label, value)
 
 action_message = st.session_state.pop("document_version_action_message", None)
 if action_message:
