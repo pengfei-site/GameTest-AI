@@ -375,7 +375,8 @@ def render_unanalyzed_requirement(document: dict) -> None:
                     analysis_data=analysis_data,
                 )
             st.session_state[saved_key] = saved_record or {"saved": True}
-            st.success("需求分析成功，分析结果已自动保存。")
+            st.toast("需求分析结果已成功保存。", icon="✅")
+            st.rerun()
         except Exception as exc:
             st.session_state[saved_key] = None
             st.error(f"需求分析或自动保存失败：{exc}")
