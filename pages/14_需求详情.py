@@ -129,8 +129,16 @@ div[data-testid="stRadio"] div[role="radiogroup"] label p {{
   line-height:1.3 !important;
   white-space:nowrap !important;
 }}
-div[data-testid="stRadio"] div[role="radiogroup"] label > div:first-child {{
+/* 胶囊已承担选中反馈，隐藏原生 radio 圆点及其图标容器 */
+div[data-testid="stRadio"] div[role="radiogroup"] input[type="radio"],
+div[data-testid="stRadio"] div[role="radiogroup"] label > div:first-child,
+div[data-testid="stRadio"] div[role="radiogroup"] label svg {{
   display:none !important;
+  visibility:hidden !important;
+  width:0 !important;
+  min-width:0 !important;
+  margin:0 !important;
+  padding:0 !important;
 }}
 @media(max-width:700px) {{ .gt-analysis-metrics {{ grid-template-columns:repeat(2,minmax(0,1fr)); }} }}
 </style>
