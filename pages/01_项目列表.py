@@ -52,6 +52,16 @@ def create_project_dialog():
             except Exception as exc:
                 st.error(f"创建项目失败：{exc}")
 
+def render_create_project_action():
+    if st.button(
+        "✨ 创建项目",
+        type="primary",
+        width="stretch",
+        key="open_create_project_dialog",
+    ):
+        create_project_dialog()
+
+
 def render_project_actions():
 
     search_col, filter_col = st.columns(
@@ -89,8 +99,10 @@ render_header(
     title="项目列表",
     description="查看和筛选工作空间中的游戏测试项目。",
     breadcrumb=["项目中心", "项目列表"],
-    actions=render_project_actions,
+    actions=render_create_project_action,
 )
+
+render_project_actions()
 
 
 # ============================================================
@@ -331,18 +343,3 @@ else:
                             st.switch_page("pages/13_项目详情.py")
 
 
-# ============================================================
-# 七、项目操作入口
-# ============================================================
-
-st.divider()
-st.markdown("### 🚀 项目操作")
-st.caption("创建项目或进入项目详情页管理项目；项目归档与恢复操作已整合至项目详情页。")
-
-if st.button(
-    "✨ 创建项目",
-    type="primary",
-    width="stretch",
-    key="open_create_project_dialog",
-):
-    create_project_dialog()
