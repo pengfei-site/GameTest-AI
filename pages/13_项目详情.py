@@ -101,7 +101,7 @@ project_name = html.escape(str(project.get("name") or "未命名项目"))
 project_description = html.escape(str(project.get("description") or "暂无项目描述"))
 
 render_header(
-    title="项目详情",
+    title="",
     description="查看项目基本信息、测试资产规模及其关联情况。",
     breadcrumb=["项目中心", "项目列表", "项目详情"],
 )
