@@ -80,8 +80,7 @@ div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-tes
     position: static !important;
     z-index: 2 !important;
 }
-/* 只隐藏 Popover 的触发按钮；不能匹配菜单内部的项目选择按钮。 */
-div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] > button {
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] button {
     position: absolute !important;
     inset: 0 !important;
     z-index: 2 !important;
