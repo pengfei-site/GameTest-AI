@@ -362,7 +362,7 @@ with project_col:
             <div class="gt-version-project-id">项目 ID：{html.escape(str(selected_project_id))}</div>
         </div>
         """)
-        with st.popover("切换项目", use_container_width=True):
+        with st.popover("切换项目", width="stretch"):
             for project_id in project_ids:
                 project = project_map[project_id]
                 is_current = project_id == selected_project_id
@@ -385,7 +385,7 @@ with project_col:
                         <div style="color:#94A3B8;font-size:10px;margin-top:7px;">项目 ID：{option_id}</div>
                     </div>
                     """)
-                    if not is_current and st.button("选择此项目", key=f"choose_document_project_{project_id}", use_container_width=True):
+                    if not is_current and st.button("选择此项目", key=f"choose_document_project_{project_id}", width="stretch"):
                         st.session_state["document_project_id"] = project_id
                         st.rerun()
 
