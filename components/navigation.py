@@ -18,26 +18,11 @@ def get_pages():
                 icon="📚",
                 url_path="project-center",
             ),
-        ],
-
-        "需求中心": [
             st.Page(
                 "pages/05_需求文档.py",
-                title="需求文档",
+                title="需求中心",
                 icon="📄",
-                url_path="requirement-documents",
-            ),
-            st.Page(
-                "pages/06_结构化需求分析.py",
-                title="结构化需求分析",
-                icon="🧠",
-                url_path="structured-requirement-analysis",
-            ),
-            st.Page(
-                "pages/07_需求版本管理.py",
-                title="需求版本管理",
-                icon="🕘",
-                url_path="requirement-versions",
+                url_path="requirement-center",
             ),
         ],
 
