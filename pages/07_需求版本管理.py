@@ -65,25 +65,27 @@ div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell:hover {
 div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell > div {
     gap: 0;
 }
-div[data-testid="stVerticalBlock"].st-key-version_project_picker_toggle {
+/* Popover 触发器作为透明覆盖层，浮层由 Streamlit 定位在卡片下方。 */
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell {
+    position: relative;
+}
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] {
+    position: static;
+}
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] > button {
     position: absolute;
     inset: 0;
     z-index: 10;
     width: 100%;
     height: 100%;
     min-height: 150px;
-}
-div[data-testid="stVerticalBlock"].st-key-version_project_picker_toggle [data-testid="stButton"] {
-    width: 100%;
-    height: 100%;
-}
-div[data-testid="stVerticalBlock"].st-key-version_project_picker_toggle button {
-    width: 100%;
-    height: 100%;
-    min-height: 150px;
     opacity: 0 !important;
     cursor: pointer;
     padding: 0;
+    border: 0 !important;
+}
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] > div {
+    z-index: 30;
 }
 .gt-version-project-stats {
     display: flex; gap: 0; align-items: stretch; flex: 0 1 auto;
@@ -194,46 +196,28 @@ with overview_project_col:
             </div>
             """
         )
-        # 空白按钮透明覆盖卡片，点击整张卡片切换项目列表的显示状态。
-        with st.container(key="version_project_picker_toggle"):
-            if st.button(
-                "展开项目列表",
-                key="toggle_version_project_picker",
-                help="切换当前项目",
-                use_container_width=True,
-            ):
-                st.session_state["version_project_picker_open"] = not st.session_state.get(
-                    "version_project_picker_open", False
-                )
-                st.rerun()
+        # 透明 Popover 触发器覆盖整张卡片，点击后在卡片下方显示悬浮项目列表。
+        with st.popover(
+            "切换项目",
+            use_container_width=True,
+        ):
+            st.caption("选择要查看需求版本的项目")
+            for project_id in project_ids:
+                project = project_map[project_id]
+                option_status = "已归档" if project.get("status") == "archived" else "进行中"
+                option_name = project.get("name") or "未命名项目"
+                option_description = project.get("description") or "暂无项目描述"
+                st.markdown(f"**🎮 {option_name} · {option_status}**")
+                st.caption(option_description)
+                if st.button(
+                    "当前项目" if project_id == selected_project_id else "切换到此项目",
+                    key=f"choose_version_project_{project_id}",
+                    use_container_width=True,
+                    type="primary" if project_id == selected_project_id else "secondary",
+                ):
+                    st.session_state["version_project_id"] = project_id
+                    st.rerun()
 
-
-
-@st.dialog("切换项目", width="large")
-def show_version_project_dialog():
-    st.caption("选择要查看需求版本的项目")
-    for project_id in project_ids:
-        project = project_map[project_id]
-        option_status = "已归档" if project.get("status") == "archived" else "进行中"
-        option_name = project.get("name") or "未命名项目"
-        option_description = project.get("description") or "暂无项目描述"
-        option_label = f"🎮 {option_name} · {option_status}"
-        with st.container(border=True):
-            st.markdown(f"**{option_label}**")
-            st.caption(option_description)
-            if st.button(
-                "当前项目" if project_id == selected_project_id else "切换到此项目",
-                key=f"choose_version_project_{project_id}",
-                use_container_width=True,
-                type="primary" if project_id == selected_project_id else "secondary",
-            ):
-                st.session_state["version_project_id"] = project_id
-                st.session_state["version_project_picker_open"] = False
-                st.rerun()
-
-
-if st.session_state.get("version_project_picker_open", False):
-    show_version_project_dialog()
 
 with overview_stats_col:
     stat_cols = st.columns(3, gap="small")
