@@ -527,16 +527,15 @@ else:
             vertical_alignment="center",
         )
         with row_cols[0]:
-            st.markdown('<div class="gt-req-native-row">', unsafe_allow_html=True)
-            st.page_link(
-                "pages/14_需求详情.py",
-                label=name,
-                query_params={
-                    "project_id": str(selected_project_id),
-                    "document_key": str(doc.get("document_key") or ""),
-                },
+            detail_url = (
+                "/requirement-detail"
+                f"?project_id={__import__('urllib.parse', fromlist=['quote']).quote(str(selected_project_id))}"
+                f"&document_key={__import__('urllib.parse', fromlist=['quote']).quote(str(doc.get('document_key') or ''))}"
             )
-            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="gt-req-native-row"><a href="{html.escape(detail_url, quote=True)}">{html.escape(name)}</a></div>',
+                unsafe_allow_html=True,
+            )
         row_cols[1].write(f"V{doc.get('version') or 1}")
         row_cols[2].write(str(doc.get("file_type") or "未知").upper())
         with row_cols[3]:
