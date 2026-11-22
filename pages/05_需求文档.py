@@ -152,6 +152,41 @@ div[data-testid="stVerticalBlock"].st-key-document_project_stats [data-testid="s
     display:flex; flex-direction:column; justify-content:center;
 }
 
+/* 项目卡片整卡透明点击层：不显示独立的“切换项目”按钮。 */
+div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell {
+    position: relative !important;
+    overflow: visible !important;
+    z-index: 1;
+}
+div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell [data-testid="stPopover"] {
+    position: static !important;
+    z-index: 2 !important;
+}
+div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell [data-testid="stPopover"] button[aria-haspopup="dialog"] {
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 5 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 132px !important;
+    min-height: 132px !important;
+    max-height: 132px !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    opacity: 0 !important;
+    color: transparent !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
+}
+div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell [data-testid="stPopover"] [data-baseweb="popover"],
+div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell [data-testid="stPopover"] [role="dialog"] {
+    position: relative !important;
+    z-index: 1000 !important;
+}
+
 /* 小屏适配 */
 @media (max-width: 768px) {
     .gt-panel {
