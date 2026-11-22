@@ -264,6 +264,27 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
         st.info("当前文档版本暂无已保存的需求分析结果。")
         return
 
+    category_labels = {
+        "summary": "需求概述",
+        "business_rules": "业务规则",
+        "preconditions": "前置条件",
+        "states": "涉及状态",
+        "numeric_constraints": "数值约束",
+        "exception_cases": "异常情况",
+        "open_questions": "待确认问题",
+    }
+    category_filter = st.selectbox(
+        "筛选分析分类",
+        options=["全部分类", *category_labels.values()],
+        index=0,
+        key=f"analysis_category_filter_{document_id}_{section_title}",
+        help="选择分类后，仅展示该分类的分析内容。",
+    )
+    selected_category = next(
+        (key for key, label in category_labels.items() if label == category_filter),
+        None,
+    )
+
     for index, analysis in enumerate(analyses, start=1):
         analysis_data = analysis.get("analysis_data") or {}
         if not isinstance(analysis_data, dict):
@@ -284,14 +305,14 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
                 f'<div class="gt-analysis-module">{html.escape(module)}</div>',
                 unsafe_allow_html=True,
             )
-            if summary:
+            if summary and selected_category in (None, "summary"):
                 st.markdown('<div class="gt-analysis-group-title">需求概述</div>', unsafe_allow_html=True)
                 st.markdown(
                     f'<div class="gt-analysis-summary">{html.escape(summary)}</div>',
                     unsafe_allow_html=True,
                 )
 
-            if business_rules:
+            if business_rules and selected_category in (None, "business_rules"):
                 st.markdown('<div class="gt-analysis-group-title">业务规则</div>', unsafe_allow_html=True)
                 for rule_index, rule in enumerate(business_rules, start=1):
                     if isinstance(rule, dict):
@@ -319,10 +340,12 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
                         unsafe_allow_html=True,
                     )
 
-            _render_analysis_items(preconditions, "前置条件", "PRE-")
-            _render_analysis_items(states, "涉及状态", "STATE-")
+            if selected_category in (None, "preconditions"):
+                _render_analysis_items(preconditions, "前置条件", "PRE-")
+            if selected_category in (None, "states"):
+                _render_analysis_items(states, "涉及状态", "STATE-")
 
-            if constraints:
+            if constraints and selected_category in (None, "numeric_constraints"):
                 st.markdown('<div class="gt-analysis-group-title">数值约束</div>', unsafe_allow_html=True)
                 rows = []
                 for item in constraints:
@@ -337,8 +360,9 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
                         rows.append({"参数": _display_value(item), "数值": "", "单位": "", "说明": ""})
                 st.dataframe(rows, hide_index=True, width="stretch")
 
-            _render_analysis_items(exceptions, "异常情况", "EX-")
-            if questions:
+            if selected_category in (None, "exception_cases"):
+                _render_analysis_items(exceptions, "异常情况", "EX-")
+            if questions and selected_category in (None, "open_questions"):
                 st.markdown('<div class="gt-analysis-group-title">待确认问题</div>', unsafe_allow_html=True)
                 for question_index, question in enumerate(questions, start=1):
                     question_text = (
@@ -354,6 +378,18 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
                         """,
                         unsafe_allow_html=True,
                     )
+
+            category_has_content = {
+                "summary": bool(summary),
+                "business_rules": bool(business_rules),
+                "preconditions": bool(preconditions),
+                "states": bool(states),
+                "numeric_constraints": bool(constraints),
+                "exception_cases": bool(exceptions),
+                "open_questions": bool(questions),
+            }
+            if selected_category and not category_has_content[selected_category]:
+                st.info(f"该分析记录暂无「{category_filter}」内容。")
 
 
 render_requirement_analysis(current)
