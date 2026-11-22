@@ -135,14 +135,55 @@ st.html("""
 
 /* 项目选择与概览：与需求版本管理页面保持一致 */
 .gt-version-project-picker {
-    position: relative; height: 132px; box-sizing: border-box;
-    background: #FFFFFF; border: 1px solid #E7EAF1; border-radius: 12px;
-    padding: 12px 18px; box-shadow: 0 2px 8px rgba(23,32,51,.04);
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
 }
-.gt-version-project-picker::after {
-    content: "⌄"; position: absolute; right: 16px; bottom: 12px;
-    color: #8490A3; font-size: 20px; line-height: 1; font-weight: 600;
+.gt-version-project-title { color:#172033; font-size:19px; line-height:1.45; font-weight:750; margin-bottom:5px; }
+.gt-version-project-desc { color:#64748B; font-size:13px; line-height:1.6; }
+.gt-version-project-id { display:inline-block; margin-top:8px; padding:4px 9px; color:#64748B; background:#F3F5F9; border-radius:6px; font-size:11px; }
+
+/* 项目卡片容器结构与需求版本管理页面保持一致。 */
+div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell {
+    position: relative !important;
+    height: 132px !important;
+    min-height: 132px !important;
+    max-height: 132px !important;
+    box-sizing: border-box;
+    overflow: visible !important;
+    background: #FFFFFF !important;
+    border: 1px solid #E7EAF1 !important;
+    border-radius: 12px !important;
+    padding: 12px 18px !important;
+    box-shadow: 0 2px 8px rgba(23, 32, 51, 0.04);
+    transition: border-color .15s, box-shadow .15s;
+}
+div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell:hover {
+    border-color: #C9C4E8 !important;
+    box-shadow: 0 3px 10px rgba(23, 32, 51, 0.06);
+}
+div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell::after {
+    content: "⌄";
+    position: absolute;
+    right: 16px;
+    bottom: 12px;
+    z-index: 3;
+    color: #8490A3;
+    font-size: 20px;
+    line-height: 1;
+    font-weight: 600;
     pointer-events: none;
+    transition: color .15s, transform .15s;
+}
+div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell:hover::after {
+    color: #6D5CE7;
+}
+div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell:has([data-testid="stPopover"] button[aria-expanded="true"])::after {
+    content: "⌃";
+    color: #6D5CE7;
+}
+div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell > div {
+    gap: 0;
 }
 .gt-version-project-title { color:#172033; font-size:19px; line-height:1.45; font-weight:750; margin-bottom:5px; }
 .gt-version-project-desc { color:#64748B; font-size:13px; line-height:1.6; }
