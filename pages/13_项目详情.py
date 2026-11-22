@@ -102,7 +102,7 @@ project_description = html.escape(str(project.get("description") or "暂无项�
 
 render_header(
     title="",
-    description="查看项目基本信息、测试资产规模及其关联情况。",
+    description="",
     breadcrumb=["项目中心", "项目列表", "项目详情"],
 )
 
