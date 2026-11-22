@@ -28,12 +28,6 @@ def get_pages():
                 url_path="project-create",
             ),
             st.Page(
-                "pages/03_项目编辑.py",
-                title="编辑项目",
-                icon="✏️",
-                url_path="project-edit",
-            ),
-            st.Page(
                 "pages/04_项目归档.py",
                 title="归档管理",
                 icon="📦",
