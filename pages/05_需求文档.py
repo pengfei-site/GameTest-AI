@@ -464,91 +464,104 @@ for entry in requirement_items:
     if matches_search and matches_filter:
         filtered_requirements.append(entry)
 
-st.html("""
-<style>
-.gt-req-table { width:100%; border:1px solid #E7EAF1; border-radius:10px; overflow:hidden; background:#fff; }
-.gt-req-native-row { padding:0.15rem 0; border-bottom:1px solid #EEF0F4; }
-.gt-req-native-row:last-child { border-bottom:0; }
-.gt-req-native-row [data-testid="stButton"] button {
-    justify-content:flex-start; text-align:left; white-space:normal;
-    color:#34305B; font-weight:650; border:0; background:transparent;
-    padding:0.35rem 0; min-height:38px; box-shadow:none;
-}
-.gt-req-native-row [data-testid="stButton"] button:hover {
-    color:#6D5CE7; background:transparent; border:0;
-}
-.gt-req-table-header {
-    color:#64748B; font-size:12px; font-weight:650;
-    background:#F7F8FA; border-bottom:1px solid #E7EAF1;
-    padding:0.7rem 0.5rem;
-}
-.gt-req-status { display:inline-block; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:600; white-space:nowrap; }
-.gt-req-status-active { color:#15803D; background:#DCFCE7; }
-.gt-req-status-deleted { color:#B45309; background:#FEF3C7; }
-</style>
-""")
-
 if not filtered_requirements:
     st.info("暂无符合条件的需求文档。点击右上角「需求上传」添加文档。")
 else:
+    table_rows = []
+    for entry in filtered_requirements:
+        doc = entry["document"]
+        name = str(doc.get("document_name") or "未命名文档")
+        version = f"V{doc.get('version') or 1}"
+        file_type = str(doc.get("file_type") or "未知").upper()
+        document_key_value = str(doc.get("document_key") or "")
+        detail_url = (
+            "/requirement-detail"
+            f"?project_id={__import__('urllib.parse', fromlist=['quote']).quote(str(selected_project_id))}"
+            f"&document_key={__import__('urllib.parse', fromlist=['quote']).quote(document_key_value)}"
+        )
+        if entry["active"]:
+            status_html = '<span class="gt-tapd-status gt-tapd-status-active">有效</span>'
+        else:
+            status_html = '<span class="gt-tapd-status gt-tapd-status-deleted">已删除</span>'
+        table_rows.append(
+            "<tr>"
+            f'<td class="gt-tapd-name"><a href="{html.escape(detail_url, quote=True)}">{html.escape(name)}</a></td>'
+            f'<td class="gt-tapd-version">{html.escape(version)}</td>'
+            f'<td class="gt-tapd-type">{html.escape(file_type)}</td>'
+            f'<td class="gt-tapd-state">{status_html}</td>'
+            "</tr>"
+        )
+
     st.html("""
     <style>
-    .gt-req-native-row { padding: 0.45rem; border-bottom: 1px solid #EEF0F4; }
-    .gt-req-native-row:hover { background: #FAFAFE; }
-    .gt-req-native-row a {
-        color: #34305B !important; font-weight: 650; text-decoration: none !important;
-        display: inline-block; padding: 5px 0;
+    .gt-tapd-wrap {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        background: #FFFFFF;
     }
-    .gt-req-native-row a:hover {
-        color: #6D5CE7 !important; text-decoration: underline !important;
+    .gt-tapd-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        table-layout: fixed;
+        color: #303133;
+        font-size: 13px;
     }
-    .gt-req-table-header {
-        color: #64748B; font-size: 12px; font-weight: 650;
-        background: #F7F8FA; border-bottom: 1px solid #E7EAF1;
-        padding: 11px 8px;
+    .gt-tapd-table thead th {
+        height: 42px;
+        padding: 0 14px;
+        text-align: left;
+        white-space: nowrap;
+        color: #606266;
+        background: #F5F7FA;
+        border-bottom: 1px solid #E4E7ED;
+        font-weight: 600;
+    }
+    .gt-tapd-table tbody td {
+        height: 48px;
+        padding: 7px 14px;
+        border-bottom: 1px solid #EBEEF5;
+        vertical-align: middle;
+        background: #FFFFFF;
+    }
+    .gt-tapd-table tbody tr:last-child td { border-bottom: 0; }
+    .gt-tapd-table tbody tr:hover td { background: #F8FAFD; }
+    .gt-tapd-table .gt-tapd-name { width: 55%; }
+    .gt-tapd-table .gt-tapd-version { width: 15%; color: #606266; }
+    .gt-tapd-table .gt-tapd-type { width: 15%; color: #606266; }
+    .gt-tapd-table .gt-tapd-state { width: 15%; }
+    .gt-tapd-table .gt-tapd-name a {
+        color: #303133;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .gt-tapd-table .gt-tapd-name a:hover {
+        color: #6D5CE7;
+        text-decoration: underline;
+    }
+    .gt-tapd-status {
+        display: inline-block;
+        padding: 3px 9px;
+        border-radius: 3px;
+        font-size: 12px;
+        line-height: 18px;
+        white-space: nowrap;
+    }
+    .gt-tapd-status-active { color: #67C23A; background: #F0F9EB; }
+    .gt-tapd-status-deleted { color: #E6A23C; background: #FDF6EC; }
+    @media (max-width: 640px) {
+        .gt-tapd-table { min-width: 560px; }
     }
     </style>
     """)
-    table_widths = [2.5, 0.8, 0.9, 0.8]
-    header_cols = st.columns(table_widths, gap="small")
-    for col, label in zip(header_cols, ["需求名称", "当前版本", "文件类型", "状态"]):
-        with col:
-            st.markdown(
-                f'<div class="gt-req-table-header">{label}</div>',
-                unsafe_allow_html=True,
-            )
-
-    for index, entry in enumerate(filtered_requirements):
-        doc = entry["document"]
-        name = str(doc.get("document_name") or "未命名文档")
-        row_cols = st.columns(
-            table_widths,
-            gap="small",
-            vertical_alignment="center",
-        )
-        with row_cols[0]:
-            detail_url = (
-                "/requirement-detail"
-                f"?project_id={__import__('urllib.parse', fromlist=['quote']).quote(str(selected_project_id))}"
-                f"&document_key={__import__('urllib.parse', fromlist=['quote']).quote(str(doc.get('document_key') or ''))}"
-            )
-            st.markdown(
-                f'<div class="gt-req-native-row"><a href="{html.escape(detail_url, quote=True)}">{html.escape(name)}</a></div>',
-                unsafe_allow_html=True,
-            )
-        row_cols[1].write(f"V{doc.get('version') or 1}")
-        row_cols[2].write(str(doc.get("file_type") or "未知").upper())
-        with row_cols[3]:
-            if entry["active"]:
-                st.markdown(
-                    '<span class="gt-req-status gt-req-status-active">有效</span>',
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    '<span class="gt-req-status gt-req-status-deleted">已删除</span>',
-                    unsafe_allow_html=True,
-                )
+    table_html = (
+        '<div class="gt-tapd-wrap"><table class="gt-tapd-table">'
+        '<thead><tr><th>需求名称</th><th>当前版本</th><th>文件类型</th><th>状态</th></tr></thead>'
+        '<tbody>' + "".join(table_rows) + '</tbody></table></div>'
+    )
+    st.html(table_html)
 
 st.caption("提示：文档版本查看、恢复和删除操作请前往「需求版本管理」页面。")
 
