@@ -455,8 +455,7 @@ for item in project_documents:
 requirement_items = []
 for key, versions in requirement_groups.items():
     active_versions = [item for item in versions if not item["is_deleted"] and item.get("is_effective", 0)]
-    available_versions = [item for item in versions if not item["is_deleted"]]
-    display_version = active_versions[0] if active_versions else (available_versions[0] if available_versions else versions[0])
+    display_version = active_versions[0] if active_versions else versions[0]
     requirement_items.append({
         "document": display_version,
         "version_count": len(versions),
