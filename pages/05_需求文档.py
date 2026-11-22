@@ -54,12 +54,46 @@ def show_requirement_upload_dialog():
         elif not document_key_input.strip():
             st.error("请输入文档标识。")
         else:
-            st.session_state["document_upload_name"] = selected_file.name
-            st.session_state["document_upload_bytes"] = selected_file.getvalue()
-            st.session_state["document_upload_document_name"] = document_name_input.strip()
-            st.session_state["document_upload_document_key"] = document_key_input.strip()
-            st.session_state.pop("parsed_document", None)
-            st.rerun()
+            import uuid
+
+            file_bytes = selected_file.getvalue()
+            file_hash = hashlib.sha256(file_bytes).hexdigest()
+            project_id = st.session_state.get("document_project_id")
+
+            try:
+                with st.spinner("正在解析并保存需求文档，请稍候..."):
+                    result = parse_document(selected_file.name, file_bytes)
+                    document_id = str(uuid.uuid4())
+                    original_file_path = save_original_document(
+                        project_id=str(project_id),
+                        document_id=document_id,
+                        file_name=selected_file.name,
+                        file_bytes=file_bytes,
+                    )
+                    saved_document = create_document_version(
+                        project_id=project_id,
+                        document_key=document_key_input.strip(),
+                        document_name=document_name_input.strip(),
+                        file_type=result["file_type"],
+                        file_path=original_file_path,
+                        parsed_content=result["content"],
+                        file_hash=file_hash,
+                        page_count=result["page_count"],
+                        char_count=result["char_count"],
+                        document_id=document_id,
+                    )
+
+                st.session_state["document_upload_notice"] = {
+                    "success": True,
+                    "message": (
+                        f"需求文档「{document_name_input.strip()}」解析并保存成功，"
+                        f"已创建版本 V{saved_document['version']}。"
+                    ),
+                }
+                st.rerun()
+
+            except Exception as e:
+                st.error(f"上传失败：文档解析或保存过程中发生错误。{e}")
 
 
 def render_upload_action():
@@ -575,241 +609,15 @@ st.caption("提示：文档版本查看、恢复和删除操作请前往「需�
 
 
 # ============================================================
-# 三、读取上传弹窗中的文档信息
+# 三、上传结果提示
 # ============================================================
 
-document_name = st.session_state.get("document_upload_document_name", "")
-document_key = st.session_state.get("document_upload_document_key", "")
-
-
-# ============================================================
-# 四、上传文档
-# ============================================================
-
-uploaded_file_name = st.session_state.get("document_upload_name")
-file_bytes = st.session_state.get("document_upload_bytes")
-
-if not uploaded_file_name or file_bytes is None:
-    st.info("点击页面右上角的「需求上传」按钮，选择并上传游戏策划需求文档。")
-    st.stop()
-
-file_hash = hashlib.sha256(file_bytes).hexdigest()
-
-with st.container(border=True):
-    st.markdown("**已选择文件**")
-
-    col1, col2 = st.columns([2, 1])
-
-    with col1:
-        st.write(uploaded_file_name)
-
-    with col2:
-        st.caption(f"{len(file_bytes):,} bytes")
-
-
-# ============================================================
-# 五、解析文档
-# ============================================================
-
-st.markdown("""
-<div class="gt-section">
-    <div class="gt-section-title">五、解析文档</div>
-    <div class="gt-section-desc">
-        提取上传文件中的文本内容，供后续结构化需求分析使用。
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-with st.container(border=True):
-    st.markdown("**文档解析**")
-    st.caption("确认项目、文档信息和上传文件无误后，开始解析。")
-
-    if st.button(
-        "开始解析文档",
-        type="primary",
-        width="stretch",
-    ):
-
-        st.session_state.pop("parsed_document", None)
-
-        if not document_name.strip():
-            st.error("请输入文档名称。")
-
-        elif not document_key.strip():
-            st.error("请输入文档标识。")
-
-        else:
-            try:
-                with st.spinner("正在解析文档..."):
-                    result = parse_document(
-                        uploaded_file_name,
-                        file_bytes,
-                    )
-
-                st.session_state["parsed_document"] = {
-                    "project_id": selected_project_id,
-                    "document_name": document_name.strip(),
-                    "document_key": document_key.strip(),
-                    "file_name": uploaded_file_name,
-                    "file_hash": file_hash,
-                    "result": result,
-                    "saved_document": None,
-                }
-
-                st.success("文档解析成功！")
-
-            except Exception as e:
-                st.error(f"文档解析失败：{e}")
-
-
-# ============================================================
-# 六、展示解析结果
-# ============================================================
-
-parsed_document = st.session_state.get("parsed_document")
-
-is_current_parse = False
-
-if parsed_document is not None:
-
-    is_current_parse = (
-        parsed_document["project_id"] == selected_project_id
-        and parsed_document["document_name"] == document_name.strip()
-        and parsed_document["document_key"] == document_key.strip()
-        and parsed_document["file_hash"] == file_hash
-    )
-
-    if not is_current_parse:
-        st.warning(
-            "项目、文档信息或上传文件已发生变化，请重新解析后再保存。"
-        )
-
-
-if is_current_parse:
-
-    result = parsed_document["result"]
-
-    st.markdown("""
-    <div class="gt-section">
-        <div class="gt-section-title">六、解析结果预览</div>
-        <div class="gt-section-desc">
-            查看文件解析信息和提取出的文档文本。
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric("文件类型", result["file_type"])
-
-    with col2:
-        st.metric("文本字符数", f'{result["char_count"]:,}')
-
-    with col3:
-        st.metric(
-            "PDF 页数",
-            result["page_count"]
-            if result["page_count"] is not None
-            else "不适用",
-        )
-
-    with st.container(border=True):
-        st.markdown("**文档解析内容**")
-        st.caption("以下内容为从上传文件中提取的文本。")
-
-        st.text_area(
-            "文档解析内容",
-            value=result["content"],
-            height=400,
-            disabled=True,
-            label_visibility="collapsed",
-        )
-
-    # ========================================================
-    # 七、保存文档
-    # ========================================================
-
-    st.markdown("""
-    <div class="gt-section">
-        <div class="gt-section-title">七、保存需求文档</div>
-        <div class="gt-section-desc">
-            将解析结果保存到当前项目的文档库。
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    saved_document = parsed_document.get("saved_document")
-
-    if saved_document is None:
-
-        with st.container(border=True):
-            st.markdown("**保存到项目文档库**")
-            st.caption(
-                "保存后可在需求版本管理页面查看该文档及其历史版本。"
-            )
-
-            if st.button(
-                "保存到项目文档库",
-                type="primary",
-                width="stretch",
-            ):
-                try:
-                    with st.spinner("正在保存文档..."):
-
-                        import uuid
-
-                        document_id = str(uuid.uuid4())
-                        original_file_path = save_original_document(
-                            project_id=str(parsed_document["project_id"]),
-                            document_id=document_id,
-                            file_name=parsed_document["file_name"],
-                            file_bytes=st.session_state["document_upload_bytes"],
-                        )
-                        created_document = create_document_version(
-                            project_id=parsed_document["project_id"],
-                            document_key=parsed_document["document_key"],
-                            document_name=parsed_document["document_name"],
-                            file_type=result["file_type"],
-                            file_path=original_file_path,
-                            parsed_content=result["content"],
-                            file_hash=parsed_document["file_hash"],
-                            page_count=result["page_count"],
-                            char_count=result["char_count"],
-                            document_id=document_id,
-                        )
-
-                    parsed_document["saved_document"] = created_document
-                    st.session_state["parsed_document"] = parsed_document
-
-                    st.success("需求文档保存成功！")
-                    st.rerun()
-
-                except Exception as e:
-                    st.error(f"文档保存失败：{e}")
-
+upload_notice = st.session_state.pop("document_upload_notice", None)
+if upload_notice:
+    if upload_notice.get("success"):
+        st.success(upload_notice.get("message", "需求文档上传成功。"))
     else:
-
-        st.success("需求文档已成功保存到项目文档库！")
-
-        col1, col2, col3 = st.columns(3)
-
-        col1.metric("文档版本", f"V{saved_document['version']}")
-        col2.metric("文档类型", saved_document["file_type"].upper())
-        col3.metric("字符数量", f'{saved_document["char_count"]:,}')
-
-        with st.container(border=True):
-            st.markdown("**文档保存信息**")
-
-            st.code(
-                f"文档 ID：{saved_document['id']}\n"
-                f"项目 ID：{saved_document['project_id']}\n"
-                f"文档标识：{saved_document['document_key']}\n"
-                f"文档名称：{saved_document['document_name']}\n"
-                f"版本号：V{saved_document['version']}"
-            )
-
-            st.info("历史版本可前往「需求版本管理」页面查看。")
+        st.error(upload_notice.get("message", "需求文档上传失败。"))
 
 
 st.divider()
