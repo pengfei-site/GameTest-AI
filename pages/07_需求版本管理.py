@@ -254,7 +254,7 @@ with overview_project_col:
         # 透明 Popover 触发器覆盖整张卡片，点击后在卡片下方显示悬浮项目列表。
         with st.popover(
             "切换项目",
-            use_container_width=True,
+            width="stretch",
         ):
             for project_id in project_ids:
                 project = project_map[project_id]
@@ -294,7 +294,7 @@ with overview_project_col:
                     if not is_current and st.button(
                         "选择此项目",
                         key=f"choose_version_project_{project_id}",
-                        use_container_width=True,
+                        width="stretch",
                         type="secondary",
                     ):
                         st.session_state["version_project_id"] = project_id
@@ -383,7 +383,7 @@ with left_col:
         if st.button(
             "当前选中" if is_selected else "查看文档",
             key=f"select_version_doc_{key}",
-            use_container_width=True,
+            width="stretch",
             type="primary" if is_selected else "secondary",
         ):
             st.session_state["version_selected_document_key"] = key
@@ -446,7 +446,7 @@ with right_col:
             key=f"delete_version_{selected_version_id}",
             type="secondary",
             disabled=not confirm_delete,
-            use_container_width=True,
+            width="stretch",
         ):
             try:
                 deleted = soft_delete_document(selected_version_id)
@@ -464,7 +464,7 @@ with right_col:
             f"恢复 V{selected_version['version']}",
             key=f"restore_version_{selected_version_id}",
             type="primary",
-            use_container_width=True,
+            width="stretch",
         ):
             try:
                 restored = restore_document(selected_version_id)
