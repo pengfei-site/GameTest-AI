@@ -6,8 +6,9 @@ from database.repositories.project_repository import list_projects
 from database.repositories.document_repository import list_documents
 
 
-project_id = st.query_params.get("project_id", "")
-document_key = st.query_params.get("document_key", "")
+# 优先读取列表页通过 session_state 传递的定位信息；同时兼容直接使用 URL 参数打开。
+project_id = st.session_state.get("requirement_detail_project_id") or st.query_params.get("project_id", "")
+document_key = st.session_state.get("requirement_detail_document_key") or st.query_params.get("document_key", "")
 
 
 def render_back_action():
