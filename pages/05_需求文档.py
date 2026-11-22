@@ -512,8 +512,10 @@ else:
         row_cols = st.columns([2.5, 0.78, 0.86, 0.72, 1, 0.74], gap="small", vertical_alignment="center")
         with row_cols[0]:
             if st.button(name, key=f"open_requirement_detail_{selected_project_id}_{doc.get('document_key')}_{index}", help="点击查看需求详情", use_container_width=True):
-                st.query_params["project_id"] = str(selected_project_id)
-                st.query_params["document_key"] = str(doc.get("document_key") or "")
+                # 使用 session_state 在页面切换时传递定位信息，避免 query_params
+                # 在不同 Streamlit 版本/导航场景下未能保留。
+                st.session_state["requirement_detail_project_id"] = str(selected_project_id)
+                st.session_state["requirement_detail_document_key"] = str(doc.get("document_key") or "")
                 st.switch_page("pages/14_需求详情.py")
         row_cols[1].write(f"V{doc.get('version') or 1}")
         row_cols[2].write(str(doc.get("file_type") or "未知").upper())
