@@ -123,10 +123,13 @@ total_document_count = len(document_groups)
 total_history_versions = len(saved_documents)
 total_active_versions = sum(1 for doc in saved_documents if not doc["is_deleted"])
 
-# 顶部紧凑项目概览：沿用项目中心的状态、描述、ID 展示语言。
+# 项目信息独立成卡片：名称、状态、描述和项目 ID 不与统计指标混排。
 with st.container(border=True, key="version_project_overview"):
-    project_left, project_right = st.columns([1.65, 1.35], vertical_alignment="center")
-    with project_left:
+    project_info_col, project_switch_col = st.columns(
+        [5, 1.25],
+        vertical_alignment="center",
+    )
+    with project_info_col:
         st.html(f"""
         <div class="gt-version-project-main">
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -137,32 +140,34 @@ with st.container(border=True, key="version_project_overview"):
             <div class="gt-version-project-id">项目 ID：{html.escape(selected_project_id)}</div>
         </div>
         """)
-    with project_right:
-        stat_cols = st.columns(3)
-        for col, value, label in zip(
-            stat_cols,
-            [total_document_count, total_active_versions, total_history_versions],
-            ["需求文档", "有效版本", "历史版本"],
-        ):
-            with col:
-                st.metric(label, value)
-    with st.popover("切换工作项目", icon=":material/swap_horiz:", use_container_width=True):
-        st.caption("选择项目后，将切换到该项目的需求版本数据。")
-        for project_id, project in project_map.items():
-            if project_id == selected_project_id:
-                st.button(
-                    f"✓  {project.get('name') or '未命名项目'} · 当前项目",
-                    key=f"version_project_current_{project_id}",
-                    disabled=True,
+    with project_switch_col:
+        with st.popover("切换项目", icon=":material/swap_horiz:", use_container_width=True):
+            st.caption("选择项目后，将切换到该项目的需求版本数据。")
+            for project_id, project in project_map.items():
+                if project_id == selected_project_id:
+                    st.button(
+                        f"✓  {project.get('name') or '未命名项目'} · 当前项目",
+                        key=f"version_project_current_{project_id}",
+                        disabled=True,
+                        use_container_width=True,
+                    )
+                elif st.button(
+                    f"🎮  {project.get('name') or '未命名项目'}",
+                    key=f"version_project_option_{project_id}",
                     use_container_width=True,
-                )
-            elif st.button(
-                f"🎮  {project.get('name') or '未命名项目'}",
-                key=f"version_project_option_{project_id}",
-                use_container_width=True,
-            ):
-                st.session_state["version_project_id"] = project_id
-                st.rerun()
+                ):
+                    st.session_state["version_project_id"] = project_id
+                    st.rerun()
+
+# 统计指标作为独立区域展示，不再放进项目信息卡片。
+stat_cols = st.columns(3)
+for col, value, label in zip(
+    stat_cols,
+    [total_document_count, total_active_versions, total_history_versions],
+    ["需求文档", "有效版本", "历史版本"],
+):
+    with col:
+        st.metric(label, value)
 
 action_message = st.session_state.pop("document_version_action_message", None)
 if action_message:
