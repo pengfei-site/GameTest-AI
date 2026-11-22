@@ -346,9 +346,6 @@ def render_unanalyzed_requirement(document: dict) -> None:
     if saved_key not in st.session_state:
         st.session_state[saved_key] = None
 
-    st.markdown("### 结构化需求")
-    st.caption("当前版本暂无已保存的需求分析结果。可以直接在此页面执行分析、查看结果并保存。")
-
 
     with st.expander("查看当前版本的文档解析内容", expanded=False):
         st.text_area(
@@ -379,7 +376,6 @@ def render_unanalyzed_requirement(document: dict) -> None:
 
     result = st.session_state.get(state_key)
     if not isinstance(result, dict):
-        st.info("点击上方按钮，开始分析当前文档版本。")
         return
 
     st.divider()
