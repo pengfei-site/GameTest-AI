@@ -55,16 +55,12 @@ active_versions = [item for item in versions if not item.get("is_deleted")]
 current = active_versions[0] if active_versions else versions[0]
 name = str(current.get("document_name") or "未命名文档")
 project_name = str(project.get("name") or "未命名项目")
-status = "有效" if active_versions else "已删除"
-status_color = "#15803D" if active_versions else "#B45309"
-status_bg = "#DCFCE7" if active_versions else "#FEF3C7"
-
 st.html(f"""
 <style>
 .gt-detail-hero {{ background:#fff; border:1px solid #E7EAF1; border-radius:14px; padding:20px 22px; margin:8px 0 18px; }}
 .gt-detail-title {{ font-size:22px; font-weight:750; color:#24213F; overflow-wrap:anywhere; }}
 .gt-detail-sub {{ color:#778196; font-size:13px; margin-top:7px; }}
-.gt-detail-badge {{ display:inline-block; border-radius:20px; padding:4px 10px; color:{status_color}; background:{status_bg}; font-size:12px; font-weight:650; }}
+.gt-detail-current-version {{ color:#5D50A8; background:#F1EFFF; border:1px solid #E6E1FF; border-radius:20px; padding:5px 11px; font-size:12px; font-weight:700; white-space:nowrap; flex-shrink:0; }}
 .gt-detail-section {{ color:#292746; font-size:16px; font-weight:700; margin:22px 0 10px; }}
 .gt-detail-version {{ border:1px solid #E7EAF1; border-radius:10px; padding:12px 14px; margin:7px 0; background:#fff; }}
 .gt-analysis-module {{ display:flex; align-items:center; gap:10px; font-size:15px; font-weight:750; color:#37316F; background:linear-gradient(110deg,#F2F0FF,#FAF9FF); border:1px solid #E7E2FF; border-left:4px solid #7968D8; border-radius:10px; padding:13px 16px; margin:2px 0 16px; }}
@@ -102,9 +98,9 @@ div[data-testid="stSegmentedControl"] button {{
 <div class="gt-detail-hero">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
     <div class="gt-detail-title">▤ {html.escape(name)}</div>
-    <span class="gt-detail-badge">{status}</span>
+    <span class="gt-detail-current-version">当前版本 V{current.get("version", 1)}</span>
   </div>
-  <div class="gt-detail-sub">所属项目：{html.escape(project_name)}　·　创建时间：{html.escape(str(current.get("created_at") or "暂无"))}　·　当前版本：V{current.get("version", 1)}　·　历史版本：{len(versions)} 个</div>
+  <div class="gt-detail-sub">所属项目：{html.escape(project_name)}　·　创建时间：{html.escape(str(current.get("created_at") or "暂无"))}　·　历史版本：{len(versions)} 个</div>
 </div>
 """)
 
