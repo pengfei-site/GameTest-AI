@@ -133,6 +133,8 @@ with st.container(border=True, key="requirement-detail-card"):
         f"所属项目：{project_name}　·　创建时间：{current.get('created_at') or '暂无'}　·　历史版本：{len(versions)} 个"
     )
 
+st.caption(f"文档标识：{document_key}")
+
 
 
 
