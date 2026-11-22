@@ -49,7 +49,8 @@ div[data-testid="stVerticalBlock"].st-key-version_project_overview > div {
 /* 项目中心卡片：可见内容与透明整卡点击层分离。 */
 div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell {
     position: relative;
-    min-height: 150px;
+    min-height: 132px;
+    height: 100%;
     box-sizing: border-box;
     background: #FFFFFF !important;
     border: 1px solid #E7EAF1 !important;
@@ -81,7 +82,7 @@ div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-tes
     display: block !important;
     width: 100% !important;
     height: 100% !important;
-    min-height: 150px !important;
+    min-height: 132px !important;
     max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -98,6 +99,19 @@ div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-tes
 }
 .gt-version-project-stats {
     display: flex; gap: 0; align-items: stretch; flex: 0 1 auto;
+}
+/* 项目卡片与右侧统计卡片统一高度，保持同一水平基线。 */
+div[data-testid="stVerticalBlock"].st-key-version_project_stats_shell {
+    height: 100%;
+    min-height: 132px;
+}
+div[data-testid="stVerticalBlock"].st-key-version_project_stats_shell [data-testid="stMetric"] {
+    height: 100%;
+    min-height: 132px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 .gt-version-stat {
     min-width: 104px; padding: 3px 18px; text-align: center;
@@ -257,14 +271,15 @@ with overview_project_col:
 
 
 with overview_stats_col:
-    stat_cols = st.columns(3, gap="small")
-    for col, value, label in zip(
-        stat_cols,
-        [total_document_count, total_active_versions, total_history_versions],
-        ["需求文档", "有效版本", "历史版本"],
-    ):
-        with col:
-            st.metric(label, value)
+    with st.container(key="version_project_stats_shell"):
+        stat_cols = st.columns(3, gap="small")
+        for col, value, label in zip(
+            stat_cols,
+            [total_document_count, total_active_versions, total_history_versions],
+            ["需求文档", "有效版本", "历史版本"],
+        ):
+            with col:
+                st.metric(label, value)
 
 action_message = st.session_state.pop("document_version_action_message", None)
 if action_message:
