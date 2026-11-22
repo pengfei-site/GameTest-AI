@@ -615,7 +615,7 @@ st.caption("提示：文档版本查看、恢复和删除操作请前往「需�
 upload_notice = st.session_state.pop("document_upload_notice", None)
 if upload_notice:
     if upload_notice.get("success"):
-        st.success(upload_notice.get("message", "需求文档上传成功。"))
+        st.toast(upload_notice.get("message", "需求文档上传成功。"), icon="✅")
     else:
         st.error(upload_notice.get("message", "需求文档上传失败。"))
 
