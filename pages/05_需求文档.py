@@ -373,7 +373,7 @@ for item in project_documents:
     document_groups.setdefault(item["document_key"], []).append(item)
 
 total_document_count = len(document_groups)
-total_active_versions = sum(1 for item in project_documents if not item["is_deleted"])
+total_active_versions = sum(1 for item in project_documents if not item["is_deleted"] and item.get("is_effective", 0))
 total_history_versions = len(project_documents)
 
 project_name = html.escape(str(selected_project.get("name") or "未命名项目"))
@@ -454,7 +454,7 @@ for item in project_documents:
 
 requirement_items = []
 for key, versions in requirement_groups.items():
-    active_versions = [item for item in versions if not item["is_deleted"]]
+    active_versions = [item for item in versions if not item["is_deleted"] and item.get("is_effective", 0)]
     display_version = active_versions[0] if active_versions else versions[0]
     requirement_items.append({
         "document": display_version,
@@ -473,7 +473,7 @@ with search_col:
 with filter_col:
     requirement_filter = st.selectbox(
         "文档状态",
-        ["全部状态", "有效", "已删除"],
+        ["全部状态", "有效", "已废弃", "已删除"],
         key="requirement_list_filter",
         label_visibility="collapsed",
     )
@@ -494,7 +494,8 @@ for entry in requirement_items:
     matches_filter = (
         requirement_filter == "全部状态"
         or (requirement_filter == "有效" and entry["active"])
-        or (requirement_filter == "已删除" and not entry["active"])
+        or (requirement_filter == "已废弃" and not entry["active"] and not entry["document"].get("is_deleted", 0))
+            or (requirement_filter == "已删除" and bool(entry["document"].get("is_deleted", 0)))
     )
     if matches_search and matches_filter:
         filtered_requirements.append(entry)
@@ -517,7 +518,11 @@ else:
         if entry["active"]:
             status_html = '<span class="gt-tapd-status gt-tapd-status-active">有效</span>'
         else:
-            status_html = '<span class="gt-tapd-status gt-tapd-status-deleted">已删除</span>'
+            status_html = (
+                '<span class="gt-tapd-status gt-tapd-status-deleted">已删除</span>'
+                if doc.get("is_deleted", 0)
+                else '<span class="gt-tapd-status gt-tapd-status-deprecated">已废弃</span>'
+            )
         table_rows.append(
             "<tr>"
             f'<td class="gt-tapd-name"><a href="{html.escape(detail_url, quote=True)}">{html.escape(name)}</a></td>'
