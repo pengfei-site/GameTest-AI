@@ -2,7 +2,7 @@ import html
 import streamlit as st
 
 from database.connection import get_connection
-from database.repositories.project_repository import get_project
+from database.repositories.project_repository import get_project, update_project
 
 
 st.html("""
@@ -25,6 +25,48 @@ st.html("""
 .relation-note{color:#64748B;font-size:12px;line-height:1.7}
 </style>
 """)
+
+
+@st.dialog("编辑项目")
+def edit_project_dialog(current_project: dict) -> None:
+    """在项目详情页弹出面板中编辑当前项目资料。"""
+    with st.form("detail_edit_project_form"):
+        edit_name = st.text_input(
+            "项目名称",
+            value=current_project.get("name") or "",
+            help="项目名称不能为空。",
+        )
+        edit_description = st.text_area(
+            "项目描述",
+            value=current_project.get("description") or "",
+            height=140,
+            help="可以填写游戏背景、玩法和测试范围。",
+        )
+        st.caption("修改项目资料不会改变已有需求、测试点和测试用例。")
+        submitted = st.form_submit_button(
+            "保存修改",
+            type="primary",
+            width="stretch",
+        )
+
+    if submitted:
+        if not edit_name.strip():
+            st.error("项目名称不能为空。")
+            return
+
+        try:
+            updated = update_project(
+                project_id=current_project["id"],
+                name=edit_name.strip(),
+                description=edit_description,
+            )
+            if updated:
+                st.success("项目资料修改成功！")
+                st.rerun()
+            else:
+                st.warning("项目不存在或没有完成修改。")
+        except Exception as exc:
+            st.error(f"修改项目失败：{exc}")
 
 
 def load_project_statistics(project_id: str) -> dict:
@@ -135,8 +177,7 @@ with st.container(border=True):
         """)
     with info_right:
         if is_active and st.button("✏️ 编辑项目", key="detail_edit_project", width="stretch"):
-            st.session_state["edit_project_target_id"] = str(project_id)
-            st.switch_page("pages/03_项目编辑.py")
+            edit_project_dialog(project)
     st.html(f"""
     <div class="project-description">{project_description}</div>
     <div style="height:1px;background:#E2E8F0;margin:16px 0 12px"></div>
