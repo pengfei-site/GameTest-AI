@@ -62,8 +62,8 @@ def show_requirement_upload_dialog():
 
 
 def render_upload_action():
-    """在页面标题右侧显示宽度缩小约三分之一的需求上传入口。"""
-    button_col, _ = st.columns([2, 1])
+    """在页面标题右侧显示宽度约为原来的三分之二、右对齐的需求上传入口。"""
+    _, button_col = st.columns([1, 2])
     with button_col:
         if st.button("＋ 需求上传", type="primary", width="stretch"):
             show_requirement_upload_dialog()
