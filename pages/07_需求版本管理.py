@@ -46,45 +46,20 @@ div[data-testid="stVerticalBlock"].st-key-version_project_overview > div {
     display: inline-block; margin-top: 8px; padding: 4px 9px;
     color: #64748B; background: #F3F5F9; border-radius: 6px; font-size: 11px;
 }
-/* 项目中心卡片：可见内容与透明整卡点击层分离。 */
-div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell {
-    position: relative;
-    min-height: 150px;
-    box-sizing: border-box;
-    background: #FFFFFF !important;
-    border: 1px solid #E7EAF1 !important;
-    border-radius: 12px !important;
+/* Popover 触发器本身就是项目卡片，选项面板浮动显示在卡片下方。 */
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] > button {
+    width: 100%; min-height: 150px; height: auto; display: block;
+    text-align: left; white-space: pre-wrap;
+    background: #FFFFFF !important; color: #172033 !important;
+    border: 1px solid #E7EAF1 !important; border-radius: 12px !important;
     padding: 20px 22px !important;
     box-shadow: 0 2px 8px rgba(23, 32, 51, 0.04);
-    transition: border-color .15s, box-shadow .15s;
 }
-div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell:hover {
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] > button:hover {
     border-color: #C9C4E8 !important;
     box-shadow: 0 3px 10px rgba(23, 32, 51, 0.06);
 }
-div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell > div {
-    gap: 0;
-}
-div[data-testid="stVerticalBlock"].st-key-version_project_picker_toggle {
-    position: absolute;
-    inset: 0;
-    z-index: 10;
-    width: 100%;
-    height: 100%;
-    min-height: 150px;
-}
-div[data-testid="stVerticalBlock"].st-key-version_project_picker_toggle [data-testid="stButton"] {
-    width: 100%;
-    height: 100%;
-}
-div[data-testid="stVerticalBlock"].st-key-version_project_picker_toggle button {
-    width: 100%;
-    height: 100%;
-    min-height: 150px;
-    opacity: 0 !important;
-    cursor: pointer;
-    padding: 0;
-}
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] > button p { text-align: left; line-height: 1.6; }
 .gt-version-project-stats {
     display: flex; gap: 0; align-items: stretch; flex: 0 1 auto;
 }
@@ -170,70 +145,28 @@ overview_project_col, overview_stats_col = st.columns(
 )
 
 with overview_project_col:
-    # 卡片内容沿用项目中心卡片的 HTML 结构与全局样式。
+    # Popover 触发按钮直接呈现为项目卡片，项目选项在卡片下方悬浮显示。
     with st.container(key="version_project_picker_shell"):
-        st.html(
-            f"""
-            <div style="
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 12px;
-                margin-bottom: 10px;
-            ">
-                <div class="gt-card-title" style="margin-bottom: 0;">
-                    🎮 {project_name}
-                </div>
-                {status_html}
-            </div>
-            <div class="gt-card-description">
-                {project_description}
-            </div>
-            <div class="gt-info-card-footer">
-                <div>项目 ID：{html.escape(selected_project_id)}</div>
-            </div>
-            """
+        project_picker_label = (
+            f"🎮 **{project_name}**  {'· 已归档' if project_status == 'archived' else '· 进行中'}"
+            f"\n\n{project_description}"
+            f"\n\n项目 ID：{html.escape(selected_project_id)}"
         )
-        # 空白按钮透明覆盖卡片，点击整张卡片切换项目列表的显示状态。
-        with st.container(key="version_project_picker_toggle"):
-            if st.button(
-                "展开项目列表",
-                key="toggle_version_project_picker",
-                help="切换当前项目",
-                use_container_width=True,
-            ):
-                st.session_state["version_project_picker_open"] = not st.session_state.get(
-                    "version_project_picker_open", False
-                )
-                st.rerun()
-
-
-
-@st.dialog("切换项目", width="large")
-def show_version_project_dialog():
-    st.caption("选择要查看需求版本的项目")
-    for project_id in project_ids:
-        project = project_map[project_id]
-        option_status = "已归档" if project.get("status") == "archived" else "进行中"
-        option_name = project.get("name") or "未命名项目"
-        option_description = project.get("description") or "暂无项目描述"
-        option_label = f"🎮 {option_name} · {option_status}"
-        with st.container(border=True):
-            st.markdown(f"**{option_label}**")
-            st.caption(option_description)
-            if st.button(
-                "当前项目" if project_id == selected_project_id else "切换到此项目",
-                key=f"choose_version_project_{project_id}",
-                use_container_width=True,
-                type="primary" if project_id == selected_project_id else "secondary",
-            ):
-                st.session_state["version_project_id"] = project_id
-                st.session_state["version_project_picker_open"] = False
-                st.rerun()
-
-
-if st.session_state.get("version_project_picker_open", False):
-    show_version_project_dialog()
+        with st.popover(project_picker_label, use_container_width=True):
+            st.caption("选择要查看需求版本的项目")
+            for project_id in project_ids:
+                project = project_map[project_id]
+                option_status = "已归档" if project.get("status") == "archived" else "进行中"
+                option_name = project.get("name") or "未命名项目"
+                option_label = f"🎮 {option_name} · {option_status}"
+                if st.button(
+                    option_label,
+                    key=f"choose_version_project_{project_id}",
+                    use_container_width=True,
+                    type="primary" if project_id == selected_project_id else "secondary",
+                ):
+                    st.session_state["version_project_id"] = project_id
+                    st.rerun()
 
 with overview_stats_col:
     stat_cols = st.columns(3, gap="small")
