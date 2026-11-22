@@ -55,7 +55,7 @@ def create_project_dialog():
 def render_create_project_action():
     # 在标题栏操作区域内增加弹性留白，使按钮靠右并保持适中宽度。
     _, button_col = st.columns(
-        [1, 2],
+        [1, 1.3],
         vertical_alignment="center",
         gap="small",
     )
