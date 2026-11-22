@@ -1,5 +1,6 @@
 import base64
 import html
+from io import BytesIO
 from pathlib import Path
 import streamlit as st
 
@@ -124,7 +125,7 @@ def render_original_preview(document: dict, key_suffix: str) -> None:
                     return {"src": f"data:{image.content_type};base64,{encoded}"}
 
                 result = mammoth.convert_to_html(
-                    original_bytes,
+                    BytesIO(original_bytes),
                     convert_image=mammoth.images.img_element(image_to_data_uri),
                 )
                 preview_html = result.value
