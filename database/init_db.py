@@ -50,8 +50,6 @@ def init_db():
             char_count INTEGER DEFAULT 0,
             is_deleted INTEGER NOT NULL DEFAULT 0
                 CHECK (is_deleted IN (0, 1)),
-            is_effective INTEGER NOT NULL DEFAULT 0
-                CHECK (is_effective IN (0, 1)),
             deleted_at TEXT,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -645,45 +643,6 @@ def init_db():
                 ADD COLUMN collection_validation_report_json TEXT
                 """
             )
-
-        # 兼容已有数据库：增加需求版本有效状态字段。
-        document_columns = {
-            row["name"]
-            for row in conn.execute("PRAGMA table_info(documents)").fetchall()
-        }
-        if "is_effective" not in document_columns:
-            conn.execute(
-                """
-                ALTER TABLE documents
-                ADD COLUMN is_effective INTEGER NOT NULL DEFAULT 0
-                CHECK (is_effective IN (0, 1))
-                """
-            )
-            # 旧数据沿用原规则：每份需求最新的未删除版本作为初始有效版本。
-            conn.execute(
-                """
-                UPDATE documents
-                SET is_effective = 1
-                WHERE is_deleted = 0
-                  AND version = (
-                      SELECT MAX(d2.version)
-                      FROM documents d2
-                      WHERE d2.project_id = documents.project_id
-                        AND d2.document_key = documents.document_key
-                        AND d2.is_deleted = 0
-                  )
-                """
-            )
-
-        # 数据库层保证同一需求最多只有一个未删除的有效版本。
-        conn.execute(
-            """
-            CREATE UNIQUE INDEX IF NOT EXISTS
-            idx_documents_single_effective_version
-            ON documents(project_id, document_key)
-            WHERE is_effective = 1 AND is_deleted = 0
-            """
-        )
 
         # 创建全部查询索引
         for sql in indexes:
