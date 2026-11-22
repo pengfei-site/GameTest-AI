@@ -55,21 +55,19 @@ if st.session_state.get("version_project_id") not in project_map:
 selected_project_id = st.session_state["version_project_id"]
 selected_project = project_map[selected_project_id]
 
-with st.container(border=True):
-    identity_col, switch_col = st.columns([0.72, 0.28], vertical_alignment="center")
-    with identity_col:
-        st.markdown(f"### 🎮 {selected_project['name']}")
-        st.caption(f"项目 ID：{selected_project_id}")
-    with switch_col:
-        with st.popover("切换项目", use_container_width=True):
-            st.caption("选择需要管理需求版本的项目")
-            st.selectbox(
-                "项目列表",
-                options=project_ids,
-                format_func=lambda project_id: project_map[project_id]["name"],
-                key="version_project_id",
-                label_visibility="collapsed",
-            )
+with st.popover(
+    f"🎮  当前项目：{selected_project['name']}  ·  {selected_project_id}  ▾",
+    use_container_width=True,
+):
+    st.markdown("#### 切换工作项目")
+    st.caption("选择项目后，页面将自动刷新对应的需求版本数据。")
+    st.selectbox(
+        "项目列表",
+        options=project_ids,
+        format_func=lambda project_id: project_map[project_id]["name"],
+        key="version_project_id",
+        label_visibility="collapsed",
+    )
 
 try:
     saved_documents = list_documents(
