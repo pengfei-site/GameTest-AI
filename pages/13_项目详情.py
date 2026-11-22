@@ -190,13 +190,13 @@ created_at = html.escape(str(project.get("created_at") or "-"))
 updated_at = html.escape(str(project.get("updated_at") or "-"))
 archived_at = project.get("archived_at")
 archived_html = f'<span>归档时间：{html.escape(str(archived_at))}</span>' if archived_at else ""
-with st.container(key=f"project_detail_card_{project_id}"):
+with st.container(border=True, key=f"project_detail_card_{project_id}"):
     info_left, info_right = st.columns([5, 2], vertical_alignment="center")
     with info_left:
         st.html(f"""
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <div class="project-name" style="margin:0">{project_name}</div>
-          <span class="status-pill {status_class}">{status_label}</span>
+          <div class="gt-card-title" style="margin:0">🎮 {project_name}</div>
+          <span class="gt-status {'gt-status-success' if is_active else 'gt-status-neutral'}">● {status_label}</span>
         </div>
         """)
     with info_right:
@@ -208,11 +208,11 @@ with st.container(key=f"project_detail_card_{project_id}"):
             if is_active and st.button("📦 项目归档", key="detail_archive_project", width="stretch"):
                 archive_project_dialog(project)
     st.html(f"""
-    <div class="project-description">{project_description}</div>
-    <div style="height:1px;background:#E2E8F0;margin:16px 0 12px"></div>
-    <div class="project-meta" style="display:flex;gap:24px;flex-wrap:wrap">
-      <span>项目 ID：{html.escape(str(project.get("id", "-")))}</span>
-      <span>创建时间：{created_at}</span><span>最近更新：{updated_at}</span>{archived_html}
+    <div class="gt-card-description">{project_description}</div>
+    <div class="gt-info-card-footer">
+      <div>项目 ID：{html.escape(str(project.get("id", "-")))}</div>
+      <div>创建时间：{created_at}</div>
+      <div>最近更新：{updated_at}</div>{f'<div>归档时间：{html.escape(str(archived_at))}</div>' if archived_at else ''}
     </div>
     """)
 
