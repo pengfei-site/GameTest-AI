@@ -341,9 +341,9 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
         )
         metric_cols = st.columns(4)
         metric_items = [
+            ("open_questions", "待确认问题"),
             ("business_rules", "业务规则"),
             ("preconditions", "前置条件"),
-            ("open_questions", "待确认问题"),
             ("numeric_constraints", "数值约束"),
         ]
         for col, (key, label) in zip(metric_cols, metric_items):
