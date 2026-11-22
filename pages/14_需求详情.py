@@ -75,6 +75,9 @@ st.html(f"""
 .gt-detail-sub {{ color:#8490A3; font-size:12px; line-height:1.7; margin-top:10px; }}
 .gt-detail-version {{ border:1px solid #E7EAF1; border-radius:10px; padding:12px 14px; margin:7px 0; background:#fff; }}
 .gt-analysis-module {{ display:flex; align-items:center; gap:10px; font-size:15px; font-weight:750; color:#37316F; background:linear-gradient(110deg,#F2F0FF,#FAF9FF); border:1px solid #E7E2FF; border-left:4px solid #7968D8; border-radius:10px; padding:13px 16px; margin:2px 0 16px; }}
+.gt-analysis-banner {{ background:linear-gradient(120deg,#F4F1FF 0%,#FAF9FF 100%); border:1px solid #E9E4FF; border-radius:14px; padding:20px 22px; margin:12px 0 16px; }}
+.gt-analysis-banner-title {{ color:#433B83; font-size:16px; font-weight:750; margin-bottom:7px; }}
+.gt-analysis-banner-desc {{ color:#77728F; font-size:13px; line-height:1.8; }}
 .gt-analysis-summary {{ background:#F8FAFF; border:1px solid #E5EAF5; border-radius:10px; padding:16px 18px; line-height:1.9; color:#30384B; font-size:14px; }}
 .gt-analysis-item {{ background:#fff; border:1px solid #E8ECF3; border-radius:10px; padding:14px 16px; margin:9px 0; box-shadow:0 1px 3px rgba(31,41,55,.025); }}
 .gt-analysis-item-head {{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; color:#30364A; font-size:13px; }}
@@ -345,6 +348,17 @@ def render_unanalyzed_requirement(document: dict) -> None:
 
     st.markdown("### 结构化需求")
     st.caption("当前版本暂无已保存的需求分析结果。可以直接在此页面执行分析、查看结果并保存。")
+
+    st.html("""
+    <div class="gt-analysis-banner">
+      <div class="gt-analysis-banner-title">AI 需求分析</div>
+      <div class="gt-analysis-banner-desc">
+        AI 将从当前文档版本中提取业务规则、前置条件、业务状态、
+        数值约束、异常场景以及待策划确认的问题。
+        分析结果经过 Pydantic 数据结构校验后展示。
+      </div>
+    </div>
+    """)
 
     with st.expander("查看当前版本的文档解析内容", expanded=False):
         st.text_area(
