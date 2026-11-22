@@ -65,27 +65,36 @@ div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell:hover {
 div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell > div {
     gap: 0;
 }
-/* Popover 触发器作为透明覆盖层，浮层由 Streamlit 定位在卡片下方。 */
+/* Popover 的真实 DOM 层级随 Streamlit 版本可能变化，因此使用后代选择器定位触发按钮。
+   触发按钮脱离文档流并铺满卡片；按钮本身完全透明，但仍保留点击能力。 */
 div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell {
-    position: relative;
+    position: relative !important;
+    isolation: isolate;
 }
 div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] {
-    position: static;
+    position: static !important;
 }
-div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] > button {
-    position: absolute;
-    inset: 0;
-    z-index: 10;
-    width: 100%;
-    height: 100%;
-    min-height: 150px;
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] button {
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 20 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 150px !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
     opacity: 0 !important;
-    cursor: pointer;
-    padding: 0;
+    color: transparent !important;
+    background: transparent !important;
     border: 0 !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
 }
-div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] > div {
-    z-index: 30;
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] [data-baseweb="popover"],
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-testid="stPopover"] [role="dialog"] {
+    z-index: 1000 !important;
 }
 .gt-version-project-stats {
     display: flex; gap: 0; align-items: stretch; flex: 0 1 auto;
