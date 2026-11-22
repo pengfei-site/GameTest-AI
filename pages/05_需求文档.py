@@ -6,6 +6,7 @@ import streamlit as st
 from core.document_parser import parse_document
 from database.repositories.project_repository import list_projects
 from database.repositories.document_repository import create_document_version, list_documents
+from core.document_storage import save_original_document
 from components.header import render_header
 
 
@@ -753,16 +754,26 @@ if is_current_parse:
                 try:
                     with st.spinner("正在保存文档..."):
 
+                        import uuid
+
+                        document_id = str(uuid.uuid4())
+                        original_file_path = save_original_document(
+                            project_id=str(parsed_document["project_id"]),
+                            document_id=document_id,
+                            file_name=parsed_document["file_name"],
+                            file_bytes=st.session_state["document_upload_bytes"],
+                        )
                         created_document = create_document_version(
                             project_id=parsed_document["project_id"],
                             document_key=parsed_document["document_key"],
                             document_name=parsed_document["document_name"],
                             file_type=result["file_type"],
-                            file_path=None,
+                            file_path=original_file_path,
                             parsed_content=result["content"],
                             file_hash=parsed_document["file_hash"],
                             page_count=result["page_count"],
                             char_count=result["char_count"],
+                            document_id=document_id,
                         )
 
                     parsed_document["saved_document"] = created_document
