@@ -33,7 +33,7 @@ def create_project_dialog():
         )
 
         submitted = st.form_submit_button(
-            "✨ 创建项目",
+            "+ 创建项目",
             type="primary",
             width="stretch",
         )
@@ -62,7 +62,7 @@ def render_create_project_action():
 
     with button_col:
         if st.button(
-            "✨ 创建项目",
+            "+ 创建项目",
             type="primary",
             width="stretch",
             key="open_create_project_dialog",
