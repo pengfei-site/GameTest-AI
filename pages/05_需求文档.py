@@ -17,7 +17,7 @@ def render_upload_action():
     """在页面标题右侧提供游戏策划需求文档上传入口。"""
     global uploaded_file
     uploaded_file = st.file_uploader(
-        "上传游戏策划需求文档",
+        "",
         type=["docx", "pdf", "md", "txt"],
         key="requirement_document",
         label_visibility="visible",
