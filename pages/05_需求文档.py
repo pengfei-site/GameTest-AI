@@ -1,4 +1,4 @@
-﻿
+
 import hashlib
 import html
 import streamlit as st
@@ -152,39 +152,9 @@ div[data-testid="stVerticalBlock"].st-key-document_project_stats [data-testid="s
     display:flex; flex-direction:column; justify-content:center;
 }
 
-/* 项目卡片整卡透明点击层：不显示独立的“切换项目”按钮。 */
+/* 项目选择下拉框位于项目卡片正下方。 */
 div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell {
-    position: relative !important;
     overflow: visible !important;
-    z-index: 1;
-}
-div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell [data-testid="stPopover"] {
-    position: static !important;
-    z-index: 2 !important;
-}
-div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell [data-testid="stPopover"] button[aria-haspopup="dialog"] {
-    position: absolute !important;
-    inset: 0 !important;
-    z-index: 5 !important;
-    display: block !important;
-    width: 100% !important;
-    height: 132px !important;
-    min-height: 132px !important;
-    max-height: 132px !important;
-    max-width: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    opacity: 0 !important;
-    color: transparent !important;
-    background: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    cursor: pointer !important;
-}
-div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell [data-testid="stPopover"] [data-baseweb="popover"],
-div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell [data-testid="stPopover"] [role="dialog"] {
-    position: relative !important;
-    z-index: 1000 !important;
 }
 
 /* 小屏适配 */
@@ -229,7 +199,11 @@ project_ids = list(project_map.keys())
 if st.session_state.get("document_project_id") not in project_map:
     st.session_state["document_project_id"] = project_ids[0]
 
-selected_project_id = st.session_state["document_project_id"]
+if st.session_state.get("document_project_selector") not in project_map:
+    st.session_state["document_project_selector"] = st.session_state["document_project_id"]
+
+selected_project_id = st.session_state["document_project_selector"]
+st.session_state["document_project_id"] = selected_project_id
 selected_project = project_map[selected_project_id]
 
 try:
@@ -269,32 +243,13 @@ with project_col:
             <div class="gt-version-project-id">项目 ID：{html.escape(str(selected_project_id))}</div>
         </div>
         """)
-        with st.popover("切换项目", use_container_width=True):
-            for project_id in project_ids:
-                project = project_map[project_id]
-                is_current = project_id == selected_project_id
-                option_name = html.escape(str(project.get("name") or "未命名项目"))
-                option_desc = html.escape(str(project.get("description") or "暂无项目描述"))
-                option_id = html.escape(str(project_id))
-                option_status = "已归档" if project.get("status") == "archived" else "进行中"
-                option_color = "#64748B" if project.get("status") == "archived" else "#15803D"
-                option_bg = "#F1F5F9" if project.get("status") == "archived" else "#DCFCE7"
-                border = "#8B7CF6" if is_current else "#E5E7EB"
-                bg = "#F8F7FF" if is_current else "#FFFFFF"
-                with st.container():
-                    st.html(f"""
-                    <div style="border:1px solid {border};background:{bg};border-radius:11px;padding:13px 15px 10px;margin:5px 0 0;">
-                        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-                            <strong style="font-size:14px;color:#172033;">🎮 {option_name}</strong>
-                            <span style="white-space:nowrap;border-radius:20px;padding:3px 8px;color:{option_color};background:{option_bg};font-size:11px;">{option_status}</span>
-                        </div>
-                        <div style="color:#64748B;font-size:12px;line-height:1.55;margin-top:7px;">{option_desc}</div>
-                        <div style="color:#94A3B8;font-size:10px;margin-top:7px;">项目 ID：{option_id}</div>
-                    </div>
-                    """)
-                    if not is_current and st.button("选择此项目", key=f"choose_document_project_{project_id}", use_container_width=True):
-                        st.session_state["document_project_id"] = project_id
-                        st.rerun()
+        st.selectbox(
+            "切换所属项目",
+            options=project_ids,
+            format_func=lambda project_id: project_map[project_id].get("name") or "未命名项目",
+            key="document_project_selector",
+            label_visibility="collapsed",
+        )
 
 with stats_col:
     with st.container(key="document_project_stats"):
