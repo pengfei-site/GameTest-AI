@@ -30,8 +30,8 @@ st.html("""
 
 st.markdown("""
 <div class="gt-section">
-  <div class="gt-section-title">项目选择</div>
-  <div class="gt-section-desc">选择需要管理需求文档版本的游戏项目。</div>
+  <div class="gt-section-title">当前工作项目</div>
+  <div class="gt-section-desc">需求版本数据将按当前项目进行筛选和管理。</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -48,13 +48,28 @@ if not projects:
 project_map = {project["id"]: project for project in projects}
 project_ids = list(project_map.keys())
 
+# 首次进入时默认选择项目列表中的第一项；后续保留用户当前选择。
+if st.session_state.get("version_project_id") not in project_map:
+    st.session_state["version_project_id"] = project_ids[0]
+
+selected_project_id = st.session_state["version_project_id"]
+selected_project = project_map[selected_project_id]
+
 with st.container(border=True):
-    selected_project_id = st.selectbox(
-        "所属游戏项目",
-        options=project_ids,
-        format_func=lambda project_id: project_map[project_id]["name"],
-        key="version_project_id",
-    )
+    identity_col, switch_col = st.columns([0.72, 0.28], vertical_alignment="center")
+    with identity_col:
+        st.markdown(f"### 🎮 {selected_project['name']}")
+        st.caption(f"项目 ID：{selected_project_id}")
+    with switch_col:
+        with st.popover("切换项目", use_container_width=True):
+            st.caption("选择需要管理需求版本的项目")
+            st.selectbox(
+                "项目列表",
+                options=project_ids,
+                format_func=lambda project_id: project_map[project_id]["name"],
+                key="version_project_id",
+                label_visibility="collapsed",
+            )
 
 try:
     saved_documents = list_documents(
