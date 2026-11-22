@@ -148,6 +148,16 @@ def set_active_document_version(document_id: str) -> bool:
     return True
 
 
+def deactivate_document_version(document_id: str) -> bool:
+    """取消指定文档版本的有效状态，不自动启用其他版本。"""
+    with get_connection(write=True) as conn:
+        cursor = conn.execute(
+            "UPDATE documents SET is_active = 0 WHERE id = ? AND is_active = 1",
+            (document_id,),
+        )
+    return cursor.rowcount > 0
+
+
 def list_documents(
     project_id: str,
     document_key: str | None = None,

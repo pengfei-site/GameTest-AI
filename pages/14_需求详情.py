@@ -11,6 +11,7 @@ from database.repositories.project_repository import list_projects
 from database.repositories.document_repository import (
     list_documents,
     set_active_document_version,
+    deactivate_document_version,
 )
 from database.repositories.requirement_repository import (
     list_requirement_analyses,
@@ -149,7 +150,12 @@ with active_action_col:
     if current.get("is_deleted"):
         st.button("已删除", disabled=True, key=f"deleted_document_version_{current['id']}", width="stretch")
     elif current.get("is_active"):
-        st.button("当前使用", disabled=True, key=f"active_document_version_{current['id']}", width="stretch")
+        if st.button("取消使用", key=f"deactivate_document_version_{current['id']}", width="stretch"):
+            try:
+                deactivate_document_version(str(current["id"]))
+                st.rerun()
+            except Exception as exc:
+                st.error(f"取消使用需求文档版本失败：{exc}")
     elif st.button("使用此版本", key=f"activate_document_version_{current['id']}", width="stretch"):
         try:
             set_active_document_version(str(current["id"]))
@@ -433,7 +439,9 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
             continue
 
         module = str(analysis.get("module") or data.get("module") or "未命名模块")
-        st.caption("有效分析记录" if analysis.get("is_active") else "已废弃分析记录")
+        analysis_is_active = bool(analysis.get("is_active"))
+        status_color = "#22C55E" if analysis_is_active else "#9CA3AF"
+        status_label = "有效" if analysis_is_active else "无效"
         summary = str(analysis.get("summary") or data.get("summary") or "")
         groups = {
             "summary": summary,
@@ -451,7 +459,9 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
 
         st.markdown(
             f'<div class="gt-analysis-module">{html.escape(module)}'
-            f'<span style="margin-left:auto;font-size:11px;color:#85899A;font-weight:500;">分析记录 {record_index}</span></div>',
+            f'<span style="margin-left:auto;font-size:11px;color:#85899A;font-weight:500;">分析记录 {record_index}</span>'
+            f'<span style="display:inline-flex;align-items:center;gap:6px;margin-left:12px;font-size:11px;color:#64748B;font-weight:600;">'
+            f'<span style="width:8px;height:8px;border-radius:50%;background:{status_color};display:inline-block;"></span>{status_label}</span></div>',
             unsafe_allow_html=True,
         )
         metric_cols = st.columns(4)
