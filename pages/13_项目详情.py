@@ -23,6 +23,8 @@ st.html("""
 .relation-title{color:#1E293B;font-size:14px;font-weight:750;margin-bottom:12px}
 .relation-value{color:#1E293B;font-size:24px;font-weight:800;margin-bottom:5px}
 .relation-note{color:#64748B;font-size:12px;line-height:1.7}
+[class*="st-key-project_detail_card_"]{background:#FFFFFF!important;border:1px solid #E2E8F0!important;border-radius:12px!important;padding:18px 20px!important;box-shadow:0 2px 8px rgba(30,41,59,.05)!important}
+[class*="st-key-project_detail_card_"]>div{background:#FFFFFF!important}
 </style>
 """)
 
