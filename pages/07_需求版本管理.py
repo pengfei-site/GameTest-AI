@@ -55,29 +55,50 @@ if st.session_state.get("version_project_id") not in project_map:
 selected_project_id = st.session_state["version_project_id"]
 selected_project = project_map[selected_project_id]
 
-with st.popover(
-    f"🎮  当前项目：{selected_project['name']}  ·  {selected_project_id}  ▾",
-    use_container_width=True,
-):
-    st.markdown("#### 切换工作项目")
-    st.caption("选择一个项目卡片，即可直接切换。")
-    for project_id in project_ids:
-        project = project_map[project_id]
-        is_current = project_id == selected_project_id
-        with st.container(border=True):
-            if is_current:
-                st.markdown(f"**✓  {project['name']}**")
-                st.caption(f"当前项目 · {project_id}")
-            else:
-                if st.button(
-                    f"🎮  {project['name']}",
-                    key=f"version_project_option_{project_id}",
-                    use_container_width=True,
-                    type="secondary",
-                ):
-                    st.session_state["version_project_id"] = project_id
-                    st.rerun()
-                st.caption(f"项目 ID：{project_id}")
+# 当前项目卡片沿用「项目中心」的名称、状态、描述和元信息展示方式。
+import html
+
+project_name_html = html.escape(str(selected_project.get("name") or "未命名项目"))
+project_description_html = html.escape(
+    str(selected_project.get("description") or "暂无项目描述")
+)
+project_id_html = html.escape(str(selected_project_id))
+project_status = selected_project.get("status", "active")
+if project_status == "archived":
+    project_status_html = '<span class="gt-project-status-archived">● 已归档</span>'
+else:
+    project_status_html = '<span class="gt-project-status-active">● 进行中</span>'
+
+with st.container(border=True):
+    st.html(
+        f"""
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">
+            <div class="gt-project-card-title">🎮 {project_name_html}</div>
+            {project_status_html}
+        </div>
+        <div class="gt-project-card-description">{project_description_html}</div>
+        <div class="gt-project-card-meta">项目 ID：{project_id_html}</div>
+        """
+    )
+    with st.popover("切换工作项目", use_container_width=True):
+        st.caption("选择一个项目卡片，即可直接切换。")
+        for project_id in project_ids:
+            project = project_map[project_id]
+            is_current = project_id == selected_project_id
+            with st.container(border=True):
+                if is_current:
+                    st.markdown(f"**✓  {project['name']}**")
+                    st.caption(f"当前项目 · {project_id}")
+                else:
+                    if st.button(
+                        f"🎮  {project['name']}",
+                        key=f"version_project_option_{project_id}",
+                        use_container_width=True,
+                        type="secondary",
+                    ):
+                        st.session_state["version_project_id"] = project_id
+                        st.rerun()
+                    st.caption(f"项目 ID：{project_id}")
 
 try:
     saved_documents = list_documents(
