@@ -242,14 +242,7 @@ div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell [data-te
 # 一、选择项目
 # ============================================================
 
-st.markdown("""
-<div class="gt-section">
-    <div class="gt-section-title">一、选择所属项目</div>
-    <div class="gt-section-desc">
-        选择需求文档归属的游戏项目。
-    </div>
-</div>
-""", unsafe_allow_html=True)
+
 
 try:
     projects = list_projects()
