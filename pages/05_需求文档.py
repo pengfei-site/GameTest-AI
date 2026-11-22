@@ -521,7 +521,6 @@ else:
         table_rows.append(
             "<tr>"
             f'<td class="gt-tapd-name"><a href="{html.escape(detail_url, quote=True)}">{html.escape(name)}</a></td>'
-            f'<td class="gt-tapd-key">{html.escape(document_key_value)}</td>'
             f'<td class="gt-tapd-version">{html.escape(version)}</td>'
             f'<td class="gt-tapd-type">{html.escape(file_type)}</td>'
             f'<td class="gt-tapd-state">{status_html}</td>'
@@ -565,15 +564,13 @@ else:
     .gt-tapd-table tbody tr:last-child td { border-bottom: 0; }
     .gt-tapd-table tbody tr:hover td { background: #F8FAFD; }
     .gt-tapd-table thead th:nth-child(1),
-    .gt-tapd-table tbody td:nth-child(1) { width: 50%; }
+    .gt-tapd-table tbody td:nth-child(1) { width: 65%; }
     .gt-tapd-table thead th:nth-child(2),
-    .gt-tapd-table tbody td:nth-child(2) { width: 20%; color: #606266; overflow-wrap:anywhere; }
+    .gt-tapd-table tbody td:nth-child(2) { width: 12%; color: #606266; }
     .gt-tapd-table thead th:nth-child(3),
-    .gt-tapd-table tbody td:nth-child(3) { width: 10%; color: #606266; }
+    .gt-tapd-table tbody td:nth-child(3) { width: 12%; color: #606266; }
     .gt-tapd-table thead th:nth-child(4),
-    .gt-tapd-table tbody td:nth-child(4) { width: 10%; color: #606266; }
-    .gt-tapd-table thead th:nth-child(5),
-    .gt-tapd-table tbody td:nth-child(5) { width: 10%; }
+    .gt-tapd-table tbody td:nth-child(4) { width: 11%; }
     .gt-tapd-table .gt-tapd-name a {
         color: #303133;
         text-decoration: none;
@@ -600,7 +597,7 @@ else:
     """)
     table_html = (
         '<div class="gt-tapd-wrap"><table class="gt-tapd-table">'
-        '<thead><tr><th>需求名称</th><th>文档标识</th><th>当前版本</th><th>文件类型</th><th>状态</th></tr></thead>'
+        '<thead><tr><th>需求名称</th><th>当前版本</th><th>文件类型</th><th>状态</th></tr></thead>'
         '<tbody>' + "".join(table_rows) + '</tbody></table></div>'
     )
     st.html(table_html)
