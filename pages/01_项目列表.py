@@ -2,13 +2,55 @@
 import streamlit as st
 import html
 
-from database.repositories.project_repository import list_projects
+from database.repositories.project_repository import list_projects, create_project
 from components.header import render_header
 
 
 # ============================================================
 # 一、页面初始化
 # ============================================================
+
+
+@st.dialog("创建项目")
+def create_project_dialog():
+    st.caption("填写项目基本信息，创建后即可进入需求分析和测试流程。")
+
+    with st.form("project_list_create_form", clear_on_submit=True):
+        new_name = st.text_input(
+            "项目名称",
+            placeholder="例如：三国策略手游",
+            help="项目名称为必填项。",
+        )
+        new_description = st.text_area(
+            "项目描述",
+            placeholder="介绍游戏类型、项目背景或测试范围……",
+            height=140,
+            help="可以填写游戏玩法、核心系统、测试重点等信息。",
+        )
+
+        st.caption(
+            "提示：项目创建成功后，可以继续录入需求文档、生成测试点和测试用例。"
+        )
+
+        submitted = st.form_submit_button(
+            "✨ 创建项目",
+            type="primary",
+            width="stretch",
+        )
+
+    if submitted:
+        if not new_name.strip():
+            st.error("项目名称不能为空。")
+        else:
+            try:
+                project = create_project(
+                    name=new_name.strip(),
+                    description=new_description,
+                )
+                st.success(f'项目「{project["name"]}」创建成功！')
+                st.rerun()
+            except Exception as exc:
+                st.error(f"创建项目失败：{exc}")
 
 def render_project_actions():
 
@@ -297,9 +339,10 @@ st.divider()
 st.markdown("### 🚀 项目操作")
 st.caption("创建项目或进入项目详情页管理项目；项目归档与恢复操作已整合至项目详情页。")
 
-st.page_link(
-    "pages/02_项目创建.py",
-    label="创建项目",
-    icon="✨",
+if st.button(
+    "✨ 创建项目",
+    type="primary",
     width="stretch",
-)
+    key="open_create_project_dialog",
+):
+    create_project_dialog()
