@@ -46,17 +46,28 @@ div[data-testid="stVerticalBlock"].st-key-version_project_overview > div {
     display: inline-block; margin-top: 8px; padding: 4px 9px;
     color: #64748B; background: #F3F5F9; border-radius: 6px; font-size: 11px;
 }
-/* 紧凑、统一风格的项目选择下拉框。 */
-div[data-testid="stSelectbox"]:has(+ div) { margin-top: 2px; }
-div[data-testid="stSelectbox"] [data-baseweb="select"] > div {
-    min-height: 42px; border: 1px solid #DDE2EC; border-radius: 10px;
-    background: #F8F9FC; box-shadow: none; transition: border-color .15s, background .15s;
+/* 整张项目卡片就是 Popover 触发器：点击卡片任意位置展开项目列表。 */
+div[data-testid="stPopover"].st-key-version_project_picker { width: 100%; }
+div[data-testid="stPopover"].st-key-version_project_picker > button {
+    width: 100%; min-height: 142px; height: auto;
+    display: flex; align-items: center; justify-content: flex-start;
+    padding: 18px 20px; text-align: left; white-space: pre-line;
+    color: #172033 !important; background: #FFFFFF !important;
+    border: 1px solid #E7EAF1 !important; border-radius: 14px !important;
+    box-shadow: 0 2px 8px rgba(23, 32, 51, 0.04) !important;
+    transition: border-color .15s, box-shadow .15s;
 }
-div[data-testid="stSelectbox"] [data-baseweb="select"] > div:hover {
-    border-color: #A79AF5; background: #FFFFFF;
+div[data-testid="stPopover"].st-key-version_project_picker > button:hover {
+    border-color: #B8AEF7 !important;
+    box-shadow: 0 4px 14px rgba(23, 32, 51, 0.08) !important;
+    background: #FFFFFF !important;
 }
-div[data-testid="stSelectbox"] [data-baseweb="select"] [data-testid="stMarkdownContainer"] p {
-    color: #34415A; font-size: 13px; font-weight: 600;
+div[data-testid="stPopover"].st-key-version_project_picker > button p {
+    color: #172033 !important; font-size: 13px; line-height: 1.65;
+    font-weight: 500; white-space: pre-line; text-align: left;
+}
+div[data-testid="stPopover"].st-key-version_project_picker [data-testid="stPopoverBody"] {
+    min-width: 300px;
 }
 .gt-version-project-stats {
     display: flex; gap: 0; align-items: stretch; flex: 0 1 auto;
@@ -143,36 +154,33 @@ overview_project_col, overview_stats_col = st.columns(
 )
 
 with overview_project_col:
-    with st.container(border=True, key="version_project_overview"):
-        st.html(f"""
-        <div class="gt-version-project-main">
-            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                <div class="gt-version-project-title">🎮 {project_name}</div>
-                {status_html}
-            </div>
-            <div class="gt-version-project-desc">{project_description}</div>
-            <div class="gt-version-project-id">项目 ID：{html.escape(selected_project_id)}</div>
-        </div>
-        """)
+    project_status_label = "● 已归档" if project_status == "archived" else "● 进行中"
+    project_picker_label = (
+        f"🎮 {selected_project.get('name') or '未命名项目'}  ·  {project_status_label}\n"
+        f"{selected_project.get('description') or '暂无项目描述'}\n"
+        f"项目 ID：{selected_project_id}                         ⌄"
+    )
+    with st.popover(
+        project_picker_label,
+        key="version_project_picker",
+        use_container_width=True,
+    ):
         st.markdown("**切换项目**")
-        def format_project_option(project_id):
+        for project_id in project_ids:
             project = project_map[project_id]
-            name = project.get("name") or "未命名项目"
-            status = "已归档" if project.get("status") == "archived" else "进行中"
-            description = project.get("description") or "暂无项目描述"
-            return f"{name}  ·  {status}  ·  {description}"
-
-        project_selector_value = st.selectbox(
-            "选择项目",
-            options=project_ids,
-            index=project_ids.index(selected_project_id),
-            format_func=format_project_option,
-            key="version_project_selector",
-            label_visibility="collapsed",
-        )
-        if project_selector_value != selected_project_id:
-            st.session_state["version_project_id"] = project_selector_value
-            st.rerun()
+            option_status = "已归档" if project.get("status") == "archived" else "进行中"
+            option_name = project.get("name") or "未命名项目"
+            option_description = project.get("description") or "暂无项目描述"
+            option_label = f"🎮 {option_name}  ·  {option_status}"
+            st.caption(option_description)
+            if st.button(
+                option_label,
+                key=f"choose_version_project_{project_id}",
+                use_container_width=True,
+                type="primary" if project_id == selected_project_id else "secondary",
+            ):
+                st.session_state["version_project_id"] = project_id
+                st.rerun()
 
 with overview_stats_col:
     stat_cols = st.columns(3, gap="small")
