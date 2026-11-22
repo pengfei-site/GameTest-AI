@@ -2,7 +2,7 @@ import html
 import streamlit as st
 
 from database.connection import get_connection
-from database.repositories.project_repository import get_project, update_project, archive_project
+from database.repositories.project_repository import get_project, update_project, archive_project, restore_project
 
 
 st.html("""
@@ -62,6 +62,30 @@ def archive_project_dialog(current_project: dict) -> None:
                 st.error(f"归档项目失败：{exc}")
     with cancel_col:
         if st.button("取消", key="detail_cancel_archive", width="stretch"):
+            st.rerun()
+
+
+@st.dialog("恢复项目")
+def restore_project_dialog(current_project: dict) -> None:
+    """确认后恢复已归档项目。"""
+    st.warning(
+        f"确定要恢复项目「{current_project.get('name') or '未命名项目'}」吗？"
+    )
+    st.caption("恢复后项目将重新变为可管理状态，可继续维护需求、测试点和测试用例。")
+    confirm_col, cancel_col = st.columns(2)
+    with confirm_col:
+        if st.button("确认恢复", key="detail_confirm_restore", type="primary", width="stretch"):
+            try:
+                result = restore_project(current_project["id"])
+                if result:
+                    st.success("项目恢复成功！")
+                    st.rerun()
+                else:
+                    st.warning("项目不存在或当前并非归档状态。")
+            except Exception as exc:
+                st.error(f"恢复项目失败：{exc}")
+    with cancel_col:
+        if st.button("取消", key="detail_cancel_restore", width="stretch"):
             st.rerun()
 
 
@@ -214,13 +238,17 @@ with st.container(border=True, key=f"project_detail_card_{project_id}"):
         </div>
         """)
     with info_right:
-        edit_col, archive_col = st.columns(2, gap="small")
-        with edit_col:
-            if is_active and st.button("✏️ 编辑项目", key="detail_edit_project", width="stretch"):
-                edit_project_dialog(project)
-        with archive_col:
-            if is_active and st.button("📦 项目归档", key="detail_archive_project", width="stretch"):
-                archive_project_dialog(project)
+        if is_active:
+            edit_col, archive_col = st.columns(2, gap="small")
+            with edit_col:
+                if st.button("✏️ 编辑项目", key="detail_edit_project", width="stretch"):
+                    edit_project_dialog(project)
+            with archive_col:
+                if st.button("📦 项目归档", key="detail_archive_project", width="stretch"):
+                    archive_project_dialog(project)
+        else:
+            if st.button("♻️ 恢复项目", key="detail_restore_project", type="primary", width="stretch"):
+                restore_project_dialog(project)
     st.html(f"""
     <div class="gt-card-description">{project_description}</div>
     <div class="gt-info-card-footer">
