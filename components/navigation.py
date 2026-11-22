@@ -76,6 +76,12 @@ def get_pages():
 
         "隐藏页面": [
             st.Page(
+                "pages/14_需求详情.py",
+                title="需求详情",
+                icon="📄",
+                url_path="requirement-detail",
+            ),
+            st.Page(
                 "pages/13_项目详情.py",
                 title="项目详情",
                 icon="📊",
