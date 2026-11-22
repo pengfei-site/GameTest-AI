@@ -207,28 +207,33 @@ with overview_project_col:
                 )
                 st.rerun()
 
-    if st.session_state.get("version_project_picker_open", False):
+
+
+@st.dialog("切换项目", width="large")
+def show_version_project_dialog():
+    st.caption("选择要查看需求版本的项目")
+    for project_id in project_ids:
+        project = project_map[project_id]
+        option_status = "已归档" if project.get("status") == "archived" else "进行中"
+        option_name = project.get("name") or "未命名项目"
+        option_description = project.get("description") or "暂无项目描述"
+        option_label = f"🎮 {option_name} · {option_status}"
         with st.container(border=True):
-            st.markdown("**切换项目**")
-            for project_id in project_ids:
-                project = project_map[project_id]
-                option_status = "已归档" if project.get("status") == "archived" else "进行中"
-                option_name = project.get("name") or "未命名项目"
-                option_description = project.get("description") or "暂无项目描述"
-                option_label = f"🎮 {option_name}  ·  {option_status}"
-                option_col, status_col = st.columns([4, 1], vertical_alignment="center")
-                with option_col:
-                    if st.button(
-                        option_label,
-                        key=f"choose_version_project_{project_id}",
-                        use_container_width=True,
-                        type="primary" if project_id == selected_project_id else "secondary",
-                    ):
-                        st.session_state["version_project_id"] = project_id
-                        st.session_state["version_project_picker_open"] = False
-                        st.rerun()
-                with status_col:
-                    st.caption(option_description)
+            st.markdown(f"**{option_label}**")
+            st.caption(option_description)
+            if st.button(
+                "当前项目" if project_id == selected_project_id else "切换到此项目",
+                key=f"choose_version_project_{project_id}",
+                use_container_width=True,
+                type="primary" if project_id == selected_project_id else "secondary",
+            ):
+                st.session_state["version_project_id"] = project_id
+                st.session_state["version_project_picker_open"] = False
+                st.rerun()
+
+
+if st.session_state.get("version_project_picker_open", False):
+    show_version_project_dialog()
 
 with overview_stats_col:
     stat_cols = st.columns(3, gap="small")
