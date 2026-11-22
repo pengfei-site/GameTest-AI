@@ -27,12 +27,6 @@ def get_pages():
                 icon="✨",
                 url_path="project-create",
             ),
-            st.Page(
-                "pages/04_项目归档.py",
-                title="归档管理",
-                icon="📦",
-                url_path="project-archive",
-            ),
         ],
 
         "需求中心": [
