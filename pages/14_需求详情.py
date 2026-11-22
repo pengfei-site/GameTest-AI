@@ -171,6 +171,20 @@ def render_original_preview(document: dict, key_suffix: str) -> None:
         st.info("当前版本没有可展示的解析正文。")
 
 
+
+st.markdown('<div class="gt-detail-section">结构化需求文本</div>', unsafe_allow_html=True)
+structured_content = str(current.get("parsed_content") or "").strip()
+if structured_content:
+    with st.container(border=True):
+        # Markdown 文档保留标题、列表、表格等结构；其他格式按提取文本展示。
+        if str(current.get("file_type") or "").lower() in {"md", "markdown"}:
+            st.markdown(structured_content)
+        else:
+            st.markdown(structured_content.replace("\\n", "  \\n"))
+else:
+    st.info("当前版本暂无可展示的结构化需求文本。")
+
+
 st.markdown('<div class="gt-detail-section">需求正文</div>', unsafe_allow_html=True)
 render_original_preview(current, f"current_{current.get('id') or current.get('version') or 'latest'}")
 
