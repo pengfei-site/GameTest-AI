@@ -24,7 +24,7 @@ def render_back_action():
 
 render_header(
     title="需求详情",
-    description="查看需求文档信息、正文内容与历史版本。",
+    description="查看需求文档信息与当前版本的结构化分析。",
     breadcrumb=["需求中心", "需求文档", "需求详情"],
     actions=render_back_action,
 )
@@ -502,19 +502,3 @@ def show_original_document_dialog():
 if st.session_state.pop("show_original_document_dialog", False):
     show_original_document_dialog()
 
-st.markdown('<div class="gt-detail-section">版本历史</div>', unsafe_allow_html=True)
-for item in versions:
-    deleted = bool(item.get("is_deleted"))
-    version_status = "已删除" if deleted else "有效"
-    st.html(f"""
-    <div class="gt-detail-version">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-        <strong style="color:#302D50;">V{item.get("version", 1)}</strong>
-        <span style="font-size:12px;color:{"#B45309" if deleted else "#15803D"};">{version_status}</span>
-      </div>
-      <div style="font-size:12px;color:#8490A3;margin-top:5px;">{html.escape(str(item.get("created_at") or "创建时间未知"))}　·　{str(item.get("file_type") or "未知").upper()}　·　{(item.get("char_count") or 0):,} 字符</div>
-    </div>
-    """)
-    with st.expander(f"查看 V{item.get('version', 1)} 内容"):
-        render_requirement_analysis(item, f"V{item.get('version', 1)} 需求结构化分析")
-        render_original_preview(item, f"history_{item.get('id') or item.get('version') or 'unknown'}")
