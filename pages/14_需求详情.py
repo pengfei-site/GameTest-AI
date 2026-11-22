@@ -51,6 +51,18 @@ if not versions:
     st.warning("未找到对应的需求文档版本。")
     st.stop()
 
+st.html("""
+<style>
+.st-key-requirement-detail-card {
+    background: #FFFFFF !important;
+    border: 1px solid #E7EAF1 !important;
+    border-radius: 12px !important;
+    padding: 20px 22px !important;
+    box-shadow: 0 2px 8px rgba(31,41,55,.04) !important;
+}
+</style>
+""")
+
 active_versions = [item for item in versions if not item.get("is_deleted")]
 default_version = active_versions[0] if active_versions else versions[0]
 version_map = {
@@ -63,7 +75,7 @@ default_version_label = next(
 )
 project_name = str(project.get("name") or "未命名项目")
 
-with st.container(border=True):
+with st.container(border=True, key="requirement-detail-card"):
     title_col, version_col = st.columns([4, 1.5], vertical_alignment="center")
     with title_col:
         st.markdown(
