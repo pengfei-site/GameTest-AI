@@ -490,31 +490,36 @@ st.html("""
 if not filtered_requirements:
     st.info("暂无符合条件的需求文档。点击右上角「需求上传」添加文档。")
 else:
-    rows_html = [
-        '<div class="gt-req-table">',
-        '<div class="gt-req-head"><div>文档名称</div><div>当前版本</div><div>文件类型</div><div>版本数</div><div>字符数</div><div>状态</div></div>',
-    ]
-    for entry in filtered_requirements:
+    st.html("""
+    <style>
+    .gt-req-native-row { padding: 7px 0; border-bottom: 1px solid #EEF0F4; }
+    .gt-req-native-row [data-testid="stButton"] button {
+        justify-content: flex-start; text-align: left; white-space: normal;
+        color: #34305B; font-weight: 650; border: 0; background: transparent;
+        padding: 5px 0; min-height: 38px;
+    }
+    .gt-req-native-row [data-testid="stButton"] button:hover {
+        color: #6D5CE7; background: transparent; border: 0;
+    }
+    </style>
+    """)
+    header_cols = st.columns([2.5, 0.78, 0.86, 0.72, 1, 0.74], gap="small")
+    for col, label in zip(header_cols, ["文档名称", "当前版本", "文件类型", "版本数", "字符数", "状态"]):
+        col.caption(f"**{label}**")
+    for index, entry in enumerate(filtered_requirements):
         doc = entry["document"]
-        name = html.escape(str(doc.get("document_name") or "未命名文档"))
-        version = html.escape(str(doc.get("version") or 1))
-        file_type = html.escape(str(doc.get("file_type") or "未知").upper())
-        version_count = str(entry["version_count"])
-        char_count = f'{(doc.get("char_count") or 0):,}'
-        status_class = "gt-req-status-active" if entry["active"] else "gt-req-status-deleted"
-        status_text = "有效" if entry["active"] else "已删除"
-        rows_html.append(
-            '<div class="gt-req-row">'
-            f'<div><div class="gt-req-name">{name}</div></div>'
-            f'<div>V{version}</div>'
-            f'<div class="gt-req-muted">{file_type}</div>'
-            f'<div>{version_count}</div>'
-            f'<div class="gt-req-muted">{char_count}</div>'
-            f'<div><span class="gt-req-status {status_class}">{status_text}</span></div>'
-            '</div>'
-        )
-    rows_html.append("</div>")
-    st.html("".join(rows_html))
+        name = str(doc.get("document_name") or "未命名文档")
+        row_cols = st.columns([2.5, 0.78, 0.86, 0.72, 1, 0.74], gap="small", vertical_alignment="center")
+        with row_cols[0]:
+            if st.button(name, key=f"open_requirement_detail_{selected_project_id}_{doc.get('document_key')}_{index}", help="点击查看需求详情", use_container_width=True):
+                st.query_params["project_id"] = str(selected_project_id)
+                st.query_params["document_key"] = str(doc.get("document_key") or "")
+                st.switch_page("pages/14_需求详情.py")
+        row_cols[1].write(f"V{doc.get('version') or 1}")
+        row_cols[2].write(str(doc.get("file_type") or "未知").upper())
+        row_cols[3].write(str(entry["version_count"]))
+        row_cols[4].write(f'{(doc.get("char_count") or 0):,}')
+        row_cols[5].write("🟢 有效" if entry["active"] else "🟡 已删除")
 
 st.caption("提示：文档版本查看、恢复和删除操作请前往「需求版本管理」页面。")
 
