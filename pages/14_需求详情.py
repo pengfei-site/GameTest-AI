@@ -52,57 +52,38 @@ if not versions:
     st.stop()
 
 active_versions = [item for item in versions if not item.get("is_deleted")]
-current = active_versions[0] if active_versions else versions[0]
+default_version = active_versions[0] if active_versions else versions[0]
+version_map = {
+    f"V{item.get('version', 1)} · {'已删除' if item.get('is_deleted') else '有效'} · {str(item.get('created_at') or '时间未知')}" : item
+    for item in versions
+}
+default_version_label = next(
+    label for label, item in version_map.items()
+    if str(item.get("id")) == str(default_version.get("id"))
+)
 project_name = str(project.get("name") or "未命名项目")
-name = str(current.get("document_name") or "未命名文档")
 
-st.html(f"""
-<style>
-.gt-detail-hero {{ background:#FFFFFF; border:1px solid #E7EAF1; border-radius:12px; padding:20px 22px; margin:8px 0 20px; box-shadow:0 2px 8px rgba(31,41,55,.04); }}
-.gt-detail-title {{ color:#302D50; font-size:20px; line-height:1.45; font-weight:750; }}
-.gt-detail-current-version {{ flex-shrink:0; color:#5D50A8; background:#F1EFFF; border:1px solid #E6E1FF; border-radius:999px; padding:6px 12px; font-size:12px; font-weight:700; white-space:nowrap; }}
-.gt-detail-sub {{ color:#8490A3; font-size:12px; line-height:1.7; margin-top:10px; }}
-.gt-detail-version {{ border:1px solid #E7EAF1; border-radius:10px; padding:12px 14px; margin:7px 0; background:#fff; }}
-.gt-analysis-module {{ display:flex; align-items:center; gap:10px; font-size:15px; font-weight:750; color:#37316F; background:linear-gradient(110deg,#F2F0FF,#FAF9FF); border:1px solid #E7E2FF; border-left:4px solid #7968D8; border-radius:10px; padding:13px 16px; margin:2px 0 16px; }}
-.gt-analysis-summary {{ background:#F8FAFF; border:1px solid #E5EAF5; border-radius:10px; padding:16px 18px; line-height:1.9; color:#30384B; font-size:14px; }}
-.gt-analysis-item {{ background:#fff; border:1px solid #E8ECF3; border-radius:10px; padding:14px 16px; margin:9px 0; box-shadow:0 1px 3px rgba(31,41,55,.025); }}
-.gt-analysis-item-head {{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; color:#30364A; font-size:13px; }}
-.gt-rule-id {{ color:#5D50A8; background:#F1EFFF; border:1px solid #E6E1FF; border-radius:6px; padding:4px 8px; font-size:11px; font-weight:750; letter-spacing:.2px; }}
-.gt-analysis-tag {{ color:#24734B; background:#EAF7EF; border:1px solid #D8F0E1; border-radius:20px; padding:3px 9px; font-size:11px; font-weight:650; white-space:nowrap; }}
-.gt-analysis-tag-warning {{ color:#9A5A0B; background:#FFF4E2; border-color:#F7E4C2; }}
-.gt-analysis-item-body {{ color:#394256; line-height:1.85; margin-top:10px; white-space:pre-wrap; font-size:13px; overflow-wrap:anywhere; }}
-.gt-analysis-source {{ color:#7B8496; font-size:12px; line-height:1.75; margin-top:10px; background:#F8F9FC; border-radius:7px; padding:8px 10px; overflow-wrap:anywhere; }}
-.gt-analysis-question {{ display:flex; align-items:flex-start; gap:10px; background:#FFFAF1; border:1px solid #F3E4C8; border-radius:10px; padding:13px 15px; margin:9px 0; line-height:1.8; color:#65491F; font-size:13px; }}
-.gt-analysis-group-title {{ display:flex; align-items:center; gap:8px; color:#343653; font-size:13px; font-weight:750; margin:20px 0 9px; padding-bottom:8px; border-bottom:1px solid #EEF0F5; }}
-.gt-analysis-group-title:before {{ content:""; width:4px; height:15px; border-radius:4px; background:#8175D5; display:inline-block; }}
-.gt-analysis-metrics {{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin:0 0 14px; }}
-.gt-analysis-metric {{ background:#FAFAFE; border:1px solid #ECEBF5; border-radius:9px; padding:10px 12px; }}
-.gt-analysis-metric strong {{ display:block; color:#39356B; font-size:19px; line-height:1.3; }}
-.gt-analysis-metric span {{ color:#85899A; font-size:11px; }}
-/* 分类导航改用 Streamlit segmented_control，不再渲染 Radio 圆点 */
-div[data-testid="stSegmentedControl"] [role="group"] {{
-  display:flex !important;
-  flex-wrap:nowrap !important;
-  width:100% !important;
-  gap:4px !important;
-}}
-div[data-testid="stSegmentedControl"] button {{
-  flex:1 1 auto !important;
-  min-width:0 !important;
-  white-space:nowrap !important;
-  padding-left:8px !important;
-  padding-right:8px !important;
-}}
-@media(max-width:700px) {{ .gt-analysis-metrics {{ grid-template-columns:repeat(2,minmax(0,1fr)); }} }}
-</style>
-<div class="gt-detail-hero">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-    <div class="gt-detail-title">▤ {html.escape(name)}</div>
-    <span class="gt-detail-current-version">当前版本 V{current.get("version", 1)}</span>
-  </div>
-  <div class="gt-detail-sub">所属项目：{html.escape(project_name)}　·　创建时间：{html.escape(str(current.get("created_at") or "暂无"))}　·　历史版本：{len(versions)} 个</div>
-</div>
-""")
+with st.container(border=True):
+    title_col, version_col = st.columns([4, 1.5], vertical_alignment="center")
+    with title_col:
+        st.markdown(
+            f'<div class="gt-detail-title">▤ {html.escape(str(default_version.get("document_name") or "未命名文档"))}</div>',
+            unsafe_allow_html=True,
+        )
+    with version_col:
+        selected_version_label = st.selectbox(
+            "当前版本",
+            options=list(version_map.keys()),
+            index=list(version_map.keys()).index(default_version_label),
+            key=f"requirement_detail_version_{project_id}_{document_key}",
+            label_visibility="collapsed",
+        )
+    current = version_map[selected_version_label]
+    name = str(current.get("document_name") or "未命名文档")
+    st.caption(
+        f"所属项目：{project_name}　·　创建时间：{current.get('created_at') or '暂无'}　·　历史版本：{len(versions)} 个"
+    )
+
 
 
 def render_original_preview(document: dict, key_suffix: str) -> None:
