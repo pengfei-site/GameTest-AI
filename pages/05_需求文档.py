@@ -15,18 +15,41 @@ from components.header import render_header
 
 @st.dialog("上传游戏策划需求文档", width="large")
 def show_requirement_upload_dialog():
-    st.caption("支持 DOCX、PDF、Markdown 和 TXT 格式。")
+    st.caption("填写文档信息并选择文件，支持 DOCX、PDF、Markdown 和 TXT 格式。")
+
+    document_name_input = st.text_input(
+        "文档名称",
+        placeholder="例如：登录功能需求说明",
+        key="document_name",
+    )
+    document_key_input = st.text_input(
+        "文档标识（document_key）",
+        placeholder="例如：LOGIN_REQUIREMENT",
+        key="document_key",
+    )
     selected_file = st.file_uploader(
         "选择需求文档",
         type=["docx", "pdf", "md", "txt"],
         key="requirement_document_dialog",
     )
 
-    if st.button("确认上传", type="primary", width="stretch", disabled=selected_file is None):
-        st.session_state["document_upload_name"] = selected_file.name
-        st.session_state["document_upload_bytes"] = selected_file.getvalue()
-        st.session_state.pop("parsed_document", None)
-        st.rerun()
+    if st.button(
+        "确认上传",
+        type="primary",
+        width="stretch",
+        disabled=selected_file is None,
+    ):
+        if not document_name_input.strip():
+            st.error("请输入文档名称。")
+        elif not document_key_input.strip():
+            st.error("请输入文档标识。")
+        else:
+            st.session_state["document_upload_name"] = selected_file.name
+            st.session_state["document_upload_bytes"] = selected_file.getvalue()
+            st.session_state["document_upload_document_name"] = document_name_input.strip()
+            st.session_state["document_upload_document_key"] = document_key_input.strip()
+            st.session_state.pop("parsed_document", None)
+            st.rerun()
 
 
 def render_upload_action():
@@ -367,34 +390,11 @@ with stats_col:
 
 
 # ============================================================
-# 二、填写文档信息
+# 二、读取上传弹窗中的文档信息
 # ============================================================
 
-st.markdown("""
-<div class="gt-section">
-    <div class="gt-section-title">二、填写文档信息</div>
-    <div class="gt-section-desc">
-        设置文档名称和唯一业务标识，便于后续版本管理。
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-with st.container(border=True):
-    col1, col2 = st.columns(2)
-
-    with col1:
-        document_name = st.text_input(
-            "文档名称",
-            placeholder="例如：登录功能需求说明",
-            key="document_name",
-        )
-
-    with col2:
-        document_key = st.text_input(
-            "文档标识（document_key）",
-            placeholder="例如：LOGIN_REQUIREMENT",
-            key="document_key",
-        )
+document_name = st.session_state.get("document_upload_document_name", "")
+document_key = st.session_state.get("document_upload_document_key", "")
 
 
 # ============================================================
