@@ -1,5 +1,9 @@
+import base64
 import html
+from pathlib import Path
 import streamlit as st
+
+from core.document_storage import read_original_document
 
 from components.header import render_header
 from database.repositories.project_repository import list_projects
@@ -77,12 +81,102 @@ meta[1].metric("文件类型", str(current.get("file_type") or "未知").upper()
 meta[2].metric("字符数", f'{(current.get("char_count") or 0):,}')
 meta[3].metric("版本数量", len(versions))
 
+def render_original_preview(document: dict, key_suffix: str) -> None:
+    """优先预览原始文件；旧版本没有原文件时回退到解析文本。"""
+    file_path = document.get("file_path")
+    try:
+        original_bytes = read_original_document(file_path)
+    except Exception as exc:
+        st.error(f"读取原始文档失败：{exc}")
+        original_bytes = None
+
+    if original_bytes:
+        file_name = Path(file_path).name
+        st.download_button(
+            "下载原始文档",
+            data=original_bytes,
+            file_name=file_name,
+            mime={
+                "pdf": "application/pdf",
+                "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "md": "text/markdown",
+                "txt": "text/plain",
+            }.get(Path(file_path).suffix.lower().lstrip("."), "application/octet-stream"),
+            key=f"download_original_{key_suffix}",
+        )
+
+        suffix = Path(file_path).suffix.lower()
+        if suffix == ".pdf":
+            encoded = base64.b64encode(original_bytes).decode("ascii")
+            st.components.v1.html(
+                f'<iframe src="data:application/pdf;base64,{encoded}" '
+                'width="100%" height="850" style="border:1px solid #E5E7EB;border-radius:8px;"></iframe>',
+                height=870,
+                scrolling=True,
+            )
+        elif suffix == ".docx":
+            try:
+                import mammoth
+
+                def image_to_data_uri(image):
+                    with image.open() as image_file:
+                        encoded = base64.b64encode(image_file.read()).decode("ascii")
+                    return {"src": f"data:{image.content_type};base64,{encoded}"}
+
+                result = mammoth.convert_to_html(
+                    original_bytes,
+                    convert_image=mammoth.images.img_element(image_to_data_uri),
+                )
+                preview_html = result.value
+                st.components.v1.html(
+                    f"""
+                    <div style="font-family:Arial,'Microsoft YaHei',sans-serif;color:#242424;
+                                line-height:1.75;padding:24px;background:#fff;">
+                    <style>
+                      h1,h2,h3,h4 {{ color:#222; margin:1.2em 0 .55em; }}
+                      p {{ margin:.55em 0; }}
+                      table {{ border-collapse:collapse;width:100%;margin:1em 0; }}
+                      td,th {{ border:1px solid #D1D5DB;padding:7px 10px;vertical-align:top; }}
+                      img {{ max-width:100%;height:auto; }}
+                      blockquote {{ border-left:3px solid #CBD5E1;padding-left:14px;color:#64748B; }}
+                    </style>
+                    {preview_html}
+                    </div>
+                    """,
+                    height=850,
+                    scrolling=True,
+                )
+                if result.messages:
+                    st.caption("部分 Word 特殊样式可能无法完全还原；可下载原始文件查看完整排版。")
+            except ImportError:
+                st.warning("Word 在线预览组件尚未安装，请下载原始 DOCX 查看完整排版。")
+            except Exception as exc:
+                st.warning(f"Word 在线预览失败：{exc}，可下载原始文件查看。")
+        elif suffix == ".md":
+            from core.document_parser import _decode_text
+            st.markdown(_decode_text(original_bytes))
+        elif suffix == ".txt":
+            from core.document_parser import _decode_text
+            st.code(_decode_text(original_bytes), language="text")
+        return
+
+    st.info("该历史版本尚未保存原始文件，以下显示当时提取的文本内容。")
+    content = document.get("parsed_content") or ""
+    if content:
+        st.text_area(
+            "解析文本内容",
+            value=content,
+            height=520,
+            disabled=True,
+            label_visibility="collapsed",
+            key=f"parsed_fallback_{key_suffix}",
+        )
+    else:
+        st.info("当前版本没有可展示的解析正文。")
+
+
 st.markdown('<div class="gt-detail-section">需求正文</div>', unsafe_allow_html=True)
-content = current.get("parsed_content") or ""
-if content:
-    st.text_area("需求正文内容", value=content, height=520, disabled=True, label_visibility="collapsed")
-else:
-    st.info("当前版本没有可展示的解析正文。")
+render_original_preview(current, str(current.get("id") or "current"))
 
 st.markdown('<div class="gt-detail-section">版本历史</div>', unsafe_allow_html=True)
 for item in versions:
@@ -98,10 +192,4 @@ for item in versions:
     </div>
     """)
     with st.expander(f"查看 V{item.get('version', 1)} 内容"):
-        st.text_area(
-            f"V{item.get('version', 1)} 正文",
-            value=item.get("parsed_content") or "",
-            height=260,
-            disabled=True,
-            key=f"detail_version_content_{item.get('id')}",
-        )
+        render_original_preview(item, str(item.get("id") or item.get("version")))
