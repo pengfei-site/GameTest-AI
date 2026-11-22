@@ -199,7 +199,7 @@ total_active_versions = sum(1 for doc in saved_documents if not doc["is_deleted"
 
 # 项目卡片与统计指标并列：左侧独立项目卡片，右侧三项统计。
 overview_project_col, overview_stats_col = st.columns(
-    [1.15, 1.85],
+    [1.53, 1.47],
     gap="medium",
     vertical_alignment="center",
 )
