@@ -431,7 +431,7 @@ search_col, filter_col, count_col = st.columns([2.4, 1, 1], vertical_alignment="
 with search_col:
     requirement_search = st.text_input(
         "搜索需求文档",
-        placeholder="搜索文档名称、标识…",
+        placeholder="搜索文档名称…",
         key="requirement_list_search",
         label_visibility="collapsed",
     )
@@ -468,7 +468,7 @@ for entry in requirement_items:
 st.html("""
 <style>
 .gt-req-table { width:100%; border:1px solid #E7EAF1; border-radius:10px; overflow:hidden; background:#fff; }
-.gt-req-head, .gt-req-row { display:grid; grid-template-columns:minmax(190px,2.5fr) minmax(150px,1.7fr) 78px 86px 72px 100px 74px; align-items:center; column-gap:12px; padding:11px 14px; }
+.gt-req-head, .gt-req-row { display:grid; grid-template-columns:minmax(190px,2.5fr) 78px 86px 72px 100px 74px; align-items:center; column-gap:12px; padding:11px 14px; }
 .gt-req-head { background:#F7F8FA; color:#64748B; font-size:12px; font-weight:650; border-bottom:1px solid #E7EAF1; }
 .gt-req-row { min-height:62px; border-bottom:1px solid #EEF0F4; color:#334155; font-size:13px; }
 .gt-req-row:last-child { border-bottom:0; }
@@ -480,9 +480,9 @@ st.html("""
 .gt-req-status-active { color:#15803D; background:#DCFCE7; }
 .gt-req-status-deleted { color:#B45309; background:#FEF3C7; }
 @media (max-width: 900px) {
-  .gt-req-head, .gt-req-row { grid-template-columns:minmax(160px,2fr) minmax(130px,1.4fr) 65px 70px 60px; }
-  .gt-req-head > :nth-child(6), .gt-req-row > :nth-child(6),
-  .gt-req-head > :nth-child(7), .gt-req-row > :nth-child(7) { display:none; }
+  .gt-req-head, .gt-req-row { grid-template-columns:minmax(160px,2fr) 65px 70px 60px 100px 74px; }
+  .gt-req-head > :nth-child(5), .gt-req-row > :nth-child(5),
+  .gt-req-head > :nth-child(6), .gt-req-row > :nth-child(6) { display:none; }
 }
 </style>
 """)
@@ -492,12 +492,11 @@ if not filtered_requirements:
 else:
     rows_html = [
         '<div class="gt-req-table">',
-        '<div class="gt-req-head"><div>文档名称</div><div>文档标识</div><div>当前版本</div><div>文件类型</div><div>版本数</div><div>字符数</div><div>状态</div></div>',
+        '<div class="gt-req-head"><div>文档名称</div><div>当前版本</div><div>文件类型</div><div>版本数</div><div>字符数</div><div>状态</div></div>',
     ]
     for entry in filtered_requirements:
         doc = entry["document"]
         name = html.escape(str(doc.get("document_name") or "未命名文档"))
-        key = html.escape(str(doc.get("document_key") or "—"))
         version = html.escape(str(doc.get("version") or 1))
         file_type = html.escape(str(doc.get("file_type") or "未知").upper())
         version_count = str(entry["version_count"])
@@ -507,7 +506,6 @@ else:
         rows_html.append(
             '<div class="gt-req-row">'
             f'<div><div class="gt-req-name">{name}</div></div>'
-            f'<div class="gt-req-muted">{key}</div>'
             f'<div>V{version}</div>'
             f'<div class="gt-req-muted">{file_type}</div>'
             f'<div>{version_count}</div>'
