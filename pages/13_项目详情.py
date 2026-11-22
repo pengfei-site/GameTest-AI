@@ -1,14 +1,13 @@
 import html
 import streamlit as st
 
-from components.header import render_header
 from database.connection import get_connection
 from database.repositories.project_repository import get_project
 
 
 st.html("""
 <style>
-.detail-section-title{color:#1E293B;font-size:18px;font-weight:750;margin:8px 0 5px}
+.detail-section-title{color:#1E293B;font-size:18px;font-weight:750;margin:0 0 5px}
 .detail-section-desc{color:#64748B;font-size:12px;line-height:1.7;margin-bottom:16px}
 .detail-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:18px 20px;box-shadow:0 2px 8px rgba(30,41,59,.035);height:100%}
 .detail-card-label{color:#64748B;font-size:13px;font-weight:650;margin-bottom:10px}
@@ -100,13 +99,17 @@ status_label = "进行中" if is_active else "已归档"
 project_name = html.escape(str(project.get("name") or "未命名项目"))
 project_description = html.escape(str(project.get("description") or "暂无项目描述"))
 
-render_header(
-    title="",
-    description="",
-    breadcrumb=["项目中心", "项目列表", "项目详情"],
+top_left, top_right = st.columns(
+    [5, 1],
+    vertical_alignment="center",
 )
-
-_, top_right = st.columns([5, 1])
+with top_left:
+    st.html("""
+    <div class="gt-breadcrumb">
+        项目中心<span class="gt-breadcrumb-separator">/</span>项目列表
+        <span class="gt-breadcrumb-separator">/</span>项目详情
+    </div>
+    """)
 with top_right:
     if st.button("返回项目列表", width="stretch"):
         st.switch_page("pages/01_项目列表.py")
