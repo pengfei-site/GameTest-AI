@@ -13,10 +13,24 @@ from components.header import render_header
 # 页面初始化
 # ============================================================
 
+def render_upload_action():
+    """在页面标题右侧提供游戏策划需求文档上传入口。"""
+    global uploaded_file
+    uploaded_file = st.file_uploader(
+        "上传游戏策划需求文档",
+        type=["docx", "pdf", "md", "txt"],
+        key="requirement_document",
+        label_visibility="visible",
+    )
+
+
+uploaded_file = None
+
 render_header(
     title="需求文档",
     description="导入和管理游戏策划需求文档，为后续结构化分析提供原始需求依据。",
     breadcrumb=["需求中心", "需求文档"],
+    actions=render_upload_action,
 )
 
 
@@ -377,23 +391,8 @@ with st.container(border=True):
 # 三、上传文档
 # ============================================================
 
-st.markdown("""
-<div class="gt-section">
-    <div class="gt-section-title">三、上传需求文档</div>
-    <div class="gt-section-desc">
-        支持 DOCX、PDF、Markdown 和 TXT 格式。
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-uploaded_file = st.file_uploader(
-    "上传游戏策划需求文档",
-    type=["docx", "pdf", "md", "txt"],
-    key="requirement_document",
-)
-
 if uploaded_file is None:
-    st.info("请上传 DOCX、PDF、Markdown 或 TXT 格式的需求文档。")
+    st.info("请在页面右上角上传 DOCX、PDF、Markdown 或 TXT 格式的需求文档。")
     st.stop()
 
 file_bytes = uploaded_file.getvalue()
