@@ -26,6 +26,17 @@ st.html("""
     gap: 16px; flex-wrap: wrap; padding: 2px 0;
 }
 .gt-version-project-main { min-width: 220px; flex: 1 1 360px; }
+/* 项目概览卡片固定使用白底，不跟随主题的容器底色变化。 */
+div[data-testid="stVerticalBlock"].st-key-version_project_overview {
+    background: #FFFFFF !important;
+    border: 1px solid #E7EAF1 !important;
+    border-radius: 14px !important;
+    padding: 18px 20px !important;
+    box-shadow: 0 2px 8px rgba(23, 32, 51, 0.04);
+}
+div[data-testid="stVerticalBlock"].st-key-version_project_overview > div {
+    background: #FFFFFF;
+}
 .gt-version-project-title {
     color: #172033; font-size: 19px; line-height: 1.45; font-weight: 750;
     margin-bottom: 5px;
@@ -113,7 +124,7 @@ total_history_versions = len(saved_documents)
 total_active_versions = sum(1 for doc in saved_documents if not doc["is_deleted"])
 
 # 顶部紧凑项目概览：沿用项目中心的状态、描述、ID 展示语言。
-with st.container(border=True):
+with st.container(border=True, key="version_project_overview"):
     project_left, project_right = st.columns([1.65, 1.35], vertical_alignment="center")
     with project_left:
         st.html(f"""
