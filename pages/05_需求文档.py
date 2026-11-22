@@ -595,6 +595,7 @@ else:
     }
     .gt-tapd-status-active { color: #67C23A; background: #F0F9EB; }
     .gt-tapd-status-deleted { color: #E6A23C; background: #FDF6EC; }
+    .gt-tapd-status-deprecated { color: #909399; background: #F4F4F5; }
     @media (max-width: 640px) {
         .gt-tapd-table { min-width: 560px; }
     }
@@ -607,7 +608,7 @@ else:
     )
     st.html(table_html)
 
-st.caption("提示：文档版本查看、恢复和删除操作请前往「需求版本管理」页面。")
+st.caption("提示：有效版本设定、历史版本查看、恢复和删除操作请前往「需求版本管理」页面。")
 
 
 # ============================================================
