@@ -71,7 +71,6 @@ st.html(f"""
 </div>
 """)
 
-st.markdown('<div class="gt-detail-section">基本信息</div>', unsafe_allow_html=True)
 meta = st.columns(4)
 meta[0].metric("当前版本", f'V{current.get("version", 1)}')
 meta[1].metric("文件类型", str(current.get("file_type") or "未知").upper())
