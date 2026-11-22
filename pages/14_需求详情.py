@@ -177,7 +177,7 @@ def render_original_preview(document: dict, key_suffix: str) -> None:
 
 
 st.markdown('<div class="gt-detail-section">需求正文</div>', unsafe_allow_html=True)
-render_original_preview(current, str(current.get("id") or "current"))
+render_original_preview(current, f"current_{current.get('id') or current.get('version') or 'latest'}")
 
 st.markdown('<div class="gt-detail-section">版本历史</div>', unsafe_allow_html=True)
 for item in versions:
@@ -193,4 +193,4 @@ for item in versions:
     </div>
     """)
     with st.expander(f"查看 V{item.get('version', 1)} 内容"):
-        render_original_preview(item, str(item.get("id") or item.get("version")))
+        render_original_preview(item, f"history_{item.get('id') or item.get('version') or 'unknown'}")
