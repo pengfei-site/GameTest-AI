@@ -455,7 +455,6 @@ for entry in requirement_items:
     matches_search = (
         not search_text
         or search_text in str(doc.get("document_name") or "").lower()
-        or search_text in str(doc.get("document_key") or "").lower()
     )
     matches_filter = (
         requirement_filter == "全部状态"
@@ -468,21 +467,20 @@ for entry in requirement_items:
 st.html("""
 <style>
 .gt-req-table { width:100%; border:1px solid #E7EAF1; border-radius:10px; overflow:hidden; background:#fff; }
-.gt-req-head, .gt-req-row { display:grid; grid-template-columns:minmax(190px,2.5fr) 78px 86px 72px 100px 74px; align-items:center; column-gap:12px; padding:11px 14px; }
-.gt-req-head { background:#F7F8FA; color:#64748B; font-size:12px; font-weight:650; border-bottom:1px solid #E7EAF1; }
-.gt-req-row { min-height:62px; border-bottom:1px solid #EEF0F4; color:#334155; font-size:13px; }
-.gt-req-row:last-child { border-bottom:0; }
-.gt-req-row:hover { background:#FAFAFE; }
-.gt-req-name { color:#34305B; font-weight:650; font-size:13px; overflow-wrap:anywhere; }
-.gt-req-key { color:#8A91A1; font-size:11px; margin-top:4px; overflow-wrap:anywhere; }
-.gt-req-muted { color:#64748B; font-size:12px; }
-.gt-req-status { display:inline-block; padding:3px 9px; border-radius:12px; font-size:11px; font-weight:600; white-space:nowrap; }
-.gt-req-status-active { color:#15803D; background:#DCFCE7; }
-.gt-req-status-deleted { color:#B45309; background:#FEF3C7; }
-@media (max-width: 900px) {
-  .gt-req-head, .gt-req-row { grid-template-columns:minmax(160px,2fr) 65px 70px 60px 100px 74px; }
-  .gt-req-head > :nth-child(5), .gt-req-row > :nth-child(5),
-  .gt-req-head > :nth-child(6), .gt-req-row > :nth-child(6) { display:none; }
+.gt-req-native-row { padding:0.15rem 0; border-bottom:1px solid #EEF0F4; }
+.gt-req-native-row:last-child { border-bottom:0; }
+.gt-req-native-row [data-testid="stButton"] button {
+    justify-content:flex-start; text-align:left; white-space:normal;
+    color:#34305B; font-weight:650; border:0; background:transparent;
+    padding:0.35rem 0; min-height:38px; box-shadow:none;
+}
+.gt-req-native-row [data-testid="stButton"] button:hover {
+    color:#6D5CE7; background:transparent; border:0;
+}
+.gt-req-table-header {
+    color:#64748B; font-size:12px; font-weight:650;
+    background:#F7F8FA; border-bottom:1px solid #E7EAF1;
+    padding:0.7rem 0.5rem;
 }
 </style>
 """)
@@ -492,36 +490,65 @@ if not filtered_requirements:
 else:
     st.html("""
     <style>
-    .gt-req-native-row { padding: 7px 0; border-bottom: 1px solid #EEF0F4; }
+    .gt-req-native-row { padding: 0 0.45rem; border-bottom: 1px solid #EEF0F4; }
+    .gt-req-native-row:hover { background: #FAFAFE; }
     .gt-req-native-row [data-testid="stButton"] button {
         justify-content: flex-start; text-align: left; white-space: normal;
         color: #34305B; font-weight: 650; border: 0; background: transparent;
-        padding: 5px 0; min-height: 38px;
+        padding: 5px 0; min-height: 38px; box-shadow: none;
     }
     .gt-req-native-row [data-testid="stButton"] button:hover {
         color: #6D5CE7; background: transparent; border: 0;
     }
+    .gt-req-table-header {
+        color: #64748B; font-size: 12px; font-weight: 650;
+        background: #F7F8FA; border-bottom: 1px solid #E7EAF1;
+        padding: 11px 8px;
+    }
     </style>
     """)
-    header_cols = st.columns([2.5, 0.78, 0.86, 0.72, 1, 0.74], gap="small")
-    for col, label in zip(header_cols, ["文档名称", "当前版本", "文件类型", "版本数", "字符数", "状态"]):
-        col.caption(f"**{label}**")
+    table_widths = [2.5, 0.8, 0.9, 0.8]
+    header_cols = st.columns(table_widths, gap="small")
+    for col, label in zip(header_cols, ["需求名称", "当前版本", "文件类型", "状态"]):
+        with col:
+            st.markdown(
+                f'<div class="gt-req-table-header">{label}</div>',
+                unsafe_allow_html=True,
+            )
+
     for index, entry in enumerate(filtered_requirements):
         doc = entry["document"]
         name = str(doc.get("document_name") or "未命名文档")
-        row_cols = st.columns([2.5, 0.78, 0.86, 0.72, 1, 0.74], gap="small", vertical_alignment="center")
+        row_cols = st.columns(
+            table_widths,
+            gap="small",
+            vertical_alignment="center",
+        )
         with row_cols[0]:
-            if st.button(name, key=f"open_requirement_detail_{selected_project_id}_{doc.get('document_key')}_{index}", help="点击查看需求详情", use_container_width=True):
-                # 使用 session_state 在页面切换时传递定位信息，避免 query_params
-                # 在不同 Streamlit 版本/导航场景下未能保留。
+            st.markdown('<div class="gt-req-native-row">', unsafe_allow_html=True)
+            if st.button(
+                name,
+                key=f"open_requirement_detail_{selected_project_id}_{doc.get('document_key')}_{index}",
+                help="点击需求名称进入详情",
+                use_container_width=True,
+            ):
                 st.session_state["requirement_detail_project_id"] = str(selected_project_id)
                 st.session_state["requirement_detail_document_key"] = str(doc.get("document_key") or "")
                 st.switch_page("pages/14_需求详情.py")
+            st.markdown("</div>", unsafe_allow_html=True)
         row_cols[1].write(f"V{doc.get('version') or 1}")
         row_cols[2].write(str(doc.get("file_type") or "未知").upper())
-        row_cols[3].write(str(entry["version_count"]))
-        row_cols[4].write(f'{(doc.get("char_count") or 0):,}')
-        row_cols[5].write("🟢 有效" if entry["active"] else "🟡 已删除")
+        with row_cols[3]:
+            if entry["active"]:
+                st.markdown(
+                    '<span class="gt-req-status gt-req-status-active">有效</span>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    '<span class="gt-req-status gt-req-status-deleted">已删除</span>',
+                    unsafe_allow_html=True,
+                )
 
 st.caption("提示：文档版本查看、恢复和删除操作请前往「需求版本管理」页面。")
 
