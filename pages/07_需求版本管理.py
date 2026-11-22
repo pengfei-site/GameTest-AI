@@ -60,14 +60,24 @@ with st.popover(
     use_container_width=True,
 ):
     st.markdown("#### 切换工作项目")
-    st.caption("选择项目后，页面将自动刷新对应的需求版本数据。")
-    st.selectbox(
-        "项目列表",
-        options=project_ids,
-        format_func=lambda project_id: project_map[project_id]["name"],
-        key="version_project_id",
-        label_visibility="collapsed",
-    )
+    st.caption("点击项目即可直接切换。")
+    for project_id in project_ids:
+        project = project_map[project_id]
+        is_current = project_id == selected_project_id
+        button_label = (
+            f"✓  {project['name']}  ·  {project_id}"
+            if is_current
+            else f"　 {project['name']}  ·  {project_id}"
+        )
+        if st.button(
+            button_label,
+            key=f"version_project_option_{project_id}",
+            use_container_width=True,
+            disabled=is_current,
+            type="secondary",
+        ):
+            st.session_state["version_project_id"] = project_id
+            st.rerun()
 
 try:
     saved_documents = list_documents(
