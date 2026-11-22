@@ -14,6 +14,7 @@ def create_document_version(
     file_hash: str | None = None,
     page_count: int | None = None,
     char_count: int | None = None,
+    document_id: str | None = None,
 ) -> dict:
     """
     创建策划文档的新版本。
@@ -38,7 +39,7 @@ def create_document_version(
     if char_count is None:
         char_count = len(parsed_content)
 
-    document_id = str(uuid.uuid4())
+    document_id = document_id or str(uuid.uuid4())
 
     with get_connection(write=True) as conn:
         # 确认所属项目存在且处于 active 状态
