@@ -170,41 +170,6 @@ def list_documents(
     return [dict(row) for row in rows]
 
 
-def set_effective_document_version(document_id: str) -> dict:
-    """将指定需求版本设为唯一有效版本，并自动废弃原有效版本。"""
-    with get_connection(write=True) as conn:
-        selected = conn.execute(
-            """
-            SELECT id, project_id, document_key, version, is_deleted
-            FROM documents
-            WHERE id = ?
-            """,
-            (document_id,),
-        ).fetchone()
-        if selected is None:
-            raise ValueError("未找到指定的需求版本")
-        if selected["is_deleted"]:
-            raise ValueError("已删除的需求版本不能设为有效版本")
-
-        conn.execute(
-            """
-            UPDATE documents
-            SET is_effective = 0
-            WHERE project_id = ? AND document_key = ?
-            """,
-            (selected["project_id"], selected["document_key"]),
-        )
-        conn.execute(
-            "UPDATE documents SET is_effective = 1 WHERE id = ? AND is_deleted = 0",
-            (document_id,),
-        )
-        updated = conn.execute(
-            "SELECT * FROM documents WHERE id = ?",
-            (document_id,),
-        ).fetchone()
-    return dict(updated)
-
-
 def soft_delete_document(document_id: str) -> bool:
     """
     逻辑删除文档，不物理删除数据库记录。
@@ -216,7 +181,6 @@ def soft_delete_document(document_id: str) -> bool:
             UPDATE documents
             SET
                 is_deleted = 1,
-                is_effective = 0,
                 deleted_at = CURRENT_TIMESTAMP
             WHERE id = ?
               AND is_deleted = 0
