@@ -83,43 +83,55 @@ st.html(f"""
 .gt-analysis-metric {{ background:#FAFAFE; border:1px solid #ECEBF5; border-radius:9px; padding:10px 12px; }}
 .gt-analysis-metric strong {{ display:block; color:#39356B; font-size:19px; line-height:1.3; }}
 .gt-analysis-metric span {{ color:#85899A; font-size:11px; }}
-/* 分类导航：统一胶囊尺寸，空间不足时自然换行 */
-div[data-testid="stRadio"] > label {{ display:none; }}
-div[data-testid="stRadio"] > div[role="radiogroup"] {{
+/* 分类导航：明确的胶囊按钮外观 */
+div[data-testid="stRadio"] div[role="radiogroup"] {
   display:flex !important;
   flex-wrap:wrap !important;
-  align-items:stretch !important;
-  gap:8px !important;
-  width:100%;
-}}
-div[data-testid="stRadio"] > div[role="radiogroup"] > label {{
-  flex:0 0 auto;
-  min-height:38px;
-  padding:8px 14px !important;
-  border:1px solid #E5E7F0 !important;
-  border-radius:9px !important;
-  background:#FFFFFF !important;
-  color:#555B70 !important;
-  justify-content:center;
+  align-items:center !important;
+  gap:10px !important;
+  width:100% !important;
+}
+div[data-testid="stRadio"] div[role="radiogroup"] label {
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  flex:0 0 auto !important;
+  min-height:40px !important;
+  padding:8px 17px !important;
   margin:0 !important;
-  transition:all .15s ease;
-}}
-div[data-testid="stRadio"] > div[role="radiogroup"] > label:has(input:checked) {{
-  border-color:#7968D8 !important;
-  background:#F1EFFF !important;
+  border:1px solid #E1E3ED !important;
+  border-radius:999px !important;
+  background:#FFFFFF !important;
+  color:#596074 !important;
+  box-shadow:none !important;
+  cursor:pointer !important;
+  transition:all .15s ease !important;
+}
+div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) {
+  border:1px solid #7968D8 !important;
+  background:#7968D8 !important;
+  color:#FFFFFF !important;
+  box-shadow:0 2px 7px rgba(121,104,216,.20) !important;
+}
+div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) p,
+div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) span {
+  color:#FFFFFF !important;
+  font-weight:650 !important;
+}
+div[data-testid="stRadio"] div[role="radiogroup"] label:hover:not(:has(input:checked)) {
+  border-color:#A99DE5 !important;
+  background:#F5F3FF !important;
   color:#51449A !important;
-  font-weight:650;
-  box-shadow:0 0 0 1px rgba(121,104,216,.08);
-}}
-div[data-testid="stRadio"] > div[role="radiogroup"] > label:hover {{
-  border-color:#B8AFE9 !important;
-  background:#F8F7FF !important;
-}}
-div[data-testid="stRadio"] > div[role="radiogroup"] > label p {{
-  font-size:13px;
-  line-height:1.35;
-  white-space:nowrap;
-}}
+}
+div[data-testid="stRadio"] div[role="radiogroup"] label p {
+  margin:0 !important;
+  font-size:13px !important;
+  line-height:1.3 !important;
+  white-space:nowrap !important;
+}
+div[data-testid="stRadio"] div[role="radiogroup"] label > div:first-child {
+  display:none !important;
+}
 @media(max-width:700px) {{ .gt-analysis-metrics {{ grid-template-columns:repeat(2,minmax(0,1fr)); }} }}
 </style>
 <div class="gt-detail-hero">
