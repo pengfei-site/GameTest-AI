@@ -234,7 +234,6 @@ with overview_project_col:
             "切换项目",
             use_container_width=True,
         ):
-            st.caption("选择要查看需求版本的项目")
             for project_id in project_ids:
                 project = project_map[project_id]
                 option_status = "已归档" if project.get("status") == "archived" else "进行中"
@@ -270,11 +269,11 @@ with overview_project_col:
                         </div>
                     </div>
                     """)
-                    if st.button(
-                        "✓ 当前项目" if is_current else "选择此项目",
+                    if not is_current and st.button(
+                        "选择此项目",
                         key=f"choose_version_project_{project_id}",
                         use_container_width=True,
-                        type="primary" if is_current else "secondary",
+                        type="secondary",
                     ):
                         st.session_state["version_project_id"] = project_id
                         st.rerun()
