@@ -18,8 +18,8 @@ document_key = st.session_state.get("requirement_detail_document_key") or st.que
 
 
 def render_back_action():
-    if st.button("← 返回需求列表", width="stretch"):
-        st.switch_page("pages/05_需求文档.py")
+    if st.button("原始文档", width="stretch"):
+        st.session_state["show_original_document_dialog"] = True
 
 
 render_header(
@@ -460,9 +460,18 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
 render_requirement_analysis(current)
 
 
-with st.expander("查看原始需求文档", expanded=False):
-    st.caption("这里展示上传时保存的原始文件；如需保留完整排版，可下载原文件查看。")
-    render_original_preview(current, f"current_{current.get('id') or current.get('version') or 'latest'}")
+
+@st.dialog("原始需求文档", width="large")
+def show_original_document_dialog():
+    st.caption("这里展示当前版本上传时保存的原始文件；如需保留完整排版，可下载原文件查看。")
+    render_original_preview(
+        current,
+        f"dialog_{current.get('id') or current.get('version') or 'latest'}",
+    )
+
+
+if st.session_state.pop("show_original_document_dialog", False):
+    show_original_document_dialog()
 
 st.markdown('<div class="gt-detail-section">版本历史</div>', unsafe_allow_html=True)
 for item in versions:
