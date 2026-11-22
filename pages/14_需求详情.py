@@ -56,8 +56,9 @@ if not versions:
     st.warning("未找到对应的需求文档版本。")
     st.stop()
 
-active_versions = [item for item in versions if not item.get("is_deleted")]
-default_version = active_versions[0] if active_versions else versions[0]
+effective_versions = [item for item in versions if not item.get("is_deleted") and item.get("is_effective", 0)]
+non_deleted_versions = [item for item in versions if not item.get("is_deleted")]
+default_version = effective_versions[0] if effective_versions else (non_deleted_versions[0] if non_deleted_versions else versions[0])
 version_map = {f"V{item.get('version', 1)}": item for item in versions}
 default_version_label = next(
     label for label, item in version_map.items()
