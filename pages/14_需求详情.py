@@ -290,10 +290,6 @@ def _render_analysis_card(title: str, body: str, status: str = "", source: str =
 def render_requirement_analysis(document: dict, section_title: str = "需求结构化分析") -> None:
     """以可筛选的工作台形式展示当前文档版本已保存的分析结果。"""
     document_id = str(document.get("id") or "").strip()
-    st.markdown(
-        f'<div class="gt-detail-section">{html.escape(section_title)}</div>',
-        unsafe_allow_html=True,
-    )
     if not document_id:
         st.info("当前文档版本缺少关联 ID，无法定位已保存的分析结果。")
         return
