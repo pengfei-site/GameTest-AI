@@ -124,20 +124,27 @@ created_at = html.escape(str(project.get("created_at") or "-"))
 updated_at = html.escape(str(project.get("updated_at") or "-"))
 archived_at = project.get("archived_at")
 archived_html = f'<span>归档时间：{html.escape(str(archived_at))}</span>' if archived_at else ""
-st.html(f"""
-<div class="detail-card">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-    <div class="project-name">{project_name}</div>
-    <span class="status-pill {status_class}">{status_label}</span>
-  </div>
-  <div class="project-description">{project_description}</div>
-  <div style="height:1px;background:#E2E8F0;margin:16px 0 12px"></div>
-  <div class="project-meta" style="display:flex;gap:24px;flex-wrap:wrap">
-    <span>项目 ID：{html.escape(str(project.get("id", "-")))}</span>
-    <span>创建时间：{created_at}</span><span>最近更新：{updated_at}</span>{archived_html}
-  </div>
-</div>
-""")
+with st.container(border=True):
+    info_left, info_right = st.columns([5, 1], vertical_alignment="center")
+    with info_left:
+        st.html(f"""
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div class="project-name" style="margin:0">{project_name}</div>
+          <span class="status-pill {status_class}">{status_label}</span>
+        </div>
+        """)
+    with info_right:
+        if is_active and st.button("✏️ 编辑项目", key="detail_edit_project", width="stretch"):
+            st.session_state["edit_project_target_id"] = str(project_id)
+            st.switch_page("pages/03_项目编辑.py")
+    st.html(f"""
+    <div class="project-description">{project_description}</div>
+    <div style="height:1px;background:#E2E8F0;margin:16px 0 12px"></div>
+    <div class="project-meta" style="display:flex;gap:24px;flex-wrap:wrap">
+      <span>项目 ID：{html.escape(str(project.get("id", "-")))}</span>
+      <span>创建时间：{created_at}</span><span>最近更新：{updated_at}</span>{archived_html}
+    </div>
+    """)
 
 try:
     stats = load_project_statistics(str(project_id))
@@ -215,17 +222,14 @@ if not is_active:
 else:
     action_items = [
         ("📄 需求文档", "查看和维护项目需求文档", "进入需求文档", "detail_documents"),
-        ("🧠 结构化需求分析", "查看需求分析结果", "进入需求分析", "detail_analysis"),
         ("🎯 测试点管理", "生成、审核和管理测试点", "进入测试点管理", "detail_test_points"),
         ("📋 测试用例管理", "查看和管理测试用例", "进入测试用例管理", "detail_test_cases"),
-        ("✏️ 编辑项目信息", "修改项目名称、描述等基础信息", "编辑项目", "detail_edit_project"),
     ]
     destinations = {
         "detail_documents": ("document_project_id", "pages/05_需求文档.py"),
         "detail_analysis": ("analysis_project_selector", "pages/06_结构化需求分析.py"),
         "detail_test_points": ("test_point_list_project", "pages/08_测试点列表.py"),
         "detail_test_cases": (None, "pages/12_测试用例管理.py"),
-        "detail_edit_project": ("edit_project_target_id", "pages/03_项目编辑.py"),
     }
     for start in range(0, len(action_items), 3):
         cols = st.columns(3)
