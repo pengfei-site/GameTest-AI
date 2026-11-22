@@ -52,19 +52,24 @@ if not versions:
     st.stop()
 
 active_versions = [item for item in versions if not item.get("is_deleted")]
-current = active_versions[0] if active_versions else versions[0]
-name = str(current.get("document_name") or "未命名文档")
+default_version = active_versions[0] if active_versions else versions[0]
+version_labels = {
+    f"V{item.get('version', 1)} · {'已删除' if item.get('is_deleted') else '有效'} · {str(item.get('created_at') or '时间未知')}"
+    : item
+    for item in versions
+}
+default_version_label = next(
+    label for label, item in version_labels.items()
+    if str(item.get("id")) == str(default_version.get("id"))
+)
 project_name = str(project.get("name") or "未命名项目")
-status = "有效" if active_versions else "已删除"
-status_color = "#15803D" if active_versions else "#B45309"
-status_bg = "#DCFCE7" if active_versions else "#FEF3C7"
 
 st.html(f"""
 <style>
-.gt-detail-hero {{ background:#fff; border:1px solid #E7EAF1; border-radius:14px; padding:20px 22px; margin:8px 0 18px; }}
+.gt-detail-hero {{ background:#fff; border:1px solid #E7EAF1; border-radius:14px; padding:20px 22px; margin:8px 0 0; }}
 .gt-detail-title {{ font-size:22px; font-weight:750; color:#24213F; overflow-wrap:anywhere; }}
 .gt-detail-sub {{ color:#778196; font-size:13px; margin-top:7px; }}
-.gt-detail-badge {{ display:inline-block; border-radius:20px; padding:4px 10px; color:{status_color}; background:{status_bg}; font-size:12px; font-weight:650; }}
+.gt-detail-badge {{ display:inline-block; border-radius:20px; padding:4px 10px; color:#15803D; background:#DCFCE7; font-size:12px; font-weight:650; }}
 .gt-detail-section {{ color:#292746; font-size:16px; font-weight:700; margin:22px 0 10px; }}
 .gt-detail-version {{ border:1px solid #E7EAF1; border-radius:10px; padding:12px 14px; margin:7px 0; background:#fff; }}
 .gt-analysis-module {{ display:flex; align-items:center; gap:10px; font-size:15px; font-weight:750; color:#37316F; background:linear-gradient(110deg,#F2F0FF,#FAF9FF); border:1px solid #E7E2FF; border-left:4px solid #7968D8; border-radius:10px; padding:13px 16px; margin:2px 0 16px; }}
@@ -83,30 +88,37 @@ st.html(f"""
 .gt-analysis-metric {{ background:#FAFAFE; border:1px solid #ECEBF5; border-radius:9px; padding:10px 12px; }}
 .gt-analysis-metric strong {{ display:block; color:#39356B; font-size:19px; line-height:1.3; }}
 .gt-analysis-metric span {{ color:#85899A; font-size:11px; }}
-/* 分类导航改用 Streamlit segmented_control，不再渲染 Radio 圆点 */
 div[data-testid="stSegmentedControl"] [role="group"] {{
-  display:flex !important;
-  flex-wrap:nowrap !important;
-  width:100% !important;
-  gap:4px !important;
+  display:flex !important; flex-wrap:nowrap !important; width:100% !important; gap:4px !important;
 }}
 div[data-testid="stSegmentedControl"] button {{
-  flex:1 1 auto !important;
-  min-width:0 !important;
-  white-space:nowrap !important;
-  padding-left:8px !important;
-  padding-right:8px !important;
+  flex:1 1 auto !important; min-width:0 !important; white-space:nowrap !important;
+  padding-left:8px !important; padding-right:8px !important;
 }}
 @media(max-width:700px) {{ .gt-analysis-metrics {{ grid-template-columns:repeat(2,minmax(0,1fr)); }} }}
 </style>
-<div class="gt-detail-hero">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-    <div class="gt-detail-title">▤ {html.escape(name)}</div>
-    <span class="gt-detail-badge">{status}</span>
-  </div>
-  <div class="gt-detail-sub">所属项目：{html.escape(project_name)}　·　创建时间：{html.escape(str(current.get("created_at") or "暂无"))}　·　当前版本：V{current.get("version", 1)}　·　历史版本：{len(versions)} 个</div>
-</div>
 """)
+with st.container(border=True):
+    st.markdown(f"### ▤ {html.escape(str(default_version.get('document_name') or '未命名文档'))}")
+    st.caption(f"所属项目：{project_name}　·　历史版本：{len(versions)} 个")
+    selected_version_label = st.selectbox(
+        "当前版本",
+        options=list(version_labels.keys()),
+        index=list(version_labels.keys()).index(default_version_label),
+        key=f"requirement_detail_version_{project_id}_{document_key}",
+        label_visibility="visible",
+    )
+    current = version_labels[selected_version_label]
+    status = "已删除" if current.get("is_deleted") else "有效"
+    status_color = "#B45309" if current.get("is_deleted") else "#15803D"
+    status_bg = "#FEF3C7" if current.get("is_deleted") else "#DCFCE7"
+    st.markdown(
+        f'<span style="display:inline-block;border-radius:20px;padding:4px 10px;'
+        f'color:{status_color};background:{status_bg};font-size:12px;font-weight:650;">'
+        f'{status}</span>　创建时间：{html.escape(str(current.get("created_at") or "暂无"))}',
+        unsafe_allow_html=True,
+    )
+name = str(current.get("document_name") or "未命名文档")
 
 
 def render_original_preview(document: dict, key_suffix: str) -> None:
