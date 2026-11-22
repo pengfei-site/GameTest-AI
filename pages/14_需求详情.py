@@ -240,8 +240,41 @@ def _render_analysis_items(values, label: str, item_prefix: str = "") -> None:
             )
 
 
+def _analysis_text(item, *keys) -> str:
+    if not isinstance(item, dict):
+        return str(item or "")
+    for key in keys:
+        value = item.get(key)
+        if value not in (None, ""):
+            return str(value)
+    return ""
+
+
+def _render_analysis_card(title: str, body: str, status: str = "", source: str = "", prefix: str = "") -> None:
+    status_html = (
+        f'<span class="gt-analysis-tag">{html.escape(status)}</span>'
+        if status else ""
+    )
+    st.markdown(
+        f"""
+        <div class="gt-analysis-item">
+          <div class="gt-analysis-item-head">
+            <span class="gt-rule-id">{html.escape(prefix or title)}</span>
+            <strong>{html.escape(title if prefix else "")}</strong>
+            {status_html}
+          </div>
+          <div class="gt-analysis-item-body">{html.escape(body or "暂无详细描述")}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if source:
+        with st.expander("查看需求依据", expanded=False):
+            st.caption(source)
+
+
 def render_requirement_analysis(document: dict, section_title: str = "需求结构化分析") -> None:
-    """展示当前文档版本已保存的分析结果，不触发重新分析。"""
+    """以可筛选的工作台形式展示当前文档版本已保存的分析结果。"""
     document_id = str(document.get("id") or "").strip()
     st.markdown(
         f'<div class="gt-detail-section">{html.escape(section_title)}</div>',
@@ -273,123 +306,152 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
         "exception_cases": "异常情况",
         "open_questions": "待确认问题",
     }
-    category_filter = st.selectbox(
-        "筛选分析分类",
-        options=["全部分类", *category_labels.values()],
-        index=0,
-        key=f"analysis_category_filter_{document_id}_{section_title}",
-        help="选择分类后，仅展示该分类的分析内容。",
-    )
-    selected_category = next(
-        (key for key, label in category_labels.items() if label == category_filter),
-        None,
-    )
+    category_icons = {
+        "summary": "📝", "business_rules": "📋", "preconditions": "🔑",
+        "states": "🔄", "numeric_constraints": "🔢",
+        "exception_cases": "⚠️", "open_questions": "❓",
+    }
 
-    for index, analysis in enumerate(analyses, start=1):
-        analysis_data = analysis.get("analysis_data") or {}
-        if not isinstance(analysis_data, dict):
+    for record_index, analysis in enumerate(analyses, start=1):
+        data = analysis.get("analysis_data") or {}
+        if not isinstance(data, dict):
             st.warning("该条分析记录的数据格式异常，暂时无法展示。")
             continue
 
-        module = str(analysis.get("module") or analysis_data.get("module") or "未命名模块")
-        summary = str(analysis.get("summary") or analysis_data.get("summary") or "")
-        business_rules = analysis_data.get("business_rules") or []
-        preconditions = analysis_data.get("preconditions") or []
-        states = analysis_data.get("states") or []
-        constraints = analysis_data.get("numeric_constraints") or []
-        exceptions = analysis_data.get("exception_cases") or []
-        questions = analysis_data.get("open_questions") or []
+        module = str(analysis.get("module") or data.get("module") or "未命名模块")
+        summary = str(analysis.get("summary") or data.get("summary") or "")
+        groups = {
+            "summary": summary,
+            "business_rules": data.get("business_rules") or [],
+            "preconditions": data.get("preconditions") or [],
+            "states": data.get("states") or [],
+            "numeric_constraints": data.get("numeric_constraints") or [],
+            "exception_cases": data.get("exception_cases") or [],
+            "open_questions": data.get("open_questions") or [],
+        }
+        counts = {
+            key: (1 if value else 0) if key == "summary" else len(value) if isinstance(value, list) else 0
+            for key, value in groups.items()
+        }
 
-        with st.expander(f"{module} · 分析记录 {index}", expanded=(index == 1)):
+        st.markdown(
+            f'<div class="gt-analysis-module">{html.escape(module)}'
+            f'<span style="margin-left:auto;font-size:11px;color:#85899A;font-weight:500;">分析记录 {record_index}</span></div>',
+            unsafe_allow_html=True,
+        )
+        metric_cols = st.columns(4)
+        metric_items = [
+            ("business_rules", "业务规则"),
+            ("preconditions", "前置条件"),
+            ("open_questions", "待确认问题"),
+            ("numeric_constraints", "数值约束"),
+        ]
+        for col, (key, label) in zip(metric_cols, metric_items):
+            with col:
+                st.metric(label, counts[key])
+
+        available = [key for key in category_labels if counts[key] > 0]
+        if not available:
+            st.info("该分析记录暂无可展示内容。")
+            continue
+
+        nav_labels = [
+            f'{category_icons[key]} {category_labels[key]} · {counts[key]}'
+            for key in available
+        ]
+        selected_label = st.radio(
+            "分析内容导航",
+            options=nav_labels,
+            horizontal=True,
+            key=f"analysis_nav_{document_id}_{record_index}_{section_title}",
+            label_visibility="collapsed",
+        )
+        selected_key = available[nav_labels.index(selected_label)]
+        st.markdown(
+            f'<div class="gt-analysis-group-title">{category_labels[selected_key]}</div>',
+            unsafe_allow_html=True,
+        )
+
+        if selected_key == "summary":
             st.markdown(
-                f'<div class="gt-analysis-module">{html.escape(module)}</div>',
+                f'<div class="gt-analysis-summary">{html.escape(summary)}</div>',
                 unsafe_allow_html=True,
             )
-            if summary and selected_category in (None, "summary"):
-                st.markdown('<div class="gt-analysis-group-title">需求概述</div>', unsafe_allow_html=True)
-                st.markdown(
-                    f'<div class="gt-analysis-summary">{html.escape(summary)}</div>',
-                    unsafe_allow_html=True,
+
+        elif selected_key == "business_rules":
+            rules = groups["business_rules"]
+            search_col, status_col = st.columns([2, 1])
+            with search_col:
+                keyword = st.text_input(
+                    "搜索业务规则",
+                    placeholder="输入规则编号、内容或需求依据",
+                    key=f"analysis_rule_search_{document_id}_{record_index}_{section_title}",
+                ).strip().lower()
+            statuses = sorted({
+                str(rule.get("status") or "").strip()
+                for rule in rules if isinstance(rule, dict) and rule.get("status")
+            })
+            with status_col:
+                status_filter = st.selectbox(
+                    "状态筛选",
+                    ["全部状态", *statuses],
+                    key=f"analysis_rule_status_{document_id}_{record_index}_{section_title}",
                 )
+            filtered_rules = []
+            for idx, rule in enumerate(rules, start=1):
+                rule_id = _analysis_text(rule, "rule_id") or f"BR-{idx:03d}"
+                body = _analysis_text(rule, "rule_text", "description", "text") if isinstance(rule, dict) else str(rule)
+                source = _analysis_text(rule, "source_text")
+                rule_status = _analysis_text(rule, "status")
+                haystack = f"{rule_id} {body} {source}".lower()
+                if keyword and keyword not in haystack:
+                    continue
+                if status_filter != "全部状态" and rule_status != status_filter:
+                    continue
+                filtered_rules.append((rule_id, body, source, rule_status))
+            st.caption(f"显示 {len(filtered_rules)} / {len(rules)} 条业务规则")
+            if not filtered_rules:
+                st.info("没有找到符合条件的业务规则。")
+            for rule_id, body, source, rule_status in filtered_rules:
+                _render_analysis_card(rule_id, body, rule_status, source, rule_id)
 
-            if business_rules and selected_category in (None, "business_rules"):
-                st.markdown('<div class="gt-analysis-group-title">业务规则</div>', unsafe_allow_html=True)
-                for rule_index, rule in enumerate(business_rules, start=1):
-                    if isinstance(rule, dict):
-                        rule_id = str(rule.get("rule_id") or f"BR-{rule_index:03d}")
-                        rule_text = str(rule.get("rule_text") or "")
-                        rule_status = str(rule.get("status") or "")
-                        source_text = str(rule.get("source_text") or "")
-                    else:
-                        rule_id, rule_text, rule_status, source_text = f"BR-{rule_index:03d}", str(rule), "", ""
-                    status_html = (
-                        f'<span class="gt-analysis-tag">{html.escape(rule_status)}</span>'
-                        if rule_status else ""
-                    )
+        elif selected_key == "numeric_constraints":
+            rows = []
+            for item in groups[selected_key]:
+                if isinstance(item, dict):
+                    rows.append({
+                        "参数": _analysis_text(item, "name") or "未命名约束",
+                        "数值": _display_value(item.get("value", "")),
+                        "单位": _analysis_text(item, "unit"),
+                        "说明": _analysis_text(item, "description"),
+                    })
+                else:
+                    rows.append({"参数": _display_value(item), "数值": "", "单位": "", "说明": ""})
+            st.dataframe(rows, hide_index=True, width="stretch")
+
+        else:
+            values = groups[selected_key]
+            for idx, item in enumerate(values, start=1):
+                if selected_key == "open_questions":
+                    body = _analysis_text(item, "question", "text", "description") if isinstance(item, dict) else str(item)
+                    source = _analysis_text(item, "source_text")
                     st.markdown(
-                        f"""
-                        <div class="gt-analysis-item">
-                          <div class="gt-analysis-item-head">
-                            <span class="gt-rule-id">{html.escape(rule_id)}</span>
-                            {status_html}
-                          </div>
-                          <div class="gt-analysis-item-body">{html.escape(rule_text)}</div>
-                          {f'<div class="gt-analysis-source">需求依据：{html.escape(source_text)}</div>' if source_text else ''}
-                        </div>
-                        """,
+                        f'<div class="gt-analysis-question"><span class="gt-analysis-tag gt-analysis-tag-warning">待确认</span><div>{html.escape(body)}</div></div>',
                         unsafe_allow_html=True,
                     )
+                    if source:
+                        with st.expander("查看需求依据", expanded=False):
+                            st.caption(source)
+                    continue
 
-            if selected_category in (None, "preconditions"):
-                _render_analysis_items(preconditions, "前置条件", "PRE-")
-            if selected_category in (None, "states"):
-                _render_analysis_items(states, "涉及状态", "STATE-")
-
-            if constraints and selected_category in (None, "numeric_constraints"):
-                st.markdown('<div class="gt-analysis-group-title">数值约束</div>', unsafe_allow_html=True)
-                rows = []
-                for item in constraints:
-                    if isinstance(item, dict):
-                        rows.append({
-                            "参数": str(item.get("name") or "未命名约束"),
-                            "数值": _display_value(item.get("value", "")),
-                            "单位": str(item.get("unit") or ""),
-                            "说明": str(item.get("description") or ""),
-                        })
-                    else:
-                        rows.append({"参数": _display_value(item), "数值": "", "单位": "", "说明": ""})
-                st.dataframe(rows, hide_index=True, width="stretch")
-
-            if selected_category in (None, "exception_cases"):
-                _render_analysis_items(exceptions, "异常情况", "EX-")
-            if questions and selected_category in (None, "open_questions"):
-                st.markdown('<div class="gt-analysis-group-title">待确认问题</div>', unsafe_allow_html=True)
-                for question_index, question in enumerate(questions, start=1):
-                    question_text = (
-                        question.get("question") or question.get("text") or question.get("description") or str(question)
-                        if isinstance(question, dict) else str(question)
-                    )
-                    st.markdown(
-                        f"""
-                        <div class="gt-analysis-question">
-                          <span class="gt-analysis-tag gt-analysis-tag-warning">待确认</span>
-                          <div>{html.escape(question_text)}</div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-
-            category_has_content = {
-                "summary": bool(summary),
-                "business_rules": bool(business_rules),
-                "preconditions": bool(preconditions),
-                "states": bool(states),
-                "numeric_constraints": bool(constraints),
-                "exception_cases": bool(exceptions),
-                "open_questions": bool(questions),
-            }
-            if selected_category and not category_has_content[selected_category]:
-                st.info(f"该分析记录暂无「{category_filter}」内容。")
+                title = (
+                    _analysis_text(item, "rule_id", "name", "title")
+                    if isinstance(item, dict) else ""
+                ) or f"{selected_key[:3].upper()}-{idx:03d}"
+                body = _analysis_text(item, "rule_text", "description", "text", "question") if isinstance(item, dict) else str(item)
+                status = _analysis_text(item, "status") if isinstance(item, dict) else ""
+                source = _analysis_text(item, "source_text") if isinstance(item, dict) else ""
+                _render_analysis_card(title, body, status, source, title)
 
 
 render_requirement_analysis(current)
