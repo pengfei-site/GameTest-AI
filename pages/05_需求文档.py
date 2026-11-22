@@ -528,10 +528,14 @@ else:
     }
     .gt-tapd-table tbody tr:last-child td { border-bottom: 0; }
     .gt-tapd-table tbody tr:hover td { background: #F8FAFD; }
-    .gt-tapd-table .gt-tapd-name { width: 70%; }
-    .gt-tapd-table .gt-tapd-version { width: 10%; color: #606266; }
-    .gt-tapd-table .gt-tapd-type { width: 10%; color: #606266; }
-    .gt-tapd-table .gt-tapd-state { width: 10%; }
+    .gt-tapd-table thead th:nth-child(1),
+    .gt-tapd-table tbody td:nth-child(1) { width: 70%; }
+    .gt-tapd-table thead th:nth-child(2),
+    .gt-tapd-table tbody td:nth-child(2) { width: 10%; color: #606266; }
+    .gt-tapd-table thead th:nth-child(3),
+    .gt-tapd-table tbody td:nth-child(3) { width: 10%; color: #606266; }
+    .gt-tapd-table thead th:nth-child(4),
+    .gt-tapd-table tbody td:nth-child(4) { width: 10%; }
     .gt-tapd-table .gt-tapd-name a {
         color: #303133;
         text-decoration: none;
