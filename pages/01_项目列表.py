@@ -104,9 +104,9 @@ def render_project_actions():
             )
 
 render_header(
-    title="项目列表",
-    description="查看和筛选工作空间中的游戏测试项目。",
-    breadcrumb=["项目中心", "项目列表"],
+    title="项目中心",
+    description="统一管理游戏测试项目，查看项目状态并进入测试工作流。",
+    breadcrumb=["工作空间", "项目中心"],
     actions=render_create_project_action,
 )
 
