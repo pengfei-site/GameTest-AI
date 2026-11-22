@@ -77,6 +77,10 @@ name = str(current.get("document_name") or "未命名文档")
 
 st.html(f"""
 <style>
+.gt-detail-hero {{ background:#FFFFFF; border:1px solid #E7EAF1; border-radius:12px; padding:20px 22px; margin:8px 0 20px; box-shadow:0 2px 8px rgba(31,41,55,.04); }}
+.gt-detail-title {{ color:#302D50; font-size:20px; line-height:1.45; font-weight:750; }}
+.gt-detail-current-version {{ flex-shrink:0; color:#5D50A8; background:#F1EFFF; border:1px solid #E6E1FF; border-radius:999px; padding:6px 12px; font-size:12px; font-weight:700; white-space:nowrap; }}
+.gt-detail-sub {{ color:#8490A3; font-size:12px; line-height:1.7; margin-top:10px; }}
 .gt-detail-version {{ border:1px solid #E7EAF1; border-radius:10px; padding:12px 14px; margin:7px 0; background:#fff; }}
 .gt-analysis-module {{ display:flex; align-items:center; gap:10px; font-size:15px; font-weight:750; color:#37316F; background:linear-gradient(110deg,#F2F0FF,#FAF9FF); border:1px solid #E7E2FF; border-left:4px solid #7968D8; border-radius:10px; padding:13px 16px; margin:2px 0 16px; }}
 .gt-analysis-summary {{ background:#F8FAFF; border:1px solid #E5EAF5; border-radius:10px; padding:16px 18px; line-height:1.9; color:#30384B; font-size:14px; }}
