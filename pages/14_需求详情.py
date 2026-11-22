@@ -83,82 +83,7 @@ st.html(f"""
 .gt-analysis-metric {{ background:#FAFAFE; border:1px solid #ECEBF5; border-radius:9px; padding:10px 12px; }}
 .gt-analysis-metric strong {{ display:block; color:#39356B; font-size:19px; line-height:1.3; }}
 .gt-analysis-metric span {{ color:#85899A; font-size:11px; }}
-/* 分类导航：明确的胶囊按钮外观 */
-div[data-testid="stRadio"] div[role="radiogroup"] {{
-  display:flex !important;
-  flex-wrap:wrap !important;
-  align-items:center !important;
-  gap:10px !important;
-  width:100% !important;
-}}
-div[data-testid="stRadio"] div[role="radiogroup"] label {{
-  display:inline-flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  flex:0 0 auto !important;
-  min-height:40px !important;
-  padding:8px 17px !important;
-  margin:0 !important;
-  border:1px solid #E1E3ED !important;
-  border-radius:999px !important;
-  background:#FFFFFF !important;
-  color:#596074 !important;
-  box-shadow:none !important;
-  cursor:pointer !important;
-  transition:all .15s ease !important;
-}}
-div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) {{
-  border:1px solid #7968D8 !important;
-  background:#7968D8 !important;
-  color:#FFFFFF !important;
-  box-shadow:0 2px 7px rgba(121,104,216,.20) !important;
-}}
-div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) p,
-div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) span {{
-  color:#FFFFFF !important;
-  font-weight:650 !important;
-}}
-div[data-testid="stRadio"] div[role="radiogroup"] label:hover:not(:has(input:checked)) {{
-  border-color:#A99DE5 !important;
-  background:#F5F3FF !important;
-  color:#51449A !important;
-}}
-div[data-testid="stRadio"] div[role="radiogroup"] label p {{
-  margin:0 !important;
-  font-size:13px !important;
-  line-height:1.3 !important;
-  white-space:nowrap !important;
-}}
-/* 胶囊已承担选中反馈：彻底关闭 Streamlit 原生 radio 圆点 */
-div[data-testid="stRadio"] div[role="radiogroup"] input[type="radio"] {{
-  appearance:none !important;
-  -webkit-appearance:none !important;
-  opacity:0 !important;
-  width:0 !important;
-  height:0 !important;
-  position:absolute !important;
-  pointer-events:none !important;
-}}
-div[data-testid="stRadio"] div[role="radiogroup"] label > div:first-child,
-div[data-testid="stRadio"] div[role="radiogroup"] label > div:first-child *,
-div[data-testid="stRadio"] div[role="radiogroup"] label svg,
-div[data-testid="stRadio"] div[role="radiogroup"] label [data-testid*="Radio"],
-div[data-testid="stRadio"] div[role="radiogroup"] label [class*="stRadio"] {{
-  display:none !important;
-  visibility:hidden !important;
-  width:0 !important;
-  height:0 !important;
-  min-width:0 !important;
-  min-height:0 !important;
-  margin:0 !important;
-  padding:0 !important;
-  border:0 !important;
-}}
-div[data-testid="stRadio"] div[role="radiogroup"] label::before,
-div[data-testid="stRadio"] div[role="radiogroup"] label::after {{
-  content:none !important;
-  display:none !important;
-}}
+/* 分类导航改用 Streamlit segmented_control，不再渲染 Radio 圆点 */
 @media(max-width:700px) {{ .gt-analysis-metrics {{ grid-template-columns:repeat(2,minmax(0,1fr)); }} }}
 </style>
 <div class="gt-detail-hero">
@@ -435,12 +360,14 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
             f'{category_icons[key]} {category_labels[key]} · {counts[key]}'
             for key in available
         ]
-        selected_label = st.radio(
+        selected_label = st.segmented_control(
             "分析内容导航",
             options=nav_labels,
-            horizontal=True,
+            selection_mode="single",
+            default=nav_labels[0],
             key=f"analysis_nav_{document_id}_{record_index}_{section_title}",
             label_visibility="collapsed",
+            width="stretch",
         )
         selected_key = available[nav_labels.index(selected_label)]
         st.markdown(
