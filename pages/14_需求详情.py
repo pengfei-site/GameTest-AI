@@ -52,27 +52,8 @@ if not versions:
     st.stop()
 
 active_versions = [item for item in versions if not item.get("is_deleted")]
-default_version = active_versions[0] if active_versions else versions[0]
-version_map = {
-    f"V{item.get('version', 1)} · {'已删除' if item.get('is_deleted') else '有效'} · {str(item.get('created_at') or '时间未知')}" : item
-    for item in versions
-}
-default_version_label = next(
-    label for label, item in version_map.items()
-    if str(item.get("id")) == str(default_version.get("id"))
-)
+current = active_versions[0] if active_versions else versions[0]
 project_name = str(project.get("name") or "未命名项目")
-
-# 版本选择器独立放置，不再增加第二张边框卡片；下方继续使用原有详情 Hero 卡片。
-_, version_col = st.columns([3, 2], vertical_alignment="center")
-with version_col:
-    selected_version_label = st.selectbox(
-        "切换版本",
-        options=list(version_map.keys()),
-        index=list(version_map.keys()).index(default_version_label),
-        key=f"requirement_detail_version_{project_id}_{document_key}",
-    )
-current = version_map[selected_version_label]
 name = str(current.get("document_name") or "未命名文档")
 
 st.html(f"""
