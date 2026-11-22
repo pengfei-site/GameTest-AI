@@ -2,7 +2,7 @@ import html
 import streamlit as st
 
 from database.connection import get_connection
-from database.repositories.project_repository import get_project, update_project
+from database.repositories.project_repository import get_project, update_project, archive_project
 
 
 st.html("""
@@ -25,6 +25,30 @@ st.html("""
 .relation-note{color:#64748B;font-size:12px;line-height:1.7}
 </style>
 """)
+
+
+@st.dialog("归档项目")
+def archive_project_dialog(current_project: dict) -> None:
+    """确认后归档当前项目。"""
+    st.warning(
+        f"确定要归档项目「{current_project.get('name') or '未命名项目'}」吗？"
+    )
+    st.caption("归档不会删除项目数据；归档后项目将进入只读状态。")
+    confirm_col, cancel_col = st.columns(2)
+    with confirm_col:
+        if st.button("确认归档", key="detail_confirm_archive", type="primary", width="stretch"):
+            try:
+                result = archive_project(current_project["id"])
+                if result:
+                    st.success("项目归档成功！")
+                    st.rerun()
+                else:
+                    st.warning("项目不存在或已经归档。")
+            except Exception as exc:
+                st.error(f"归档项目失败：{exc}")
+    with cancel_col:
+        if st.button("取消", key="detail_cancel_archive", width="stretch"):
+            st.rerun()
 
 
 @st.dialog("编辑项目")
@@ -166,8 +190,8 @@ created_at = html.escape(str(project.get("created_at") or "-"))
 updated_at = html.escape(str(project.get("updated_at") or "-"))
 archived_at = project.get("archived_at")
 archived_html = f'<span>归档时间：{html.escape(str(archived_at))}</span>' if archived_at else ""
-with st.container(border=True):
-    info_left, info_right = st.columns([5, 1], vertical_alignment="center")
+with st.container(key=f"project_detail_card_{project_id}"):
+    info_left, info_right = st.columns([5, 2], vertical_alignment="center")
     with info_left:
         st.html(f"""
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
@@ -176,8 +200,13 @@ with st.container(border=True):
         </div>
         """)
     with info_right:
-        if is_active and st.button("✏️ 编辑项目", key="detail_edit_project", width="stretch"):
-            edit_project_dialog(project)
+        edit_col, archive_col = st.columns(2, gap="small")
+        with edit_col:
+            if is_active and st.button("✏️ 编辑项目", key="detail_edit_project", width="stretch"):
+                edit_project_dialog(project)
+        with archive_col:
+            if is_active and st.button("📦 项目归档", key="detail_archive_project", width="stretch"):
+                archive_project_dialog(project)
     st.html(f"""
     <div class="project-description">{project_description}</div>
     <div style="height:1px;background:#E2E8F0;margin:16px 0 12px"></div>
