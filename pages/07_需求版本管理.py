@@ -46,21 +46,44 @@ div[data-testid="stVerticalBlock"].st-key-version_project_overview > div {
     display: inline-block; margin-top: 8px; padding: 4px 9px;
     color: #64748B; background: #F3F5F9; border-radius: 6px; font-size: 11px;
 }
-/* 项目中心卡片作为可见主体，透明 Popover 触发层覆盖整张卡片。 */
+/* 项目中心卡片：可见内容与透明整卡点击层分离。 */
 div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell {
     position: relative;
     min-height: 150px;
+    box-sizing: border-box;
+    background: #FFFFFF !important;
+    border: 1px solid #E7EAF1 !important;
+    border-radius: 12px !important;
+    padding: 20px 22px !important;
+    box-shadow: 0 2px 8px rgba(23, 32, 51, 0.04);
+    transition: border-color .15s, box-shadow .15s;
 }
-div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell > div { gap: 0; }
-div[data-testid="stPopover"].st-key-version_project_picker {
-    position: absolute; inset: 0; z-index: 5; width: 100%;
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell:hover {
+    border-color: #C9C4E8 !important;
+    box-shadow: 0 3px 10px rgba(23, 32, 51, 0.06);
 }
-div[data-testid="stPopover"].st-key-version_project_picker > button {
-    position: absolute; inset: 0; width: 100%; height: 100%;
-    min-height: 150px; opacity: 0; cursor: pointer;
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell > div {
+    gap: 0;
 }
-div[data-testid="stPopover"].st-key-version_project_picker [data-testid="stPopoverBody"] {
-    min-width: 300px;
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_toggle {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+    min-height: 150px;
+}
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_toggle [data-testid="stButton"] {
+    width: 100%;
+    height: 100%;
+}
+div[data-testid="stVerticalBlock"].st-key-version_project_picker_toggle button {
+    width: 100%;
+    height: 100%;
+    min-height: 150px;
+    opacity: 0 !important;
+    cursor: pointer;
+    padding: 0;
 }
 .gt-version-project-stats {
     display: flex; gap: 0; align-items: stretch; flex: 0 1 auto;
@@ -147,7 +170,7 @@ overview_project_col, overview_stats_col = st.columns(
 )
 
 with overview_project_col:
-    # 可见卡片复用项目中心的卡片 HTML 类名与信息层级。
+    # 卡片内容沿用项目中心卡片的 HTML 结构与全局样式。
     with st.container(key="version_project_picker_shell"):
         st.html(
             f"""
@@ -171,12 +194,21 @@ with overview_project_col:
             </div>
             """
         )
-        # 透明 Popover 按钮覆盖卡片，点击卡片任意位置均可展开项目列表。
-        with st.popover(
-            "切换项目",
-            key="version_project_picker",
-            use_container_width=True,
-        ):
+        # 空白按钮透明覆盖卡片，点击整张卡片切换项目列表的显示状态。
+        with st.container(key="version_project_picker_toggle"):
+            if st.button(
+                "展开项目列表",
+                key="toggle_version_project_picker",
+                help="切换当前项目",
+                use_container_width=True,
+            ):
+                st.session_state["version_project_picker_open"] = not st.session_state.get(
+                    "version_project_picker_open", False
+                )
+                st.rerun()
+
+    if st.session_state.get("version_project_picker_open", False):
+        with st.container(border=True):
             st.markdown("**切换项目**")
             for project_id in project_ids:
                 project = project_map[project_id]
@@ -184,15 +216,19 @@ with overview_project_col:
                 option_name = project.get("name") or "未命名项目"
                 option_description = project.get("description") or "暂无项目描述"
                 option_label = f"🎮 {option_name}  ·  {option_status}"
-                st.caption(option_description)
-                if st.button(
-                    option_label,
-                    key=f"choose_version_project_{project_id}",
-                    use_container_width=True,
-                    type="primary" if project_id == selected_project_id else "secondary",
-                ):
-                    st.session_state["version_project_id"] = project_id
-                    st.rerun()
+                option_col, status_col = st.columns([4, 1], vertical_alignment="center")
+                with option_col:
+                    if st.button(
+                        option_label,
+                        key=f"choose_version_project_{project_id}",
+                        use_container_width=True,
+                        type="primary" if project_id == selected_project_id else "secondary",
+                    ):
+                        st.session_state["version_project_id"] = project_id
+                        st.session_state["version_project_picker_open"] = False
+                        st.rerun()
+                with status_col:
+                    st.caption(option_description)
 
 with overview_stats_col:
     stat_cols = st.columns(3, gap="small")
