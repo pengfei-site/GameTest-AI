@@ -9,6 +9,7 @@ from core.document_storage import read_original_document
 from components.header import render_header
 from database.repositories.project_repository import list_projects
 from database.repositories.document_repository import list_documents
+from database.repositories.requirement_repository import list_requirement_analyses
 
 
 # 优先读取列表页通过 session_state 传递的定位信息；同时兼容直接使用 URL 参数打开。
@@ -172,17 +173,90 @@ def render_original_preview(document: dict, key_suffix: str) -> None:
 
 
 
-st.markdown('<div class="gt-detail-section">结构化需求文本</div>', unsafe_allow_html=True)
-structured_content = str(current.get("parsed_content") or "").strip()
-if structured_content:
-    with st.container(border=True):
-        # Markdown 文档保留标题、列表、表格等结构；其他格式按提取文本展示。
-        if str(current.get("file_type") or "").lower() in {"md", "markdown"}:
-            st.markdown(structured_content)
-        else:
-            st.markdown(structured_content.replace("\\n", "  \\n"))
-else:
-    st.info("当前版本暂无可展示的结构化需求文本。")
+def render_requirement_analysis(document: dict, section_title: str = "需求结构化分析") -> None:
+    """展示已保存的需求分析结果；这里只读数据库，不触发重新分析。"""
+    document_id = str(document.get("id") or "").strip()
+    st.markdown(
+        f'<div class="gt-detail-section">{html.escape(section_title)}</div>',
+        unsafe_allow_html=True,
+    )
+    if not document_id:
+        st.info("当前文档版本缺少关联 ID，无法定位已保存的分析结果。")
+        return
+
+    try:
+        analyses = list_requirement_analyses(
+            project_id=str(project_id),
+            document_id=document_id,
+        )
+    except Exception as exc:
+        st.error(f"读取已保存的需求分析结果失败：{exc}")
+        return
+
+    if not analyses:
+        st.info("当前文档版本暂无已保存的需求分析结果。")
+        return
+
+    for index, analysis in enumerate(analyses, start=1):
+        analysis_data = analysis.get("analysis_data") or {}
+        if not isinstance(analysis_data, dict):
+            st.warning("该条分析记录的数据格式异常，暂时无法展示。")
+            continue
+
+        created_at = str(analysis.get("created_at") or "创建时间未知")
+        module = str(analysis.get("module") or analysis_data.get("module") or "未命名模块")
+        summary = str(analysis.get("summary") or analysis_data.get("summary") or "")
+        with st.expander(
+            f"分析记录 {index} · {module} · {created_at}",
+            expanded=(index == 1),
+        ):
+            st.markdown(f"**功能模块：** {module}")
+            if summary:
+                st.markdown("**需求摘要**")
+                st.markdown(summary)
+
+            business_rules = analysis_data.get("business_rules") or []
+            if business_rules:
+                st.markdown("**业务规则**")
+                for rule in business_rules:
+                    if not isinstance(rule, dict):
+                        st.markdown(f"- {rule}")
+                        continue
+                    rule_id = str(rule.get("rule_id") or "")
+                    rule_text = str(rule.get("rule_text") or "")
+                    status = str(rule.get("status") or "未标注")
+                    source_text = str(rule.get("source_text") or "")
+                    st.markdown(f"- **{rule_id}** {rule_text}（{status}）")
+                    if source_text:
+                        st.caption(f"需求依据：{source_text}")
+
+            for field, label in (
+                ("preconditions", "前置条件"),
+                ("states", "涉及状态"),
+                ("exception_cases", "异常情况"),
+                ("open_questions", "待确认问题"),
+            ):
+                values = analysis_data.get(field) or []
+                if values:
+                    st.markdown(f"**{label}**")
+                    for value in values:
+                        st.markdown(f"- {value}")
+
+            constraints = analysis_data.get("numeric_constraints") or []
+            if constraints:
+                st.markdown("**数值约束**")
+                for item in constraints:
+                    if isinstance(item, dict):
+                        name = str(item.get("name") or "未命名约束")
+                        value = item.get("value", "")
+                        unit = str(item.get("unit") or "")
+                        description = str(item.get("description") or "")
+                        st.markdown(f"- **{name}：** {value}{unit} {description}")
+                    else:
+                        st.markdown(f"- {item}")
+
+
+render_requirement_analysis(current)
 
 
 st.markdown('<div class="gt-detail-section">需求正文</div>', unsafe_allow_html=True)
@@ -202,4 +276,5 @@ for item in versions:
     </div>
     """)
     with st.expander(f"查看 V{item.get('version', 1)} 内容"):
+        render_requirement_analysis(item, f"V{item.get('version', 1)} 需求结构化分析")
         render_original_preview(item, f"history_{item.get('id') or item.get('version') or 'unknown'}")
