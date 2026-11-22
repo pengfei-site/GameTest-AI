@@ -66,12 +66,12 @@ div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell:hover {
     border-color: #C9C4E8 !important;
     box-shadow: 0 3px 10px rgba(23, 32, 51, 0.06);
 }
-/* 左下角展开提示；Popover 展开时箭头向上，收起时向下。 */
+/* 右下角展开提示；Popover 展开时箭头向上，收起时向下。 */
 div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell::after {
     content: "⌄";
     position: absolute;
-    left: 18px;
-    bottom: 10px;
+    right: 16px;
+    bottom: 12px;
     z-index: 3;
     color: #8490A3;
     font-size: 20px;
