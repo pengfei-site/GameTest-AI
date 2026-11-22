@@ -67,16 +67,23 @@ st.html(f"""
 .gt-detail-badge {{ display:inline-block; border-radius:20px; padding:4px 10px; color:{status_color}; background:{status_bg}; font-size:12px; font-weight:650; }}
 .gt-detail-section {{ color:#292746; font-size:16px; font-weight:700; margin:22px 0 10px; }}
 .gt-detail-version {{ border:1px solid #E7EAF1; border-radius:10px; padding:12px 14px; margin:7px 0; background:#fff; }}
-.gt-analysis-module {{ font-size:15px; font-weight:700; color:#403B78; background:#F4F2FF; border-left:3px solid #8175D5; border-radius:7px; padding:10px 12px; margin:4px 0 14px; }}
-.gt-analysis-summary {{ background:#F8F9FC; border:1px solid #E9ECF3; border-radius:9px; padding:13px 15px; line-height:1.75; color:#34384A; }}
-.gt-analysis-item {{ background:#fff; border:1px solid #E8EAF1; border-radius:9px; padding:12px 14px; margin:8px 0; }}
-.gt-analysis-item-head {{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; color:#34324F; }}
-.gt-rule-id {{ color:#6558B5; background:#F1EFFF; border-radius:5px; padding:3px 7px; font-size:12px; font-weight:700; }}
-.gt-analysis-tag {{ color:#26734D; background:#EAF7EF; border-radius:20px; padding:3px 8px; font-size:11px; }}
-.gt-analysis-tag-warning {{ color:#A65B0B; background:#FFF3DF; }}
-.gt-analysis-item-body {{ color:#41465A; line-height:1.7; margin-top:8px; white-space:pre-wrap; }}
-.gt-analysis-source {{ color:#8790A2; font-size:12px; line-height:1.6; margin-top:7px; border-top:1px dashed #E7EAF1; padding-top:7px; }}
-.gt-analysis-question {{ display:flex; align-items:flex-start; gap:10px; background:#FFFAF1; border:1px solid #F5E5C8; border-radius:9px; padding:12px 14px; margin:8px 0; line-height:1.65; color:#65491F; }}
+.gt-analysis-module {{ display:flex; align-items:center; gap:10px; font-size:15px; font-weight:750; color:#37316F; background:linear-gradient(110deg,#F2F0FF,#FAF9FF); border:1px solid #E7E2FF; border-left:4px solid #7968D8; border-radius:10px; padding:13px 16px; margin:2px 0 16px; }}
+.gt-analysis-summary {{ background:#F8FAFF; border:1px solid #E5EAF5; border-radius:10px; padding:16px 18px; line-height:1.9; color:#30384B; font-size:14px; }}
+.gt-analysis-item {{ background:#fff; border:1px solid #E8ECF3; border-radius:10px; padding:14px 16px; margin:9px 0; box-shadow:0 1px 3px rgba(31,41,55,.025); }}
+.gt-analysis-item-head {{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; color:#30364A; font-size:13px; }}
+.gt-rule-id {{ color:#5D50A8; background:#F1EFFF; border:1px solid #E6E1FF; border-radius:6px; padding:4px 8px; font-size:11px; font-weight:750; letter-spacing:.2px; }}
+.gt-analysis-tag {{ color:#24734B; background:#EAF7EF; border:1px solid #D8F0E1; border-radius:20px; padding:3px 9px; font-size:11px; font-weight:650; white-space:nowrap; }}
+.gt-analysis-tag-warning {{ color:#9A5A0B; background:#FFF4E2; border-color:#F7E4C2; }}
+.gt-analysis-item-body {{ color:#394256; line-height:1.85; margin-top:10px; white-space:pre-wrap; font-size:13px; overflow-wrap:anywhere; }}
+.gt-analysis-source {{ color:#7B8496; font-size:12px; line-height:1.75; margin-top:10px; background:#F8F9FC; border-radius:7px; padding:8px 10px; overflow-wrap:anywhere; }}
+.gt-analysis-question {{ display:flex; align-items:flex-start; gap:10px; background:#FFFAF1; border:1px solid #F3E4C8; border-radius:10px; padding:13px 15px; margin:9px 0; line-height:1.8; color:#65491F; font-size:13px; }}
+.gt-analysis-group-title {{ display:flex; align-items:center; gap:8px; color:#343653; font-size:13px; font-weight:750; margin:20px 0 9px; padding-bottom:8px; border-bottom:1px solid #EEF0F5; }}
+.gt-analysis-group-title:before {{ content:""; width:4px; height:15px; border-radius:4px; background:#8175D5; display:inline-block; }}
+.gt-analysis-metrics {{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin:0 0 14px; }}
+.gt-analysis-metric {{ background:#FAFAFE; border:1px solid #ECEBF5; border-radius:9px; padding:10px 12px; }}
+.gt-analysis-metric strong {{ display:block; color:#39356B; font-size:19px; line-height:1.3; }}
+.gt-analysis-metric span {{ color:#85899A; font-size:11px; }}
+@media(max-width:700px) {{ .gt-analysis-metrics {{ grid-template-columns:repeat(2,minmax(0,1fr)); }} }}
 </style>
 <div class="gt-detail-hero">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
@@ -278,14 +285,14 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
                 unsafe_allow_html=True,
             )
             if summary:
-                st.markdown("**需求概述**")
+                st.markdown('<div class="gt-analysis-group-title">需求概述</div>', unsafe_allow_html=True)
                 st.markdown(
                     f'<div class="gt-analysis-summary">{html.escape(summary)}</div>',
                     unsafe_allow_html=True,
                 )
 
             if business_rules:
-                st.markdown("**业务规则**")
+                st.markdown('<div class="gt-analysis-group-title">业务规则</div>', unsafe_allow_html=True)
                 for rule_index, rule in enumerate(business_rules, start=1):
                     if isinstance(rule, dict):
                         rule_id = str(rule.get("rule_id") or f"BR-{rule_index:03d}")
@@ -316,7 +323,7 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
             _render_analysis_items(states, "涉及状态", "STATE-")
 
             if constraints:
-                st.markdown("**数值约束**")
+                st.markdown('<div class="gt-analysis-group-title">数值约束</div>', unsafe_allow_html=True)
                 rows = []
                 for item in constraints:
                     if isinstance(item, dict):
@@ -332,7 +339,7 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
 
             _render_analysis_items(exceptions, "异常情况", "EX-")
             if questions:
-                st.markdown("**待确认问题**")
+                st.markdown('<div class="gt-analysis-group-title">待确认问题</div>', unsafe_allow_html=True)
                 for question_index, question in enumerate(questions, start=1):
                     question_text = (
                         question.get("question") or question.get("text") or question.get("description") or str(question)
