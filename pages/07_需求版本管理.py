@@ -1,3 +1,4 @@
+import html
 import streamlit as st
 
 from components.header import render_header
@@ -19,102 +20,88 @@ render_header(
 
 st.html("""
 <style>
-.gt-section { margin: 1.2rem 0 0.65rem 0; }
-.gt-section-title { font-size: 1.05rem; font-weight: 700; color: #292746; }
-.gt-section-desc { font-size: .84rem; color: #85839a; line-height: 1.6; margin-top: .2rem; }
-.gt-doc-item { padding: .75rem .85rem; border: 1px solid #eeeafd; border-radius: 10px; margin: .35rem 0; }
-.gt-detail-head { background: linear-gradient(120deg,#f4f1ff 0%,#faf9ff 100%); border: 1px solid #e9e4ff; border-radius: 12px; padding: 1rem 1.1rem; margin-bottom: .8rem; }
-.gt-muted { color: #77728f; font-size: .82rem; }
+.gt-version-page { color: #172033; }
+.gt-version-project {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap; padding: 2px 0;
+}
+.gt-version-project-main { min-width: 220px; flex: 1 1 360px; }
+.gt-version-project-title {
+    color: #172033; font-size: 19px; line-height: 1.45; font-weight: 750;
+    margin-bottom: 5px;
+}
+.gt-version-project-desc { color: #64748B; font-size: 13px; line-height: 1.6; }
+.gt-version-project-id {
+    display: inline-block; margin-top: 8px; padding: 4px 9px;
+    color: #64748B; background: #F3F5F9; border-radius: 6px; font-size: 11px;
+}
+.gt-version-project-stats {
+    display: flex; gap: 0; align-items: stretch; flex: 0 1 auto;
+}
+.gt-version-stat {
+    min-width: 104px; padding: 3px 18px; text-align: center;
+    border-left: 1px solid #E9ECF3;
+}
+.gt-version-stat strong { display:block; color:#243B82; font-size:22px; line-height:1.35; }
+.gt-version-stat span { color:#64748B; font-size:11px; }
+.gt-version-section-title { font-size:16px; font-weight:750; color:#172033; }
+.gt-version-section-hint { color:#8A93A5; font-size:12px; margin-top:3px; }
+.gt-version-doc {
+    padding: 10px 12px; border: 1px solid #E8EAF2; border-radius: 10px;
+    background: #FFFFFF; margin: 7px 0;
+}
+.gt-version-doc-active { border-color:#9A8BFA; background:#F8F7FF; }
+.gt-version-doc-name { font-size:13px; color:#172033; font-weight:700; }
+.gt-version-doc-meta { font-size:11px; color:#8490A3; margin-top:4px; }
+.gt-version-detail-head {
+    padding: 13px 15px; border-radius: 10px; background:#F7F8FC;
+    border:1px solid #EAECF4; margin-bottom:12px;
+}
+.gt-version-detail-title { font-size:17px; color:#172033; font-weight:750; }
+.gt-version-detail-key { font-size:11px; color:#8490A3; margin-top:5px; }
+.gt-version-content {
+    border:1px solid #EAECF4; background:#FAFBFD; border-radius:10px;
+    padding:14px; color:#334155; font-size:13px; line-height:1.8;
+    white-space:pre-wrap; overflow-wrap:anywhere;
+}
+div[data-testid="stVerticalBlock"] div:has(> .gt-version-doc) { gap: 0; }
+@media (max-width: 760px) {
+    .gt-version-project-stats { width:100%; }
+    .gt-version-stat { min-width:0; flex:1; padding:4px 8px; }
+}
 </style>
 """)
 
-st.markdown("""
-<div class="gt-section">
-  <div class="gt-section-title">当前工作项目</div>
-  <div class="gt-section-desc">需求版本数据将按当前项目进行筛选和管理。</div>
-</div>
-""", unsafe_allow_html=True)
-
 try:
     projects = list_projects()
-except Exception as e:
-    st.error(f"项目列表加载失败：{e}")
+except Exception as exc:
+    st.error(f"项目列表加载失败：{exc}")
     st.stop()
 
 if not projects:
     st.info("当前没有可用项目，请先创建项目。")
     st.stop()
 
-project_map = {project["id"]: project for project in projects}
-project_ids = list(project_map.keys())
-
-# 首次进入时默认选择项目列表中的第一项；后续保留用户当前选择。
+project_map = {str(project["id"]): project for project in projects}
+project_ids = list(project_map)
 if st.session_state.get("version_project_id") not in project_map:
     st.session_state["version_project_id"] = project_ids[0]
 
 selected_project_id = st.session_state["version_project_id"]
 selected_project = project_map[selected_project_id]
-
-# 当前项目卡片沿用「项目中心」的名称、状态、描述和元信息展示方式。
-import html
-
-project_name_html = html.escape(str(selected_project.get("name") or "未命名项目"))
-project_description_html = html.escape(
-    str(selected_project.get("description") or "暂无项目描述")
-)
-project_id_html = html.escape(str(selected_project_id))
+project_name = html.escape(str(selected_project.get("name") or "未命名项目"))
+project_description = html.escape(str(selected_project.get("description") or "暂无项目描述"))
 project_status = selected_project.get("status", "active")
-if project_status == "archived":
-    project_status_html = '<span class="gt-project-status-archived">● 已归档</span>'
-else:
-    project_status_html = '<span class="gt-project-status-active">● 进行中</span>'
-
-with st.container(border=True):
-    st.html(
-        f"""
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">
-            <div class="gt-project-card-title">🎮 {project_name_html}</div>
-            {project_status_html}
-        </div>
-        <div class="gt-project-card-description">{project_description_html}</div>
-        <div class="gt-project-card-meta">项目 ID：{project_id_html}</div>
-        """
-    )
-    with st.popover("切换工作项目", use_container_width=True):
-        st.caption("选择一个项目卡片，即可直接切换。")
-        for project_id in project_ids:
-            project = project_map[project_id]
-            is_current = project_id == selected_project_id
-            with st.container(border=True):
-                if is_current:
-                    st.markdown(f"**✓  {project['name']}**")
-                    st.caption(f"当前项目 · {project_id}")
-                else:
-                    if st.button(
-                        f"🎮  {project['name']}",
-                        key=f"version_project_option_{project_id}",
-                        use_container_width=True,
-                        type="secondary",
-                    ):
-                        st.session_state["version_project_id"] = project_id
-                        st.rerun()
-                    st.caption(f"项目 ID：{project_id}")
+status_html = (
+    '<span class="gt-status gt-status-neutral">● 已归档</span>'
+    if project_status == "archived"
+    else '<span class="gt-status gt-status-success">● 进行中</span>'
+)
 
 try:
-    saved_documents = list_documents(
-        project_id=selected_project_id,
-        include_deleted=True,
-    )
-except Exception as e:
-    st.error(f"需求文档版本加载失败：{e}")
-    st.stop()
-
-action_message = st.session_state.pop("document_version_action_message", None)
-if action_message:
-    st.success(action_message)
-
-if not saved_documents:
-    st.info("当前项目还没有导入需求文档。")
+    saved_documents = list_documents(project_id=selected_project_id, include_deleted=True)
+except Exception as exc:
+    st.error(f"需求文档版本加载失败：{exc}")
     st.stop()
 
 document_groups = {}
@@ -125,175 +112,211 @@ total_document_count = len(document_groups)
 total_history_versions = len(saved_documents)
 total_active_versions = sum(1 for doc in saved_documents if not doc["is_deleted"])
 
-st.markdown("""
-<div class="gt-section">
-  <div class="gt-section-title">版本概览</div>
-  <div class="gt-section-desc">当前项目需求文档及版本记录统计。</div>
-</div>
-""", unsafe_allow_html=True)
-
+# 顶部紧凑项目概览：沿用项目中心的状态、描述、ID 展示语言。
 with st.container(border=True):
-    metric_cols = st.columns(3)
-    metric_cols[0].metric("需求文档数量", total_document_count)
-    metric_cols[1].metric("有效版本数量", total_active_versions)
-    metric_cols[2].metric("历史版本总数", total_history_versions)
+    project_left, project_right = st.columns([1.65, 1.35], vertical_alignment="center")
+    with project_left:
+        st.html(f"""
+        <div class="gt-version-project-main">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <div class="gt-version-project-title">🎮 {project_name}</div>
+                {status_html}
+            </div>
+            <div class="gt-version-project-desc">{project_description}</div>
+            <div class="gt-version-project-id">项目 ID：{html.escape(selected_project_id)}</div>
+        </div>
+        """)
+    with project_right:
+        stat_cols = st.columns(3)
+        for col, value, label in zip(
+            stat_cols,
+            [total_document_count, total_active_versions, total_history_versions],
+            ["需求文档", "有效版本", "历史版本"],
+        ):
+            with col:
+                st.metric(label, value)
+    with st.popover("切换工作项目", icon=":material/swap_horiz:", use_container_width=True):
+        st.caption("选择项目后，将切换到该项目的需求版本数据。")
+        for project_id, project in project_map.items():
+            if project_id == selected_project_id:
+                st.button(
+                    f"✓  {project.get('name') or '未命名项目'} · 当前项目",
+                    key=f"version_project_current_{project_id}",
+                    disabled=True,
+                    use_container_width=True,
+                )
+            elif st.button(
+                f"🎮  {project.get('name') or '未命名项目'}",
+                key=f"version_project_option_{project_id}",
+                use_container_width=True,
+            ):
+                st.session_state["version_project_id"] = project_id
+                st.rerun()
 
-st.markdown("""
-<div class="gt-section">
-  <div class="gt-section-title">文档版本管理</div>
-  <div class="gt-section-desc">在左侧定位文档，在右侧查看版本详情并执行管理操作。</div>
-</div>
-""", unsafe_allow_html=True)
+action_message = st.session_state.pop("document_version_action_message", None)
+if action_message:
+    st.success(action_message)
 
-filter_col1, filter_col2 = st.columns([2, 1])
-with filter_col1:
+if not saved_documents:
+    st.info("当前项目还没有导入需求文档。")
+    st.stop()
+
+st.markdown("")
+left_col, right_col = st.columns([0.39, 0.61], gap="large")
+
+with left_col:
+    st.html("""
+    <div class="gt-version-section-title">▤ 需求文档列表</div>
+    <div class="gt-version-section-hint">搜索并选择文档，查看对应版本详情。</div>
+    """)
     search_keyword = st.text_input(
-        "搜索文档名称或标识",
+        "搜索需求文档",
         placeholder="输入文档名称或 document_key",
         key="version_search_keyword",
+        label_visibility="collapsed",
     )
-with filter_col2:
     document_status_filter = st.selectbox(
         "版本显示范围",
         options=["有效版本", "全部版本"],
         key="version_status_filter",
     )
 
-filtered_groups = []
-for key, all_versions in document_groups.items():
-    active_versions = [doc for doc in all_versions if not doc["is_deleted"]]
-    latest = active_versions[0] if active_versions else None
-    visible_versions = active_versions if document_status_filter == "有效版本" else all_versions
-    if not visible_versions:
-        continue
-    display_document = latest if latest else all_versions[0]
+    filtered_groups = []
     keyword = search_keyword.strip().lower()
-    document_name = display_document["document_name"].lower()
-    if not keyword or keyword in document_name or keyword in key.lower():
-        filtered_groups.append((key, visible_versions, all_versions, latest, display_document))
+    for key, all_versions in document_groups.items():
+        active_versions = [doc for doc in all_versions if not doc["is_deleted"]]
+        visible_versions = active_versions if document_status_filter == "有效版本" else all_versions
+        if not visible_versions:
+            continue
+        display_document = active_versions[0] if active_versions else all_versions[0]
+        if (
+            not keyword
+            or keyword in str(display_document["document_name"]).lower()
+            or keyword in str(key).lower()
+        ):
+            filtered_groups.append((key, visible_versions, all_versions, active_versions, display_document))
 
-st.caption(
-    f"筛选结果：{len(filtered_groups)} 份文档 · 当前项目共 {total_document_count} 份，"
-    f"有效版本 {total_active_versions} 条，历史版本总数 {total_history_versions} 条。"
-)
+    st.caption(f"共找到 {len(filtered_groups)} 份文档")
+    if not filtered_groups:
+        st.warning("没有找到符合条件的需求文档。")
+        st.stop()
 
-if not filtered_groups:
-    st.warning("没有找到符合条件的需求文档。")
-    st.stop()
+    group_map = {item[0]: item for item in filtered_groups}
+    document_keys = list(group_map)
+    selected_key = st.session_state.get("version_selected_document_key")
+    if selected_key not in group_map:
+        selected_key = document_keys[0]
+        st.session_state["version_selected_document_key"] = selected_key
 
-group_map = {item[0]: item for item in filtered_groups}
-document_keys = list(group_map.keys())
-
-left_col, right_col = st.columns([0.38, 0.62], gap="large")
-
-with left_col:
-    st.markdown("#### 文档列表")
-    st.caption("选择文档以查看对应的版本历史。")
-    selected_document_key = st.selectbox(
-        "选择需求文档",
-        options=document_keys,
-        format_func=lambda key: (
-            f"{group_map[key][4]['document_name']} · "
-            f"{len([v for v in group_map[key][2] if not v['is_deleted']])} 个有效版本"
-        ),
-        key="version_selected_document_key",
-    )
-
-    for key, versions, all_versions, latest, display_document in filtered_groups:
-        latest_label = f"V{latest['version']}" if latest else "暂无有效版本"
-        st.markdown(
-            f"""<div class="gt-doc-item">
-            <strong>{display_document['document_name']}</strong><br>
-            <span class="gt-muted">{key}</span><br>
-            <span class="gt-muted">最新有效：{latest_label} · 历史版本：{len(all_versions)}</span>
-            </div>""",
-            unsafe_allow_html=True,
-        )
+    for key, versions, all_versions, active_versions, display_document in filtered_groups:
+        is_selected = key == selected_key
+        latest_label = f"V{active_versions[0]['version']}" if active_versions else "暂无有效版本"
+        doc_name = html.escape(str(display_document.get("document_name") or "未命名文档"))
+        doc_key = html.escape(str(key))
+        card_class = "gt-version-doc gt-version-doc-active" if is_selected else "gt-version-doc"
+        st.html(f"""
+        <div class="{card_class}">
+            <div class="gt-version-doc-name">▤ {doc_name}</div>
+            <div class="gt-version-doc-meta">{doc_key}</div>
+            <div class="gt-version-doc-meta">最新有效：{latest_label}　·　历史版本：{len(all_versions)}</div>
+        </div>
+        """)
+        if st.button(
+            "当前选中" if is_selected else "查看文档",
+            key=f"select_version_doc_{key}",
+            use_container_width=True,
+            type="primary" if is_selected else "secondary",
+        ):
+            st.session_state["version_selected_document_key"] = key
+            st.rerun()
 
 with right_col:
-    key, versions, all_versions, latest, display_document = group_map[selected_document_key]
+    key, versions, all_versions, active_versions, display_document = group_map[selected_key]
+    doc_name = html.escape(str(display_document.get("document_name") or "未命名文档"))
+    doc_key_html = html.escape(str(key))
+    st.html(f"""
+    <div class="gt-version-detail-head">
+        <div class="gt-version-detail-title">▤ {doc_name}</div>
+        <div class="gt-version-detail-key">文档标识：{doc_key_html}</div>
+    </div>
+    """)
 
-    st.markdown(
-        f"""<div class="gt-detail-head">
-        <strong>{display_document['document_name']}</strong><br>
-        <span class="gt-muted">文档标识：{key}</span>
-        </div>""",
-        unsafe_allow_html=True,
-    )
-
-    info_cols = st.columns(4)
-    info_cols[0].metric("最新有效版本", f"V{latest['version']}" if latest else "无")
-    info_cols[1].metric("有效版本数", sum(1 for doc in all_versions if not doc["is_deleted"]))
-    info_cols[2].metric("历史版本总数", len(all_versions))
-    info_cols[3].metric("文件类型", display_document["file_type"].upper())
+    meta_cols = st.columns(4)
+    meta_cols[0].metric("最新有效版本", f"V{active_versions[0]['version']}" if active_versions else "无")
+    meta_cols[1].metric("有效版本数", len(active_versions))
+    meta_cols[2].metric("历史版本数", len(all_versions))
+    meta_cols[3].metric("文件类型", str(display_document.get("file_type") or "未知").upper())
 
     with st.container(border=True):
-        st.write(f"**文档名称：** {display_document['document_name']}")
-        st.write(f"**文档标识：** `{key}`")
-        st.write(f"**文档 ID：** `{display_document['id']}`")
-        st.write(f"**创建时间：** {format_local_datetime(display_document.get('created_at'))}")
+        detail_cols = st.columns(2)
+        detail_cols[0].caption("文档 ID")
+        detail_cols[0].code(str(display_document["id"]))
+        detail_cols[1].caption("创建时间")
+        detail_cols[1].write(format_local_datetime(display_document.get("created_at")))
 
     st.markdown("#### 版本历史")
     version_options = {
         (
-            f"V{doc['version']}（{format_local_datetime(doc.get('created_at'))}）"
-            + (" [已删除]" if doc["is_deleted"] else "")
+            f"V{doc['version']} · {format_local_datetime(doc.get('created_at'))}"
+            + (" · 已删除" if doc["is_deleted"] else "")
         ): doc["id"]
         for doc in versions
     }
-    selected_version_label = st.selectbox(
-        "选择要管理的文档版本",
-        options=list(version_options.keys()),
+    selected_label = st.selectbox(
+        "选择要查看和管理的版本",
+        options=list(version_options),
         key=f"manage_version_{key}",
     )
-    selected_version_id = version_options[selected_version_label]
-    selected_version_record = next(doc for doc in versions if doc["id"] == selected_version_id)
+    selected_version_id = version_options[selected_label]
+    selected_version = next(doc for doc in versions if doc["id"] == selected_version_id)
 
-    st.markdown("#### 版本状态与操作")
-    with st.container(border=True):
-        if not selected_version_record["is_deleted"]:
-            st.success(f"V{selected_version_record['version']} · 有效版本")
-            confirm_delete = st.checkbox(
-                f"确认逻辑删除 V{selected_version_record['version']}？",
-                key=f"confirm_version_delete_{selected_version_id}",
-            )
-            if st.button(
-                "删除所选版本",
-                key=f"delete_version_{selected_version_id}",
-                type="secondary",
-                disabled=not confirm_delete,
-                use_container_width=True,
-            ):
-                try:
-                    deleted = soft_delete_document(selected_version_id)
-                    if deleted:
-                        st.session_state["document_version_action_message"] = (
-                            f"V{selected_version_record['version']} 已成功逻辑删除。"
-                        )
-                        st.rerun()
-                    else:
-                        st.warning("删除未生效，该版本可能已经被删除。")
-                except Exception as e:
-                    st.error(f"删除文档版本失败：{e}")
-        else:
-            st.warning(f"V{selected_version_record['version']} · 已逻辑删除")
-            if st.button(
-                f"恢复 V{selected_version_record['version']}",
-                key=f"restore_version_{selected_version_id}",
-                type="primary",
-                use_container_width=True,
-            ):
-                try:
-                    restored = restore_document(selected_version_id)
-                    if restored:
-                        st.session_state["document_version_action_message"] = (
-                            f"V{selected_version_record['version']} 已成功恢复。"
-                        )
-                        st.rerun()
-                    else:
-                        st.warning("恢复未生效，该版本可能已经恢复。")
-                except Exception as e:
-                    st.error(f"恢复文档版本失败：{e}")
+    version_meta = st.columns(3)
+    version_meta[0].metric("版本号", f"V{selected_version['version']}")
+    version_meta[1].metric("创建时间", format_local_datetime(selected_version.get("created_at")))
+    version_meta[2].metric("状态", "已删除" if selected_version["is_deleted"] else "有效")
+
+    st.markdown("#### 版本管理")
+    if not selected_version["is_deleted"]:
+        st.success(f"V{selected_version['version']} · 有效版本")
+        confirm_delete = st.checkbox(
+            f"确认逻辑删除 V{selected_version['version']}？",
+            key=f"confirm_version_delete_{selected_version_id}",
+        )
+        if st.button(
+            "删除所选版本",
+            key=f"delete_version_{selected_version_id}",
+            type="secondary",
+            disabled=not confirm_delete,
+            use_container_width=True,
+        ):
+            try:
+                deleted = soft_delete_document(selected_version_id)
+                if deleted:
+                    st.session_state["document_version_action_message"] = (
+                        f"V{selected_version['version']} 已成功逻辑删除。"
+                    )
+                    st.rerun()
+                st.warning("删除未生效，该版本可能已经被删除。")
+            except Exception as exc:
+                st.error(f"删除文档版本失败：{exc}")
+    else:
+        st.warning(f"V{selected_version['version']} · 已逻辑删除")
+        if st.button(
+            f"恢复 V{selected_version['version']}",
+            key=f"restore_version_{selected_version_id}",
+            type="primary",
+            use_container_width=True,
+        ):
+            try:
+                restored = restore_document(selected_version_id)
+                if restored:
+                    st.session_state["document_version_action_message"] = (
+                        f"V{selected_version['version']} 已成功恢复。"
+                    )
+                    st.rerun()
+                st.warning("恢复未生效，该版本可能已经恢复。")
+            except Exception as exc:
+                st.error(f"恢复文档版本失败：{exc}")
 
     st.markdown("#### 版本内容")
     st.caption("读取当前所选版本保存的完整需求文档内容。")
@@ -304,8 +327,8 @@ with right_col:
                 st.error("未找到该文档版本。")
             else:
                 st.session_state[f"viewed_version_{key}"] = selected_document
-        except Exception as e:
-            st.error(f"读取文档版本失败：{e}")
+        except Exception as exc:
+            st.error(f"读取文档版本失败：{exc}")
 
     viewed_document = st.session_state.get(f"viewed_version_{key}")
     if viewed_document is not None and viewed_document["id"] == selected_version_id:
