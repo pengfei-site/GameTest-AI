@@ -482,6 +482,9 @@ st.html("""
     background:#F7F8FA; border-bottom:1px solid #E7EAF1;
     padding:0.7rem 0.5rem;
 }
+.gt-req-status { display:inline-block; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:600; white-space:nowrap; }
+.gt-req-status-active { color:#15803D; background:#DCFCE7; }
+.gt-req-status-deleted { color:#B45309; background:#FEF3C7; }
 </style>
 """)
 
