@@ -363,130 +363,28 @@ def render_unanalyzed_requirement(document: dict) -> None:
         width="stretch",
         key=f"detail_run_analysis_{document_id}",
     ):
-        st.session_state[state_key] = None
         st.session_state[saved_key] = None
         try:
             with st.spinner("AI 正在分析当前版本的策划需求，请稍候..."):
                 result = analyze_requirement(content)
-                st.session_state[state_key] = result.model_dump(mode="json")
-            st.success("结构化需求分析完成。")
-        except Exception as exc:
-            st.error("需求分析失败，请检查 AI 服务或返回数据。")
-            st.exception(exc)
+                analysis_data = result.model_dump(mode="json")
+                if not isinstance(analysis_data, dict):
+                    raise ValueError("分析结果格式异常，未生成有效的结构化数据。")
 
-    result = st.session_state.get(state_key)
-    if not isinstance(result, dict):
-        return
-
-    st.divider()
-    st.markdown("### 分析结果")
-    st.caption(f"分析文档：{document.get('document_name') or document.get('file_name') or '未命名文档'}")
-
-    with st.container(border=True):
-        st.markdown("**一、需求摘要**")
-        st.markdown(f"**功能模块：** {result.get('module') or '未命名模块'}")
-        st.write(result.get("summary") or "暂无需求摘要")
-
-    with st.container(border=True):
-        st.markdown("**二、核心业务规则**")
-        rules = result.get("business_rules") or []
-        if rules:
-            rule_rows = [{
-                "规则编号": item.get("rule_id", ""),
-                "规则描述": item.get("rule_text", ""),
-                "需求依据": item.get("source_text", ""),
-                "确认状态": "已明确" if item.get("status") == "confirmed" else "待确认",
-            } for item in rules if isinstance(item, dict)]
-            st.dataframe(pd.DataFrame(rule_rows), width="stretch", hide_index=True)
-        else:
-            st.info("暂未提取到业务规则。")
-
-    simple_groups = [
-        ("三、前置条件", "preconditions", "暂未提取到前置条件。"),
-        ("四、业务状态", "states", "暂未提取到业务状态。"),
-    ]
-    for heading, key, empty_text in simple_groups:
-        with st.container(border=True):
-            st.markdown(f"**{heading}**")
-            values = result.get(key) or []
-            if values:
-                for value in values:
-                    st.markdown(f"- {value}")
-            else:
-                st.info(empty_text)
-
-    with st.container(border=True):
-        st.markdown("**五、数值约束**")
-        constraints = result.get("numeric_constraints") or []
-        if constraints:
-            rows = [{
-                "数值名称": str(item.get("name") or ""),
-                "数值": "" if item.get("value") is None else str(item.get("value")),
-                "单位": str(item.get("unit") or ""),
-                "说明": str(item.get("description") or ""),
-            } for item in constraints if isinstance(item, dict)]
-            st.dataframe(pd.DataFrame(rows, columns=["数值名称", "数值", "单位", "说明"]), width="stretch", hide_index=True)
-        else:
-            st.info("暂未提取到数值约束。")
-
-    for heading, key, empty_text in [
-        ("六、异常场景", "exception_cases", "暂未提取到异常场景。"),
-        ("七、待策划确认的问题", "open_questions", "当前未发现需要确认的问题。"),
-    ]:
-        with st.container(border=True):
-            st.markdown(f"**{heading}**")
-            values = result.get(key) or []
-            if values:
-                for index, value in enumerate(values, 1):
-                    if key == "open_questions":
-                        st.warning(f"{index}. {value}")
-                    else:
-                        st.markdown(f"- {value}")
-            elif key == "open_questions":
-                st.success(empty_text)
-            else:
-                st.info(empty_text)
-
-    st.markdown("### 结构化数据")
-    with st.expander("查看完整 JSON"):
-        st.json(result)
-    st.download_button(
-        "下载需求分析 JSON",
-        data=json.dumps(result, ensure_ascii=False, indent=2),
-        file_name=f"requirement_analysis_V{document.get('version', 1)}.json",
-        mime="application/json",
-        key=f"detail_download_analysis_{document_id}",
-    )
-
-    st.markdown("### 保存分析结果")
-    saved_record = st.session_state.get(saved_key)
-    if saved_record:
-        st.success("当前分析结果已经保存到数据库。")
-        st.caption(
-            f"分析记录 ID：{saved_record.get('id')} · 创建时间："
-            f"{format_local_datetime(saved_record.get('created_at'))}"
-        )
-    elif st.button(
-        "保存分析结果",
-        type="primary",
-        width="stretch",
-        key=f"detail_save_analysis_{document_id}",
-    ):
-        try:
-            with st.spinner("正在保存分析结果..."):
+            with st.spinner("分析成功，正在自动保存结果..."):
                 saved_record = create_requirement_analysis(
                     project_id=str(project_id),
                     document_id=document_id,
-                    module=result.get("module") or "未命名模块",
-                    summary=result.get("summary") or "",
-                    analysis_data=result,
+                    module=analysis_data.get("module") or "未命名模块",
+                    summary=analysis_data.get("summary") or "",
+                    analysis_data=analysis_data,
                 )
-            st.session_state[saved_key] = saved_record
-            st.success("分析结果已成功保存到数据库。")
-            st.rerun()
+            st.session_state[saved_key] = saved_record or {"saved": True}
+            st.success("需求分析成功，分析结果已自动保存。")
         except Exception as exc:
-            st.error("分析结果保存失败，请检查数据库记录和关联关系。")
-            st.exception(exc)
+            st.session_state[saved_key] = None
+            st.error(f"需求分析或自动保存失败：{exc}")
+
 
 
 def render_requirement_analysis(document: dict, section_title: str = "需求结构化分析") -> None:
