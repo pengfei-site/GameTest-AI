@@ -49,13 +49,15 @@ div[data-testid="stVerticalBlock"].st-key-version_project_overview > div {
 /* 项目中心卡片：可见内容与透明整卡点击层分离。 */
 div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell {
     position: relative;
-    min-height: 132px;
-    height: 100%;
+    height: 132px !important;
+    min-height: 132px !important;
+    max-height: 132px !important;
     box-sizing: border-box;
+    overflow: hidden;
     background: #FFFFFF !important;
     border: 1px solid #E7EAF1 !important;
     border-radius: 12px !important;
-    padding: 20px 22px !important;
+    padding: 12px 18px !important;
     box-shadow: 0 2px 8px rgba(23, 32, 51, 0.04);
     transition: border-color .15s, box-shadow .15s;
 }
@@ -82,7 +84,9 @@ div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-tes
     display: block !important;
     width: 100% !important;
     height: 100% !important;
+    height: 132px !important;
     min-height: 132px !important;
+    max-height: 132px !important;
     max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -102,12 +106,14 @@ div[data-testid="stVerticalBlock"].st-key-version_project_picker_shell [data-tes
 }
 /* 项目卡片与右侧统计卡片统一高度，保持同一水平基线。 */
 div[data-testid="stVerticalBlock"].st-key-version_project_stats_shell {
-    height: 100%;
-    min-height: 132px;
+    height: 132px !important;
+    min-height: 132px !important;
+    max-height: 132px !important;
 }
 div[data-testid="stVerticalBlock"].st-key-version_project_stats_shell [data-testid="stMetric"] {
-    height: 100%;
-    min-height: 132px;
+    height: 132px !important;
+    min-height: 132px !important;
+    max-height: 132px !important;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
