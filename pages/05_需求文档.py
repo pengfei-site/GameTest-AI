@@ -13,18 +13,27 @@ from components.header import render_header
 # 页面初始化
 # ============================================================
 
-def render_upload_action():
-    """在页面标题右侧提供游戏策划需求文档上传入口。"""
-    global uploaded_file
-    uploaded_file = st.file_uploader(
-        "",
+@st.dialog("上传游戏策划需求文档", width="large")
+def show_requirement_upload_dialog():
+    st.caption("支持 DOCX、PDF、Markdown 和 TXT 格式。")
+    selected_file = st.file_uploader(
+        "选择需求文档",
         type=["docx", "pdf", "md", "txt"],
-        key="requirement_document",
-        label_visibility="visible",
+        key="requirement_document_dialog",
     )
 
+    if st.button("确认上传", type="primary", width="stretch", disabled=selected_file is None):
+        st.session_state["document_upload_name"] = selected_file.name
+        st.session_state["document_upload_bytes"] = selected_file.getvalue()
+        st.session_state.pop("parsed_document", None)
+        st.rerun()
 
-uploaded_file = None
+
+def render_upload_action():
+    """在页面标题右侧显示需求上传入口。"""
+    if st.button("＋ 需求上传", type="primary", width="stretch"):
+        show_requirement_upload_dialog()
+
 
 render_header(
     title="需求文档",
@@ -392,11 +401,13 @@ with st.container(border=True):
 # 三、上传文档
 # ============================================================
 
-if uploaded_file is None:
-    st.info("请在页面右上角上传 DOCX、PDF、Markdown 或 TXT 格式的需求文档。")
+uploaded_file_name = st.session_state.get("document_upload_name")
+file_bytes = st.session_state.get("document_upload_bytes")
+
+if not uploaded_file_name or file_bytes is None:
+    st.info("点击页面右上角的「需求上传」按钮，选择并上传游戏策划需求文档。")
     st.stop()
 
-file_bytes = uploaded_file.getvalue()
 file_hash = hashlib.sha256(file_bytes).hexdigest()
 
 with st.container(border=True):
@@ -405,7 +416,7 @@ with st.container(border=True):
     col1, col2 = st.columns([2, 1])
 
     with col1:
-        st.write(uploaded_file.name)
+        st.write(uploaded_file_name)
 
     with col2:
         st.caption(f"{len(file_bytes):,} bytes")
@@ -446,7 +457,7 @@ with st.container(border=True):
             try:
                 with st.spinner("正在解析文档..."):
                     result = parse_document(
-                        uploaded_file.name,
+                        uploaded_file_name,
                         file_bytes,
                     )
 
@@ -454,7 +465,7 @@ with st.container(border=True):
                     "project_id": selected_project_id,
                     "document_name": document_name.strip(),
                     "document_key": document_key.strip(),
-                    "file_name": uploaded_file.name,
+                    "file_name": uploaded_file_name,
                     "file_hash": file_hash,
                     "result": result,
                     "saved_document": None,
