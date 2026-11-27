@@ -115,6 +115,32 @@ class TestGenerationBatchEffectiveStatus(unittest.TestCase):
             "effective",
         )
 
+    def test_database_rejects_two_effective_batches_for_same_version(self):
+        first = self._create_batch("analysis-v1-a")
+        second = self._create_batch("analysis-v1-b")
+
+        batch_repository.set_generation_batch_effective(first["id"])
+
+        with self.assertRaises(sqlite3.IntegrityError):
+            with self._get_connection() as conn:
+                conn.execute(
+                    """
+                    UPDATE generation_batches
+                    SET batch_status = 'effective'
+                    WHERE id = ?
+                    """,
+                    (second["id"],),
+                )
+
+        self.assertEqual(
+            batch_repository.get_generation_batch(first["id"])["batch_status"],
+            "effective",
+        )
+        self.assertEqual(
+            batch_repository.get_generation_batch(second["id"])["batch_status"],
+            "obsolete",
+        )
+
     def test_missing_batch_cannot_be_set_effective(self):
         with self.assertRaises(ValueError):
             batch_repository.set_generation_batch_effective("missing-batch")
