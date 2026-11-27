@@ -729,8 +729,14 @@ if open_document_id:
     st.session_state["test_point_context"] = {
         "project_id": str(selected_project_id),
         "document_id": str(open_document_id),
+        "requirement_analysis_id": str(
+            st.query_params.get("open_test_points_analysis") or ""
+        ),
+        "filter_by_analysis": True,
     }
     del st.query_params["open_test_points_document"]
+    if "open_test_points_analysis" in st.query_params:
+        del st.query_params["open_test_points_analysis"]
     st.switch_page("pages/15_测试点详情.py")
 
 # 仅在确认不需要跳转后渲染当前页面标题，避免跳转时残留「测试点中心」标题。
@@ -914,9 +920,15 @@ else:
             if active_analysis
             else "暂无有效分析记录"
         )
+        active_analysis_id = (
+            str(active_analysis.get("id") or "")
+            if active_analysis else ""
+        )
         detail_url = (
             "?open_test_points_document="
             + __import__("urllib.parse", fromlist=["quote"]).quote(document_id)
+            + "&open_test_points_analysis="
+            + __import__("urllib.parse", fromlist=["quote"]).quote(active_analysis_id)
         )
         if entry["active"]:
             status_html = '<span class="gt-tapd-status gt-tapd-status-active">有效版本</span>'
