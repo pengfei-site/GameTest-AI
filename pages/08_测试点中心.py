@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from components.header import render_header
 
 from database.repositories.project_repository import list_projects
+from database.repositories.document_repository import list_documents
 
 from database.repositories.generation_batch_repository import (
     get_generation_batch,
@@ -126,14 +127,14 @@ div[data-testid="stVerticalBlock"].st-key-test_point_project_picker_shell [data-
 
 render_header(
     title="测试点中心",
-    description="统一查看、筛选和维护 AI 生成的游戏测试点，支持人工编辑、单条审核和批量审核。",
+    description="按项目集中查看需求文档，并从需求入口进入对应的测试点列表。",
     breadcrumb=["测试点中心"],
 )
 
 
 st.html("""
 <div class="tp-page-intro">
-    集中管理测试点记录，跟踪 AI 审核与人工审核状态，并保留完整操作历史。
+    集中管理项目需求入口，选择需求名称即可查看该需求下的测试点。
 </div>
 """)
 
@@ -740,16 +741,46 @@ project_description = html.escape(str(selected_project.get("description") or "�
 project_status = selected_project.get("status", "active")
 status_label = "已归档" if project_status == "archived" else "进行中"
 status_color, status_bg = ("#64748B", "#F1F5F9") if project_status == "archived" else ("#15803D", "#DCFCE7")
-with get_connection() as conn:
-    project_stats_row = conn.execute("""
-        SELECT COUNT(*) AS total,
-               SUM(CASE WHEN tp.manual_review_status = 'approved' THEN 1 ELSE 0 END) AS approved,
-               SUM(CASE WHEN tp.manual_review_status = 'pending' THEN 1 ELSE 0 END) AS pending
-        FROM test_points tp
-        JOIN generation_batches gb ON gb.id = tp.batch_id
-        WHERE gb.project_id = ? AND tp.is_deleted = 0
-    """, (selected_project_id,)).fetchone()
-project_stats = dict(project_stats_row) if project_stats_row else {"total": 0, "approved": 0, "pending": 0}
+try:
+    project_documents = list_documents(
+        project_id=selected_project_id,
+        include_deleted=True,
+    )
+except Exception as exc:
+    st.error(f"读取项目需求列表失败：{exc}")
+    st.stop()
+
+requirement_groups = {}
+for item in project_documents:
+    requirement_groups.setdefault(item.get("document_key") or item.get("id"), []).append(item)
+
+requirement_items = []
+for key, versions in requirement_groups.items():
+    active_versions = [
+        item for item in versions
+        if item.get("is_active") and not item.get("is_deleted")
+    ]
+    available_versions = [
+        item for item in versions
+        if not item.get("is_deleted")
+    ]
+    display_version = (
+        active_versions[0]
+        if active_versions
+        else available_versions[0] if available_versions else versions[0]
+    )
+    requirement_items.append({
+        "document": display_version,
+        "version_count": len(versions),
+        "active": bool(active_versions),
+        "has_available": bool(available_versions),
+    })
+
+project_stats = {
+    "total": len(requirement_items),
+    "active": sum(1 for item in requirement_items if item["active"]),
+    "versions": len(project_documents),
+}
 project_col, stats_col = st.columns([1.15, 1.85], gap="medium", vertical_alignment="center")
 with project_col:
     with st.container(key="test_point_project_picker_shell"):
@@ -768,376 +799,191 @@ with project_col:
                         st.rerun()
 with stats_col:
     metric_cols = st.columns(3, gap="small")
-    for col, label, value in zip(metric_cols, ("测试点总数", "已通过", "待审核"), ("total", "approved", "pending")):
+    for col, label, value in zip(metric_cols, ("需求数量", "有效需求", "需求版本"), ("total", "active", "versions")):
         with col:
             st.metric(label, project_stats.get(value) or 0)
 
 
 # ============================================================
-# 2. 批次选择
+# 2. 需求列表
 # ============================================================
 
-try:
-    batches = list_generation_batches(
-        selected_project_id
-    )
+st.markdown("""
+<div class="gt-section">
+    <div class="gt-section-title">需求列表</div>
+    <div class="gt-section-desc">集中查看当前项目的需求文档，点击需求名称进入对应需求的测试点列表。</div>
+</div>
+""", unsafe_allow_html=True)
 
-except Exception as exc:
-    st.error(f"读取测试点生成批次失败：{exc}")
-    st.stop()
-
-if not batches:
-    st.warning("当前项目暂无测试点生成批次。")
-    st.stop()
-
-
-batch_options = {
-    batch["id"]: batch
-    for batch in batches
-}
-
-with st.container(border=True):
-    selected_batch_id = st.selectbox(
-        "选择测试点生成批次",
-        options=list(batch_options.keys()),
-        format_func=lambda x: format_batch(
-            batch_options[x]
-        ),
-        key=f"test_point_list_batch_{selected_project_id}",
-    )
-
-
-try:
-    batch = get_generation_batch(
-        selected_batch_id
-    )
-
-except Exception as exc:
-    st.error(f"读取生成批次失败：{exc}")
-    st.stop()
-
-if not batch:
-    st.error("无法读取所选批次。")
-    st.stop()
-
-
-# ============================================================
-# 3. 获取批次全部测试点并计算统计
-# ============================================================
-
-try:
-    all_batch_points = list_test_points(
-        selected_batch_id,
-        include_deleted=True,
-    )
-
-except Exception as exc:
-    st.error(f"读取批次测试点失败：{exc}")
-    st.stop()
-
-
-statistics = calculate_statistics(
-    all_batch_points
+search_col, filter_col = st.columns(
+    [12, 1],
+    vertical_alignment="center",
+    gap="small",
 )
-
-
-# ============================================================
-# 4. 批次统计数据
-# ============================================================
-
-if statistics["other"] > 0:
-    st.warning(
-        f"发现 {statistics['other']} 条其他审核状态的测试点，"
-        "请检查数据库中的 manual_review_status。"
+with search_col:
+    requirement_search = st.text_input(
+        "搜索需求文档",
+        placeholder="搜索需求名称…",
+        key="test_point_center_requirement_search",
+        label_visibility="collapsed",
+        width="stretch",
     )
-
-
-# ============================================================
-# 5. 测试点筛选
-# ============================================================
-
-st.divider()
-st.subheader("测试点列表")
-
-with st.container(border=True):
-    filter_col1, filter_col2 = st.columns(2)
-
-    with filter_col1:
-        include_deleted = st.checkbox(
-            "显示已逻辑删除的测试点",
-            value=False,
-            key=f"test_point_include_deleted_{selected_batch_id}",
+with filter_col:
+    with st.popover(
+        "筛选",
+        icon=":material/filter_list:",
+        help="筛选需求文档",
+        width="stretch",
+    ):
+        st.markdown("**文档状态**")
+        requirement_filter = st.radio(
+            "需求文档状态筛选",
+            options=["全部状态", "有效版本", "暂无有效版本"],
+            key="test_point_center_requirement_filter",
+            label_visibility="collapsed",
         )
 
-    with filter_col2:
-        status_options = {
-            "全部": None,
-            "待审核": "pending",
-            "已通过": "approved",
-            "已驳回": "rejected",
-        }
-
-        selected_status_label = st.selectbox(
-            "人工审核状态筛选",
-            options=list(status_options.keys()),
-            key=f"test_point_status_filter_{selected_batch_id}",
-        )
-
-selected_status = status_options[
-    selected_status_label
-]
-
-
-try:
-    test_points = list_test_points(
-        selected_batch_id,
-        include_deleted=include_deleted,
-        manual_review_status=selected_status,
+search_text = requirement_search.strip().lower()
+filtered_requirements = []
+for entry in requirement_items:
+    document = entry["document"]
+    matches_search = (
+        not search_text
+        or search_text in str(document.get("document_name") or "").lower()
+        or search_text in str(document.get("document_key") or "").lower()
     )
-
-except Exception as exc:
-    st.error(f"读取测试点列表失败：{exc}")
-    st.stop()
-
-
-with st.expander("批量人工审核", expanded=False):
-    render_batch_review_actions(
-        all_batch_points,
-        selected_batch_id,
+    matches_filter = (
+        requirement_filter == "全部状态"
+        or (requirement_filter == "有效版本" and entry["active"])
+        or (requirement_filter == "暂无有效版本" and not entry["active"])
     )
+    if matches_search and matches_filter:
+        filtered_requirements.append(entry)
 
-
-st.caption(
-    f"当前筛选结果：{len(test_points)} 条 | "
-    f"批次有效总数：{statistics['total']} 条 | "
-    f"已删除总数：{statistics['deleted']} 条"
-)
-
-
-if include_deleted:
-    st.info("当前已开启逻辑删除记录展示。")
-
-
-# ============================================================
-# 6. 测试点列表展示
-# ============================================================
-
-if not test_points:
-    st.info("当前筛选条件下没有测试点。")
-
+if not filtered_requirements:
+    st.info("暂无符合条件的需求文档。")
 else:
-    st.subheader("测试点记录")
-
-    for index, point in enumerate(test_points, start=1):
-        point_id = point.get(
-            "point_id",
-            "未知编号",
-        )
-
-        point_title = get_point_title(point)
-
-        status = point.get("manual_review_status", "未知")
-        status_label = {"pending":"待审核", "approved":"已通过", "rejected":"已驳回"}.get(status, status)
-        with st.container(border=True):
-            st.markdown(f'<div class="tp-record-title">{point_title}<span class="tp-pill {status}">{status_label}</span></div><div class="tp-record-meta">{point_id} · AI审核：{point.get("ai_review_status", "未知")}</div>', unsafe_allow_html=True)
-            col1, col2, col3 = st.columns(3)
-
-            col1.write(
-                f"AI审核状态："
-                f"{point.get('ai_review_status', '未知')}"
-            )
-
-            col2.write(
-                f"人工审核状态：{status_label}"
-            )
-
-            col3.write(
-                f"逻辑删除："
-                f"{'是' if point.get('is_deleted') else '否'}"
-            )
-
-            st.caption(f"内部 ID：{point.get('id', '')}")
-
-
-# ============================================================
-# 7. 测试点详情
-# ============================================================
-
-st.divider()
-st.subheader("测试点详情")
-
-if not test_points:
-    st.info("没有可供查看详情的测试点。")
-
-else:
-    test_point_options = {
-        point["id"]: point
-        for point in test_points
+    st.html("""
+    <style>
+    .tp-requirement-table-head {
+        display: grid;
+        grid-template-columns: minmax(260px, 6fr) 1.2fr 1.2fr 1.6fr;
+        align-items: center;
+        min-height: 42px;
+        padding: 0 14px;
+        color: #606266;
+        background: #F5F7FA;
+        border: 1px solid #E4E7ED;
+        border-radius: 8px 8px 0 0;
+        font-size: 13px;
+        font-weight: 600;
     }
+    .tp-requirement-row {
+        border: 1px solid #EBEEF5;
+        border-top: 0;
+        background: #FFFFFF;
+        padding: 4px 8px;
+    }
+    .tp-requirement-row:last-child {
+        border-radius: 0 0 8px 8px;
+    }
+    div[class*="st-key-open_test_points_for_requirement_"] button {
+        justify-content: flex-start !important;
+        color: #303133 !important;
+        background: transparent !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        padding-left: 6px !important;
+        font-weight: 500 !important;
+    }
+    div[class*="st-key-open_test_points_for_requirement_"] button:hover {
+        color: #6D5CE7 !important;
+        text-decoration: underline !important;
+        background: #F8FAFD !important;
+    }
+    .tp-requirement-meta {
+        color: #606266;
+        font-size: 13px;
+        padding: 8px 4px;
+    }
+    .tp-requirement-status {
+        display: inline-block;
+        padding: 3px 9px;
+        border-radius: 3px;
+        font-size: 12px;
+        line-height: 18px;
+        white-space: nowrap;
+    }
+    .tp-requirement-status-active {
+        color: #67C23A;
+        background: #F0F9EB;
+    }
+    .tp-requirement-status-inactive {
+        color: #E6A23C;
+        background: #FDF6EC;
+    }
+    </style>
+    <div class="tp-requirement-table-head">
+        <span>需求名称</span>
+        <span>当前版本</span>
+        <span>文件类型</span>
+        <span>状态</span>
+    </div>
+    """)
+    for index, entry in enumerate(filtered_requirements):
+        document = entry["document"]
+        document_id = str(document.get("id") or "")
+        document_name = str(document.get("document_name") or "未命名需求")
+        version_label = f"Ver. {document.get('version') or 1}"
+        file_type = str(document.get("file_type") or "未知").upper()
+        if entry["active"]:
+            status_label = "有效版本"
+            status_class = "tp-requirement-status-active"
+        elif entry["has_available"]:
+            status_label = "暂无有效版本"
+            status_class = "tp-requirement-status-inactive"
+        else:
+            status_label = "版本均已删除"
+            status_class = "tp-requirement-status-inactive"
 
-    selected_test_point_id = st.selectbox(
-        "选择要查看的测试点",
-        options=list(test_point_options.keys()),
-        format_func=lambda x: format_test_point(
-            test_point_options[x]
-        ),
-        key=f"test_point_detail_selection_{selected_batch_id}",
-    )
-
-    try:
-        test_point = get_test_point(
-            selected_test_point_id
-        )
-
-    except Exception as exc:
-        st.error(f"读取测试点详情失败：{exc}")
-        st.stop()
-
-    if not test_point:
-        st.error("无法读取测试点详情。")
-
-    else:
-        # ----------------------------------------------------
-        # 基本信息和审核信息
-        # ----------------------------------------------------
-
-        with st.container(border=True):
-            col1, col2 = st.columns(2)
-
-            with col1:
-                st.subheader("基本信息")
-
-                st.write(
-                    "内部 ID：",
-                    test_point.get("id"),
-                )
-
-                st.write(
-                    "测试点编号：",
-                    test_point.get("point_id"),
-                )
-
-                st.write(
-                    "所属批次：",
-                    test_point.get("batch_id"),
-                )
-
-                st.write(
-                    "创建时间：",
-                    format_local_datetime(
-                        test_point.get("created_at")
-                    ),
-                )
-
-                st.write(
-                    "更新时间：",
-                    format_local_datetime(
-                        test_point.get("updated_at")
-                    ),
-                )
-
-            with col2:
-                st.subheader("审核信息")
-
-                st.write(
-                    "AI 审核状态：",
-                    test_point.get(
-                        "ai_review_status",
-                        "未知",
-                    ),
-                )
-
-                st.write(
-                    "人工审核状态：",
-                    test_point.get(
-                        "manual_review_status",
-                        "未知",
-                    ),
-                )
-
-                st.write(
-                    "人工审核意见 / 驳回原因：",
-                    test_point.get("manual_comment") or "暂无",
-                )
-
-                st.write(
-                    "审核时间：",
-                    format_local_datetime(
-                        test_point.get("reviewed_at")
-                    ),
-                )
-
-        # ----------------------------------------------------
-        # 删除状态
-        # ----------------------------------------------------
-
-        if test_point.get("is_deleted"):
-            st.warning(
-                "该测试点已逻辑删除。"
-                f"删除时间："
-                f"{format_local_datetime(test_point.get('deleted_at'))}"
+        with st.container(key=f"tp_requirement_row_{index}"):
+            name_col, version_col, type_col, status_col = st.columns(
+                [6, 1.2, 1.2, 1.6],
+                vertical_alignment="center",
+                gap="small",
             )
+            with name_col:
+                if st.button(
+                    document_name,
+                    key=f"open_test_points_for_requirement_{document_id}",
+                    type="tertiary",
+                    width="stretch",
+                    help="查看该需求版本下的测试点",
+                ):
+                    st.session_state["test_point_context"] = {
+                        "project_id": str(selected_project_id),
+                        "document_id": document_id,
+                    }
+                    st.switch_page("pages/15_测试点列表.py")
+            with version_col:
+                st.markdown(
+                    f'<div class="tp-requirement-meta">{html.escape(version_label)}</div>',
+                    unsafe_allow_html=True,
+                )
+            with type_col:
+                st.markdown(
+                    f'<div class="tp-requirement-meta">{html.escape(file_type)}</div>',
+                    unsafe_allow_html=True,
+                )
+            with status_col:
+                st.markdown(
+                    f'<div class="tp-requirement-meta"><span class="tp-requirement-status {status_class}">{status_label}</span></div>',
+                    unsafe_allow_html=True,
+                )
 
-        # ----------------------------------------------------
-        # 单条人工审核
-        # ----------------------------------------------------
-
-        st.divider()
-
-        with st.container(border=True):
-            render_single_review_actions(test_point)
-
-        # ----------------------------------------------------
-        # 当前内容
-        # ----------------------------------------------------
-
-        with st.container(border=True):
-            show_content(
-                "当前测试点内容",
-                test_point.get("current_content"),
-            )
-
-        # ----------------------------------------------------
-        # 人工编辑
-        # ----------------------------------------------------
-
-        st.divider()
-
-        with st.container(border=True):
-            st.subheader("人工编辑测试点")
-            render_edit_form(test_point)
-
-        # ----------------------------------------------------
-        # 操作历史
-        # ----------------------------------------------------
-
-        with st.container(border=True):
-            render_test_point_history(
-                test_point["id"]
-            )
-
-        # ----------------------------------------------------
-        # 原始内容
-        # ----------------------------------------------------
-
-        with st.expander("查看原始测试点内容"):
-            show_content(
-                "原始测试点内容",
-                test_point.get("original_content"),
-            )
-
-        # ----------------------------------------------------
-        # 完整数据库记录
-        # ----------------------------------------------------
-
-        with st.expander("查看完整数据库记录"):
-            st.json(
-                test_point,
-                expanded=True,
-            )
+st.caption("提示：需求文档版本查看、恢复和删除操作请前往「需求版本管理」页面。")
 
 
-# ============================================================
 # 8. 页面说明
 # ============================================================
 
