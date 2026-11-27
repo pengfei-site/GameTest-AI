@@ -383,9 +383,6 @@ def _render_analysis_card(title: str, body: str, status: str = "", source: str =
         """,
         unsafe_allow_html=True,
     )
-    if source:
-        with st.expander("查看需求依据", expanded=False):
-            st.caption(source)
 
 
 
@@ -580,9 +577,6 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
                         f'<div class="gt-analysis-question"><span class="gt-analysis-tag gt-analysis-tag-warning">待确认</span><div>{html.escape(body)}</div></div>',
                         unsafe_allow_html=True,
                     )
-                    if source:
-                        with st.expander("查看需求依据", expanded=False):
-                            st.caption(source)
                     continue
 
                 title = (
