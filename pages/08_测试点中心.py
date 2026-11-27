@@ -748,7 +748,7 @@ selected_project = project_options[selected_project_id]
 try:
     documents = list_documents(
         project_id=selected_project_id,
-        include_deleted=False,
+        include_deleted=True,
     )
 except Exception as exc:
     st.error(f"读取需求文档失败：{exc}")
@@ -757,6 +757,15 @@ except Exception as exc:
 if not documents:
     st.info("当前项目暂无需求文档，请先在需求中心创建或导入需求文档。")
     st.stop()
+
+# 侧边栏入口默认不展示已删除版本；若从需求详情页明确进入某个已删除版本，
+# 则保留该版本，避免静默回退到其他版本。
+context_document_id = str(navigation_context.get("document_id") or "")
+documents = [
+    document for document in documents
+    if not document.get("is_deleted")
+    or str(document.get("id")) == context_document_id
+]
 
 documents_by_key = {}
 for document in documents:
@@ -772,6 +781,10 @@ context_document = next(
     ),
     None,
 )
+if context_document_id and not context_document:
+    st.error("无法定位需求详情页选中的文档版本，请返回需求详情页重新进入。")
+    st.stop()
+
 if context_document:
     context_document_key = str(
         context_document.get("document_key") or context_document.get("id")
