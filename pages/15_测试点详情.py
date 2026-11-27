@@ -248,7 +248,7 @@ if review_success_message:
 if st.session_state.pop("test_point_edit_success", False):
     st.success(
         "测试点编辑成功，修改历史已保存。"
-        "人工审核状态已重置为 pending，AI 审核状态保持不变。"
+        "人工审核状态已重置为 pending，AI 审核状态已重置为 approved。"
     )
 
 delete_success_message = st.session_state.pop(
@@ -838,7 +838,7 @@ def render_edit_form(test_point):
     st.info(
         "编辑说明：测试点编号和原始内容不可修改。"
         "保存后会记录修改前后的完整快照，"
-        "并将人工审核状态重置为 pending。"
+        "AI 审核状态重置为 approved，人工审核状态重置为 pending。"
     )
 
     with st.form(
