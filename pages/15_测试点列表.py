@@ -109,38 +109,22 @@ st.html("""
 .tp-pill.pending {background:#fff4d6;color:#8a6200}.tp-pill.approved {background:#e6f6ee;color:#18794e}.tp-pill.rejected {background:#fdeaea;color:#a83232}
 /* 当前查看范围卡片：沿用需求版本管理中需求文档卡片的视觉样式。 */
 .tp-scope-summary {
-    margin: 7px 0;
-    padding: 10px 12px;
-    border: 1px solid #E8EAF2;
-    border-radius: 10px;
-    background: #FFFFFF;
+    background: #f8f7ff;
+    border: 1px solid #eae7fc;
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    margin-top: 0.7rem;
 }
 .tp-scope-summary-label {
-    color: #172033;
-    font-size: 13px;
-    line-height: 1.5;
-    font-weight: 700;
-    margin-bottom: 4px;
+    color: #39345f;
+    font-weight: 650;
+    font-size: 0.92rem;
+    overflow-wrap: anywhere;
 }
 .tp-scope-summary-value {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 7px;
-    margin-top: 4px;
-    color: #8490A3;
-    font-size: 11px;
-    line-height: 1.5;
-    font-weight: 400;
-}
-.tp-scope-separator { color: #8490A3; font-weight: 400; }
-.tp-scope-version {
-    padding: 2px 8px;
-    border-radius: 6px;
-    background: #F3F5F9;
-    color: #64748B;
-    font-size: 11px;
-    font-weight: 500;
+    color: #85839a;
+    font-size: 0.8rem;
+    margin-top: 0.3rem;
 }
 .tp-scope-active, .tp-scope-history {
     padding: 2px 8px;
@@ -1323,20 +1307,8 @@ batch_count = len({
 })
 st.html(f"""
 <div class="tp-scope-summary">
-    <div class="tp-scope-summary-label">
-        <span>▤&nbsp;{document_name}</span>
-    </div>
-    <div class="tp-scope-summary-value">
-        <span>所属项目：{project_name}</span>
-        <span class="tp-scope-separator">·</span>
-        <span class="tp-scope-version">{version_label}</span>
-        <span class="tp-scope-separator">·</span>
-        <span>版本状态：{document_status}</span>
-        <span class="tp-scope-separator">·</span>
-        <span>创建时间：{document_created_at}</span>
-        <span class="tp-scope-separator">·</span>
-        <span>测试点批次数：{batch_count} 个</span>
-    </div>
+    <div class="tp-scope-summary-label">▤&nbsp;{document_name}</div>
+    <div class="tp-scope-summary-value">所属项目：{project_name}　·　{version_label}　·　版本状态：{document_status}　·　创建时间：{document_created_at}　·　测试点批次数：{batch_count} 个</div>
 </div>
 """)
 
