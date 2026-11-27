@@ -1321,9 +1321,11 @@ batch_count = len({
 st.html(f"""
 <div class="tp-scope-summary">
     <div class="tp-scope-summary-value">
+        <span>▤&nbsp;{document_name}</span>
+    </div>
+    <div class="tp-scope-summary-value">
         <span>所属项目：{project_name}</span>
         <span class="tp-scope-separator">·</span>
-        <span>需求：{document_name}</span>
         <span class="tp-scope-version">{version_label}</span>
         <span class="tp-scope-separator">·</span>
         <span>版本状态：{document_status}</span>
