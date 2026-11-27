@@ -1051,8 +1051,6 @@ if not test_points:
     st.info("当前筛选条件下没有测试点。")
 
 else:
-    st.subheader("测试点记录")
-
     for index, point in enumerate(test_points, start=1):
         point_id = point.get(
             "point_id",
