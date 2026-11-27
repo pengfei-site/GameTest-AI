@@ -601,6 +601,15 @@ def render_edit_form(test_point):
                 st.error(f"测试点编辑失败：{exc}")
 
 
+@st.dialog("人工编辑测试点", width="large")
+def render_edit_dialog(test_point):
+    """在弹窗中复用现有的人工编辑表单。"""
+    st.caption(
+        f"测试点编号：{test_point.get('point_id') or test_point.get('id')}"
+    )
+    render_edit_form(test_point)
+
+
 # ============================================================
 # 单条人工审核
 # ============================================================
@@ -1109,8 +1118,61 @@ if not test_points:
     st.info("当前筛选条件下没有测试点。")
 
 else:
-    table_rows = []
+    # 使用 Streamlit 原生按钮承载每行编辑操作，保持表格列表布局。
+    st.html("""
+    <style>
+    .tp-list-header-cell {
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+        color: #606266;
+        background: #F5F7FA;
+        border-bottom: 1px solid #E4E7ED;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .tp-list-row-cell {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        padding: 6px 10px;
+        color: #303133;
+        font-size: 13px;
+        overflow-wrap: anywhere;
+    }
+    .tp-list-id-cell { color: #606266; white-space: nowrap; }
+    [class*="st-key-tp-list-row-"] {
+        border-bottom: 1px solid #EBEEF5;
+        background: #FFFFFF;
+        padding: 0 2px;
+    }
+    [class*="st-key-tp-list-row-"]:hover {
+        background: #F8FAFD;
+    }
+    [class*="st-key-tp-list-row-"] [data-testid="stHorizontalBlock"] {
+        align-items: center;
+        gap: 0.35rem;
+    }
+    [class*="st-key-tp-list-row-"] [data-testid="stButton"] button {
+        min-height: 30px;
+        padding: 0 10px;
+        font-size: 12px;
+    }
+    </style>
+    """)
+
+    header_cols = st.columns([15, 39, 14, 14, 9, 9], gap="small")
+    for col, label in zip(
+        header_cols,
+        ("测试点编号", "测试点名称", "人工审核状态", "AI审核状态", "逻辑删除", "编辑"),
+    ):
+        with col:
+            st.html(f'<div class="tp-list-header-cell">{label}</div>')
+
     for point in test_points:
+        point_internal_id = point.get("id")
         point_id = html.escape(str(point.get("point_id") or "未知编号"))
         point_title = html.escape(str(get_point_title(point)))
         manual_status = point.get("manual_review_status", "未知")
@@ -1119,7 +1181,7 @@ else:
             "approved": "已通过",
             "rejected": "已驳回",
         }.get(manual_status, str(manual_status))
-        ai_status = str(point.get("ai_review_status") or "未知")
+        ai_status = html.escape(str(point.get("ai_review_status") or "未知"))
         is_deleted = bool(point.get("is_deleted"))
 
         manual_status_class = {
@@ -1130,22 +1192,40 @@ else:
         deleted_label = "是" if is_deleted else "否"
         deleted_class = "tp-list-tag-danger" if is_deleted else "tp-list-tag-neutral"
 
-        table_rows.append(
-            "<tr>"
-            f'<td class="tp-list-id">{point_id}</td>'
-            f'<td>{point_title}</td>'
-            f'<td><span class="tp-list-tag {manual_status_class}">{html.escape(manual_status_label)}</span></td>'
-            f'<td>{html.escape(ai_status)}</td>'
-            f'<td><span class="tp-list-tag {deleted_class}">{deleted_label}</span></td>'
-            "</tr>"
-        )
-
-    table_html = (
-        '<div class="tp-list-wrap"><table class="tp-list-table">'
-        '<thead><tr><th>测试点编号</th><th>测试点名称</th><th>人工审核状态</th><th>AI审核状态</th><th>逻辑删除</th></tr></thead>'
-        '<tbody>' + "".join(table_rows) + '</tbody></table></div>'
-    )
-    st.html(table_html)
+        with st.container(key=f"tp-list-row-{point_internal_id}"):
+            row_cols = st.columns([15, 39, 14, 14, 9, 9], gap="small")
+            with row_cols[0]:
+                st.html(f'<div class="tp-list-row-cell tp-list-id-cell">{point_id}</div>')
+            with row_cols[1]:
+                st.html(f'<div class="tp-list-row-cell">{point_title}</div>')
+            with row_cols[2]:
+                st.html(
+                    f'<div class="tp-list-row-cell"><span class="tp-list-tag {manual_status_class}">'
+                    f'{html.escape(manual_status_label)}</span></div>'
+                )
+            with row_cols[3]:
+                st.html(f'<div class="tp-list-row-cell">{ai_status}</div>')
+            with row_cols[4]:
+                st.html(
+                    f'<div class="tp-list-row-cell"><span class="tp-list-tag {deleted_class}">'
+                    f'{deleted_label}</span></div>'
+                )
+            with row_cols[5]:
+                if is_deleted:
+                    st.button(
+                        "编辑",
+                        key=f"edit_test_point_disabled_{point_internal_id}",
+                        disabled=True,
+                        width="stretch",
+                        help="已逻辑删除的测试点不能直接编辑",
+                    )
+                elif st.button(
+                    "编辑",
+                    key=f"open_edit_test_point_{point_internal_id}",
+                    width="stretch",
+                    help="编辑当前测试点",
+                ):
+                    render_edit_dialog(point)
 
 
 # ============================================================
@@ -1285,16 +1365,6 @@ else:
                 "当前测试点内容",
                 test_point.get("current_content"),
             )
-
-        # ----------------------------------------------------
-        # 人工编辑
-        # ----------------------------------------------------
-
-        st.divider()
-
-        with st.container(border=True):
-            st.subheader("人工编辑测试点")
-            render_edit_form(test_point)
 
         # ----------------------------------------------------
         # 操作历史
