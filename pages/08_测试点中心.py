@@ -739,11 +739,7 @@ render_header(
     breadcrumb=["测试点中心"],
 )
 
-st.html("""
-<div class="tp-page-intro">
-    集中管理项目需求入口，选择需求名称即可查看该需求下的测试点。
-</div>
-""")
+
 
 selected_project = project_options[selected_project_id]
 project_name = html.escape(str(selected_project.get("project_name") or selected_project.get("name") or "未命名项目"))
