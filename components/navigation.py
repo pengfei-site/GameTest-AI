@@ -73,8 +73,8 @@ def get_pages():
                 url_path="project-detail",
             ),
             st.Page(
-                "pages/15_测试点列表.py",
-                title="测试点列表",
+                "pages/15_测试点详情.py",
+                title="测试点详情",
                 icon="🎯",
                 url_path="test-point-list-detail",
                 visibility="hidden",
