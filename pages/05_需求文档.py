@@ -500,18 +500,11 @@ else:
             f"?project_id={__import__('urllib.parse', fromlist=['quote']).quote(str(selected_project_id))}"
             f"&document_key={__import__('urllib.parse', fromlist=['quote']).quote(document_key_value)}"
         )
-        if entry["active"]:
-            status_html = '<span class="gt-tapd-status gt-tapd-status-active">有效版本</span>'
-        elif entry["has_available"]:
-            status_html = '<span class="gt-tapd-status gt-tapd-status-deleted">暂无有效版本</span>'
-        else:
-            status_html = '<span class="gt-tapd-status gt-tapd-status-deleted">版本均已删除</span>'
         table_rows.append(
             "<tr>"
             f'<td class="gt-tapd-name"><a href="{html.escape(detail_url, quote=True)}">{html.escape(name)}</a></td>'
             f'<td class="gt-tapd-version">{html.escape(version)}</td>'
             f'<td class="gt-tapd-type">{html.escape(file_type)}</td>'
-            f'<td class="gt-tapd-state">{status_html}</td>'
             "</tr>"
         )
 
@@ -554,11 +547,9 @@ else:
     .gt-tapd-table thead th:nth-child(1),
     .gt-tapd-table tbody td:nth-child(1) { width: 60%; }
     .gt-tapd-table thead th:nth-child(2),
-    .gt-tapd-table tbody td:nth-child(2) { width: 12%; color: #606266; }
+    .gt-tapd-table tbody td:nth-child(2) { width: 20%; color: #606266; }
     .gt-tapd-table thead th:nth-child(3),
-    .gt-tapd-table tbody td:nth-child(3) { width: 12%; color: #606266; }
-    .gt-tapd-table thead th:nth-child(4),
-    .gt-tapd-table tbody td:nth-child(4) { width: 16%; }
+    .gt-tapd-table tbody td:nth-child(3) { width: 20%; color: #606266; }
     .gt-tapd-table .gt-tapd-name a {
         color: #303133;
         text-decoration: none;
@@ -568,16 +559,6 @@ else:
         color: #6D5CE7;
         text-decoration: underline;
     }
-    .gt-tapd-status {
-        display: inline-block;
-        padding: 3px 9px;
-        border-radius: 3px;
-        font-size: 12px;
-        line-height: 18px;
-        white-space: nowrap;
-    }
-    .gt-tapd-status-active { color: #67C23A; background: #F0F9EB; }
-    .gt-tapd-status-deleted { color: #E6A23C; background: #FDF6EC; }
     @media (max-width: 640px) {
         .gt-tapd-table { min-width: 560px; }
     }
@@ -585,7 +566,7 @@ else:
     """)
     table_html = (
         '<div class="gt-tapd-wrap"><table class="gt-tapd-table">'
-        '<thead><tr><th>需求名称</th><th>当前版本</th><th>文件类型</th><th>状态</th></tr></thead>'
+        '<thead><tr><th>需求名称</th><th>当前版本</th><th>文件类型</th></tr></thead>'
         '<tbody>' + "".join(table_rows) + '</tbody></table></div>'
     )
     st.html(table_html)
