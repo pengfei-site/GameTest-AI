@@ -31,7 +31,7 @@ document_key = st.session_state.get("requirement_detail_document_key") or st.que
 render_header(
     title="需求详情",
     description="AI 从当前文档版本中提取业务规则、前置条件、业务状态、数值约束、异常场景以及待策划确认的问题。",
-    breadcrumb=["需求中心", "需求文档", "需求详情"],
+    breadcrumb=["需求中心", "需求详情"],
 )
 
 if not project_id or not document_key:
