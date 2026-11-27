@@ -122,14 +122,14 @@ div[data-testid="stVerticalBlock"].st-key-test_point_project_picker_shell [data-
 
 render_header(
     title="测试点中心",
-    description="统一查看、筛选和维护 AI 生成的游戏测试点，支持人工编辑、单条审核和批量审核。",
+    description="按需求文档版本统一查看和维护 AI 生成的测试点，支持人工编辑、单条审核和批量审核。",
     breadcrumb=["测试点中心"],
 )
 
 
 st.html("""
 <div class="tp-page-intro">
-    集中管理测试点记录，跟踪 AI 审核与人工审核状态，并保留完整操作历史。
+    先选择项目、需求文档及版本，再查看该版本下的测试点、审核状态和操作历史。
 </div>
 """)
 
@@ -969,7 +969,7 @@ for batch_id, batch_points in document_batch_points.items():
 
 st.caption(
     f"当前筛选结果：{len(test_points)} 条 | "
-    f"批次有效总数：{statistics['total']} 条 | "
+    f"当前需求版本有效总数：{statistics['total']} 条 | "
     f"已删除总数：{statistics['deleted']} 条"
 )
 
