@@ -1625,12 +1625,14 @@ else:
                             "编辑",
                             key=f"edit_test_point_disabled_{point_internal_id}",
                             disabled=True,
+                            type="primary",
                             width="stretch",
                             help="已逻辑删除的测试点不能直接编辑",
                         )
                     elif st.button(
                         "编辑",
                         key=f"open_edit_test_point_{point_internal_id}",
+                        type="primary",
                         width="stretch",
                         help="编辑当前测试点",
                     ):
@@ -1639,6 +1641,7 @@ else:
                     if st.button(
                         "查看历史",
                         key=f"open_test_point_history_{point_internal_id}",
+                        type="primary",
                         width="stretch",
                         help="查看当前测试点的操作历史记录",
                     ):
@@ -1651,6 +1654,7 @@ else:
                         if st.button(
                             "恢复",
                             key=f"open_restore_test_point_{point_internal_id}",
+                            type="primary",
                             width="stretch",
                             help="恢复当前已逻辑删除的测试点",
                         ):
@@ -1661,6 +1665,7 @@ else:
                     elif st.button(
                         "删除",
                         key=f"open_delete_test_point_{point_internal_id}",
+                        type="primary",
                         width="stretch",
                         help="逻辑删除当前测试点，保留记录和操作历史",
                     ):
