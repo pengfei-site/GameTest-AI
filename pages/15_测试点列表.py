@@ -149,6 +149,71 @@ st.html("""
     font-size: 0.75rem;
 }
 
+/* 测试点列表卡片：沿用需求详情页结构化需求条目的视觉样式。 */
+.tp-list-card {
+    background: #FFFFFF;
+    border: 1px solid #E8ECF3;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 9px 0;
+    box-shadow: 0 1px 3px rgba(31,41,55,.025);
+}
+.tp-list-card-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-wrap: wrap;
+    color: #30364A;
+    font-size: 13px;
+    line-height: 1.6;
+}
+.tp-list-id {
+    display: inline-flex;
+    align-items: center;
+    color: #5D50A8;
+    background: #F1EFFF;
+    border: 1px solid #E6E1FF;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: .2px;
+}
+.tp-list-card-title {
+    color: #30364A;
+    font-size: 13px;
+    font-weight: 650;
+    overflow-wrap: anywhere;
+}
+.tp-list-tag {
+    display: inline-block;
+    border-radius: 20px;
+    padding: 3px 9px;
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 18px;
+    white-space: nowrap;
+}
+.tp-list-tag-success { color: #24734B; background: #EAF7EF; border: 1px solid #D8F0E1; }
+.tp-list-tag-warning { color: #9A5A0B; background: #FFF4E2; border: 1px solid #F7E4C2; }
+.tp-list-tag-danger { color: #A83232; background: #FDEAEA; border: 1px solid #F6D4D4; }
+.tp-list-tag-neutral { color: #64748B; background: #F3F5F9; border: 1px solid #E7EAF1; }
+.tp-list-card-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    margin-top: 10px;
+    color: #7B8496;
+    font-size: 12px;
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+    .tp-list-card { padding: 12px 13px; }
+    .tp-list-card-meta { gap: 5px 12px; }
+}
+
 </style>
 """)
 
@@ -1052,34 +1117,45 @@ if not test_points:
 
 else:
     for index, point in enumerate(test_points, start=1):
-        point_id = point.get(
-            "point_id",
-            "未知编号",
+        point_id = html.escape(str(point.get("point_id") or "未知编号"))
+        point_title = html.escape(str(get_point_title(point)))
+        internal_id = html.escape(str(point.get("id") or ""))
+        manual_status = point.get("manual_review_status", "未知")
+        manual_status_label = {
+            "pending": "待审核",
+            "approved": "已通过",
+            "rejected": "已驳回",
+        }.get(manual_status, str(manual_status))
+        ai_status = str(point.get("ai_review_status") or "未知")
+        is_deleted = bool(point.get("is_deleted"))
+
+        manual_status_class = {
+            "pending": "tp-list-tag-warning",
+            "approved": "tp-list-tag-success",
+            "rejected": "tp-list-tag-danger",
+        }.get(manual_status, "tp-list-tag-neutral")
+        deleted_html = (
+            '<span class="tp-list-tag tp-list-tag-danger">已删除</span>'
+            if is_deleted else ""
         )
 
-        point_title = get_point_title(point)
-
-        status = point.get("manual_review_status", "未知")
-        status_label = {"pending":"待审核", "approved":"已通过", "rejected":"已驳回"}.get(status, status)
-        with st.container(border=True):
-            st.markdown(f'<div class="tp-record-title">{point_title}<span class="tp-pill {status}">{status_label}</span></div><div class="tp-record-meta">{point_id} · AI审核：{point.get("ai_review_status", "未知")}</div>', unsafe_allow_html=True)
-            col1, col2, col3 = st.columns(3)
-
-            col1.write(
-                f"AI审核状态："
-                f"{point.get('ai_review_status', '未知')}"
-            )
-
-            col2.write(
-                f"人工审核状态：{status_label}"
-            )
-
-            col3.write(
-                f"逻辑删除："
-                f"{'是' if point.get('is_deleted') else '否'}"
-            )
-
-            st.caption(f"内部 ID：{point.get('id', '')}")
+        st.html(f"""
+        <div class="tp-list-card">
+            <div class="tp-list-card-head">
+                <span class="tp-list-id">{point_id}</span>
+                <strong class="tp-list-card-title">{point_title}</strong>
+                <span class="tp-list-tag {manual_status_class}">{html.escape(manual_status_label)}</span>
+                <span class="tp-list-tag tp-list-tag-neutral">AI：{html.escape(ai_status)}</span>
+                {deleted_html}
+            </div>
+            <div class="tp-list-card-meta">
+                <span>人工审核：{html.escape(manual_status_label)}</span>
+                <span>AI 审核：{html.escape(ai_status)}</span>
+                <span>逻辑删除：{"是" if is_deleted else "否"}</span>
+                <span>内部 ID：{internal_id}</span>
+            </div>
+        </div>
+        """)
 
 
 # ============================================================
