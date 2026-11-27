@@ -143,7 +143,7 @@ div[data-testid="stSegmentedControl"] button {{
 """)
 
 with st.container(border=True, key="requirement-detail-card"):
-    title_col, version_col = st.columns([4.5, 1.5], vertical_alignment="center")
+    title_col, version_col = st.columns([4.5, 0.6], vertical_alignment="center")
     with title_col:
         st.markdown(
             f'<div class="gt-detail-title">▤ {html.escape(str(default_version.get("document_name") or "未命名文档"))}</div>',
