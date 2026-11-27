@@ -1793,10 +1793,10 @@ else:
 
     # 表头与所有测试点行放在同一容器中，使用与需求列表相同的零间距布局。
     with st.container(key="tp-list-shell"):
-        header_cols = st.columns([18, 47, 35], gap="small")
+        header_cols = st.columns([16, 34, 20, 30], gap="small")
         for col, label in zip(
             header_cols,
-            ("测试点编号", "测试点名称", "操作"),
+            ("测试点编号", "测试点名称", "AI审核状态", "操作"),
         ):
             with col:
                 st.html(f'<div class="tp-list-header-cell">{label}</div>')
@@ -1825,7 +1825,7 @@ else:
                         st.session_state["expanded_test_point_id"] = point_internal_id
                     st.rerun()
 
-                row_cols = st.columns([18, 47, 35], gap="small")
+                row_cols = st.columns([16, 34, 20, 30], gap="small")
                 with row_cols[0]:
                     st.html(
                         f'<div class="tp-list-row-cell tp-list-id-cell">'
@@ -1834,6 +1834,22 @@ else:
                 with row_cols[1]:
                     st.html(f'<div class="tp-list-row-cell">{point_title}</div>')
                 with row_cols[2]:
+                    ai_review_status = str(point.get("ai_review_status") or "").strip()
+                    ai_status_labels = {
+                        "passed": ("通过", "tp-list-tag-success"),
+                        "needs_review": ("待复核", "tp-list-tag-warning"),
+                        "failed": ("失败", "tp-list-tag-danger"),
+                    }
+                    ai_status_label, ai_status_class = ai_status_labels.get(
+                        ai_review_status,
+                        ("未知" if not ai_review_status else ai_review_status, "tp-list-tag-neutral"),
+                    )
+                    st.html(
+                        f'<div class="tp-list-row-cell">'
+                        f'<span class="tp-list-tag {ai_status_class}">'
+                        f'{html.escape(ai_status_label)}</span></div>'
+                    )
+                with row_cols[3]:
                     action_cols = st.columns(3, gap="small")
                     with action_cols[0]:
                         if is_deleted:
