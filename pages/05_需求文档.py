@@ -107,7 +107,7 @@ def render_upload_action():
 render_header(
     title="需求中心",
     description="导入和管理游戏策划需求文档，为后续结构化分析提供原始需求依据。",
-    breadcrumb=["需求中心", "需求文档"],
+    breadcrumb=["需求中心"],
     actions=render_upload_action,
 )
 
