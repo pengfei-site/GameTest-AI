@@ -24,8 +24,9 @@ from core.time_utils import format_local_datetime
 
 
 # 优先读取列表页通过 session_state 传递的定位信息；同时兼容直接使用 URL 参数打开。
-project_id = st.session_state.get("requirement_detail_project_id") or st.query_params.get("project_id", "")
-document_key = st.session_state.get("requirement_detail_document_key") or st.query_params.get("document_key", "")
+# URL 参数优先，确保从测试点详情返回时能准确恢复当前需求文档。
+project_id = st.query_params.get("project_id", "") or st.session_state.get("requirement_detail_project_id", "")
+document_key = st.query_params.get("document_key", "") or st.session_state.get("requirement_detail_document_key", "")
 
 
 render_header(
@@ -212,25 +213,26 @@ with analysis_action_col:
         except Exception as exc:
             st.error(f"需求分析或自动保存失败：{exc}")
 with test_point_action_col:
-    if st.button("查看测试点", key=f"open_test_point_list_{project_id}", type="primary", width="stretch"):
-        active_analysis = next(
-            (item for item in current_analyses if item.get("is_active")),
-            None,
-        )
-        selected_document_id = str(current.get("id") or "")
-        selected_analysis_id = str(active_analysis.get("id") or "") if active_analysis else ""
-        st.session_state["test_point_context"] = {
-            "project_id": str(project_id),
-            "document_id": selected_document_id,
-            "requirement_analysis_id": selected_analysis_id,
-            "filter_by_analysis": True,
-        }
-        # 同步写入 URL，避免测试点详情页刷新后丢失当前需求版本及分析记录定位。
-        st.query_params["tp_project_id"] = str(project_id)
-        st.query_params["tp_document_id"] = selected_document_id
-        st.query_params["tp_analysis_id"] = selected_analysis_id
-        st.query_params["tp_filter_by_analysis"] = "1"
-        st.switch_page("pages/15_测试点详情.py")
+    active_analysis = next(
+        (item for item in current_analyses if item.get("is_active")),
+        None,
+    )
+    selected_document_id = str(current.get("id") or "")
+    selected_analysis_id = str(active_analysis.get("id") or "") if active_analysis else ""
+    # 使用页面链接进行站内导航，让浏览器保留可返回的页面历史；
+    # 测试点详情页通过 URL 参数恢复当前需求版本和分析记录范围。
+    st.page_link(
+        "pages/15_测试点详情.py",
+        label="查看测试点",
+        icon=":material/list_alt:",
+        width="stretch",
+        query_params={
+            "tp_project_id": str(project_id),
+            "tp_document_id": selected_document_id,
+            "tp_analysis_id": selected_analysis_id,
+            "tp_filter_by_analysis": "1",
+        },
+    )
 with original_action_col:
     if st.button("查看原文", key="view_original_document", type="primary", width="stretch"):
         st.session_state["show_original_document_dialog"] = True
