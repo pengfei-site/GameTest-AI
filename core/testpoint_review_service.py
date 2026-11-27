@@ -1,5 +1,13 @@
 """测试点人工审核服务。"""
 
+from database.repositories.test_point_repository import (
+    approve_test_point as repository_approve_test_point,
+    batch_approve_test_points as repository_batch_approve_test_points,
+    batch_reject_test_points as repository_batch_reject_test_points,
+    reject_test_point as repository_reject_test_point,
+)
+
+
 # 临时关闭人工审核时改为 False；恢复流程时改为 True。
 MANUAL_REVIEW_ENABLED = False
 
@@ -7,14 +15,6 @@ MANUAL_REVIEW_ENABLED = False
 def _ensure_manual_review_enabled():
     if not MANUAL_REVIEW_ENABLED:
         raise RuntimeError("人工审核流程当前已暂时关闭")
-
-
-from database.repositories.test_point_repository import (
-    approve_test_point as repository_approve_test_point,
-    batch_approve_test_points as repository_batch_approve_test_points,
-    batch_reject_test_points as repository_batch_reject_test_points,
-    reject_test_point as repository_reject_test_point,
-)
 
 
 def _normalize_test_point_id(test_point_id: str) -> str:
