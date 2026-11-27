@@ -107,24 +107,28 @@ st.html("""
 .tp-record-meta {color:#77758b;font-size:.82rem;margin-top:6px;}
 .tp-pill {display:inline-block;border-radius:999px;padding:3px 9px;font-size:.76rem;font-weight:650;background:#f0eef8;color:#6254a4;margin-left:6px;}
 .tp-pill.pending {background:#fff4d6;color:#8a6200}.tp-pill.approved {background:#e6f6ee;color:#18794e}.tp-pill.rejected {background:#fdeaea;color:#a83232}
-/* 当前查看范围卡片：沿用需求版本管理中需求文档卡片的视觉样式。 */
+/* 当前查看范围卡片：与需求详情页面顶部信息卡片保持一致。 */
 .tp-scope-summary {
-    background: #f8f7ff;
-    border: 1px solid #eae7fc;
+    background: #FFFFFF;
+    border: 1px solid #E7EAF1;
     border-radius: 12px;
-    padding: 0.9rem 1rem;
-    margin-top: 0.7rem;
+    padding: 20px 22px;
+    margin: 8px 0 20px;
+    box-shadow: 0 2px 8px rgba(31,41,55,.04);
+    box-sizing: border-box;
 }
 .tp-scope-summary-label {
-    color: #39345f;
-    font-weight: 650;
-    font-size: 0.92rem;
+    color: #302D50;
+    font-size: 20px;
+    line-height: 1.45;
+    font-weight: 750;
     overflow-wrap: anywhere;
 }
 .tp-scope-summary-value {
-    color: #85839a;
-    font-size: 0.8rem;
-    margin-top: 0.3rem;
+    color: #8490A3;
+    font-size: 12px;
+    line-height: 1.7;
+    margin-top: 10px;
 }
 .tp-scope-active, .tp-scope-history {
     padding: 2px 8px;
