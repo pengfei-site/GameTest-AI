@@ -1275,6 +1275,42 @@ else:
 
             if is_expanded:
                 with st.container(border=True):
+                    info_col, review_col = st.columns(2)
+
+                    with info_col:
+                        st.subheader("基本信息")
+                        st.write("内部 ID：", point.get("id"))
+                        st.write("测试点编号：", point.get("point_id"))
+                        st.write("所属批次：", point.get("batch_id"))
+                        st.write(
+                            "创建时间：",
+                            format_local_datetime(point.get("created_at")),
+                        )
+                        st.write(
+                            "更新时间：",
+                            format_local_datetime(point.get("updated_at")),
+                        )
+
+                    with review_col:
+                        st.subheader("审核信息")
+                        st.write(
+                            "AI 审核状态：",
+                            point.get("ai_review_status", "未知"),
+                        )
+                        st.write(
+                            "人工审核状态：",
+                            point.get("manual_review_status", "未知"),
+                        )
+                        st.write(
+                            "人工审核意见 / 驳回原因：",
+                            point.get("manual_comment") or "暂无",
+                        )
+                        st.write(
+                            "审核时间：",
+                            format_local_datetime(point.get("reviewed_at")),
+                        )
+
+                    st.divider()
                     show_content(
                         "测试点内容",
                         point.get("current_content"),
@@ -1319,76 +1355,6 @@ else:
         st.error("无法读取测试点详情。")
 
     else:
-        # ----------------------------------------------------
-        # 基本信息和审核信息
-        # ----------------------------------------------------
-
-        with st.container(border=True):
-            col1, col2 = st.columns(2)
-
-            with col1:
-                st.subheader("基本信息")
-
-                st.write(
-                    "内部 ID：",
-                    test_point.get("id"),
-                )
-
-                st.write(
-                    "测试点编号：",
-                    test_point.get("point_id"),
-                )
-
-                st.write(
-                    "所属批次：",
-                    test_point.get("batch_id"),
-                )
-
-                st.write(
-                    "创建时间：",
-                    format_local_datetime(
-                        test_point.get("created_at")
-                    ),
-                )
-
-                st.write(
-                    "更新时间：",
-                    format_local_datetime(
-                        test_point.get("updated_at")
-                    ),
-                )
-
-            with col2:
-                st.subheader("审核信息")
-
-                st.write(
-                    "AI 审核状态：",
-                    test_point.get(
-                        "ai_review_status",
-                        "未知",
-                    ),
-                )
-
-                st.write(
-                    "人工审核状态：",
-                    test_point.get(
-                        "manual_review_status",
-                        "未知",
-                    ),
-                )
-
-                st.write(
-                    "人工审核意见 / 驳回原因：",
-                    test_point.get("manual_comment") or "暂无",
-                )
-
-                st.write(
-                    "审核时间：",
-                    format_local_datetime(
-                        test_point.get("reviewed_at")
-                    ),
-                )
-
         # ----------------------------------------------------
         # 删除状态
         # ----------------------------------------------------
