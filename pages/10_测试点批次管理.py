@@ -15,6 +15,7 @@ from database.repositories.requirement_repository import (
 from database.repositories.generation_batch_repository import (
     get_generation_batch,
     list_generation_batches,
+    set_generation_batch_effective,
 )
 
 from database.repositories.test_point_repository import (
@@ -532,7 +533,8 @@ for batch in batches:
         ),
         "批次 ID": batch_id,
         "需求分析 ID": batch.get("requirement_analysis_id", "-"),
-        "状态": show_status(status),
+        "批次有效状态": "有效" if batch.get("batch_status") == "effective" else "废弃",
+        "生成状态": show_status(status),
         "有效测试点": statistics.get("point_count", 0),
         "待审核": (
             review_statistics.get("pending", 0)
@@ -629,8 +631,13 @@ with basic_col2:
     )
 
     render_info_card(
-        "批次状态",
+        "生成状态",
         show_status(batch_status),
+    )
+
+    render_info_card(
+        "批次有效状态",
+        "有效" if selected_batch.get("batch_status") == "effective" else "废弃",
     )
 
     render_info_card(
@@ -640,6 +647,28 @@ with basic_col2:
             or selected_batch.get("created_at")
         ),
     )
+
+
+# ============================================================
+# 8.1 批次有效状态管理
+# ============================================================
+
+if selected_batch.get("batch_status") == "effective":
+    st.success("当前批次为该需求版本的有效批次。")
+else:
+    st.caption("将当前批次设为有效后，同一需求版本下原有效批次会自动变为废弃。")
+    if st.button(
+        "设为有效批次",
+        key=f"set_generation_batch_effective_{selected_batch_id}",
+        type="primary",
+    ):
+        try:
+            set_generation_batch_effective(selected_batch_id)
+        except Exception as exc:
+            st.error(f"设置有效批次失败：{exc}")
+        else:
+            st.success("已设置为有效批次，同一需求版本下原有效批次已自动废弃。")
+            st.rerun()
 
 
 # ============================================================
