@@ -765,11 +765,24 @@ except Exception as exc:
     st.error(f"读取需求分析记录失败：{exc}")
     st.stop()
 
-active_analysis_by_document = {
-    str(analysis.get("document_id")): analysis
-    for analysis in project_analyses
-    if analysis.get("is_active")
-}
+analysis_record_numbers = {}
+active_analysis_by_document = {}
+document_analysis_counts = {}
+
+# 与需求详情页保持一致：按分析记录创建时间倒序编号，最新记录为分析记录 1。
+for analysis in project_analyses:
+    document_id = str(analysis.get("document_id") or "")
+    if not document_id:
+        continue
+
+    document_analysis_counts[document_id] = (
+        document_analysis_counts.get(document_id, 0) + 1
+    )
+    analysis_id = str(analysis.get("id") or "")
+    analysis_record_numbers[analysis_id] = document_analysis_counts[document_id]
+
+    if analysis.get("is_active"):
+        active_analysis_by_document[document_id] = analysis
 
 requirement_groups = {}
 for item in project_documents:
@@ -896,13 +909,10 @@ else:
         document_name = str(document.get("document_name") or "未命名需求")
         version_label = f"Ver. {document.get('version') or 1}"
         active_analysis = active_analysis_by_document.get(document_id)
-        analysis_summary = (
-            str(active_analysis.get("summary") or "").strip()
+        analysis_label = (
+            f"【分析记录 {analysis_record_numbers.get(str(active_analysis.get('id') or ''), '')}】"
             if active_analysis
-            else ""
-        )
-        analysis_label = analysis_summary or (
-            "有效分析记录" if active_analysis else "暂无有效分析记录"
+            else "暂无有效分析记录"
         )
         detail_url = (
             "?open_test_points_document="
