@@ -210,7 +210,7 @@ with analysis_action_col:
 with test_point_action_col:
     if st.button("测试点", key=f"open_test_point_list_{project_id}", type="primary", width="stretch"):
         st.session_state["test_point_list_project"] = str(project_id)
-        st.switch_page("pages/08_测试点中心.py")
+        st.switch_page("pages/15_测试点列表.py")
 with original_action_col:
     if st.button("查看原文", key="view_original_document", type="primary", width="stretch"):
         st.session_state["show_original_document_dialog"] = True
