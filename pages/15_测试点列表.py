@@ -1134,13 +1134,19 @@ else:
         white-space: nowrap;
     }
     .tp-list-row-cell {
+        height: 48px;
         min-height: 48px;
+        box-sizing: border-box;
         display: flex;
         align-items: center;
-        padding: 6px 10px;
+        padding: 7px 10px;
         color: #303133;
         font-size: 13px;
         overflow-wrap: anywhere;
+    }
+    /* 列表行按需求列表的紧凑表格节奏排列，取消 Streamlit 默认纵向块间距。 */
+    div[data-testid="stVerticalBlock"]:has(> [class*="st-key-tp-list-row-"]) {
+        gap: 0 !important;
     }
     .tp-list-id-cell { color: #606266; white-space: nowrap; }
     .tp-list-expand-arrow {
