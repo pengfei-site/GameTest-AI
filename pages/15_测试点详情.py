@@ -117,6 +117,16 @@ st.html("""
     box-shadow: 0 2px 8px rgba(31,41,55,.04);
     box-sizing: border-box;
 }
+/* 需求信息卡片容器：批次筛选控件与需求信息共同位于卡片内部。 */
+.st-key-tp-scope-summary-card {
+    background: #FFFFFF;
+    border: 1px solid #E7EAF1;
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin: 8px 0 20px;
+    box-shadow: 0 2px 8px rgba(31,41,55,.04);
+    box-sizing: border-box;
+}
 .tp-scope-summary-label {
     color: #302D50;
     font-size: 20px;
@@ -1319,7 +1329,7 @@ for batch_id, batch_points in document_batch_points.items():
     )
     batch_filter_options[batch_label] = batch_key
 
-with st.container(border=True):
+with st.container(key="tp-scope-summary-card"):
     scope_title_col, batch_filter_col = st.columns(
         [5, 1.5],
         vertical_alignment="center",
