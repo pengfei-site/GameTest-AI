@@ -118,17 +118,20 @@ st.html("""
 .tp-scope-summary-label {
     color: #172033;
     font-size: 13px;
+    line-height: 1.5;
     font-weight: 700;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 .tp-scope-summary-value {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: 7px;
-    color: #172033;
-    font-size: 13px;
-    font-weight: 700;
+    margin-top: 4px;
+    color: #8490A3;
+    font-size: 11px;
+    line-height: 1.5;
+    font-weight: 400;
 }
 .tp-scope-separator { color: #8490A3; font-weight: 400; }
 .tp-scope-version {
@@ -1320,7 +1323,7 @@ batch_count = len({
 })
 st.html(f"""
 <div class="tp-scope-summary">
-    <div class="tp-scope-summary-value">
+    <div class="tp-scope-summary-label">
         <span>▤&nbsp;{document_name}</span>
     </div>
     <div class="tp-scope-summary-value">
