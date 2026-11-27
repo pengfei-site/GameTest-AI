@@ -885,6 +885,12 @@ else:
         font-size: 13px;
         font-weight: 600;
     }
+    /* Streamlit 默认会在同级容器之间添加较大的纵向 gap。
+       需求行需要连续排列，因此仅收紧包含需求行的列表容器。 */
+    div[data-testid="stVerticalBlock"]:has(> div[class*="st-key-tp_requirement_row_"]) {
+        gap: 0 !important;
+        row-gap: 0 !important;
+    }
     div[class*="st-key-tp_requirement_row_"] {
         box-sizing: border-box;
         min-height: 48px;
