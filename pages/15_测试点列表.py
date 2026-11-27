@@ -1377,12 +1377,6 @@ with filter_col:
             key=f"test_point_status_filter_v2_{selected_document_id}",
             label_visibility="collapsed",
         )
-        st.divider()
-        include_deleted = st.checkbox(
-            "显示已逻辑删除的测试点",
-            value=False,
-            key=f"test_point_include_deleted_{selected_document_id}",
-        )
 
 selected_status = status_options[selected_status_label]
 
@@ -1434,11 +1428,19 @@ for batch_id, batch_points in document_batch_points.items():
             batch_id,
         )
 
-st.caption(
-    f"当前筛选结果：{len(test_points)} 条 | "
-    f"当前需求版本有效总数：{statistics['total']} 条 | "
-    f"已删除总数：{statistics['deleted']} 条"
-)
+statistics_cols = st.columns([10, 2], vertical_alignment="center")
+with statistics_cols[0]:
+    st.caption(
+        f"当前筛选结果：{len(test_points)} 条 | "
+        f"当前需求版本有效总数：{statistics['total']} 条 | "
+        f"已删除总数：{statistics['deleted']} 条"
+    )
+with statistics_cols[1]:
+    include_deleted = st.checkbox(
+        "显示已删除",
+        value=False,
+        key=f"test_point_include_deleted_{selected_document_id}",
+    )
 
 if include_deleted:
     st.info("当前已开启逻辑删除记录展示。")
