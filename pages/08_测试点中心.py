@@ -121,22 +121,7 @@ div[data-testid="stVerticalBlock"].st-key-test_point_project_picker_shell [data-
 """)
 
 
-# ============================================================
-# 页面 Header
-# ============================================================
 
-render_header(
-    title="测试点中心",
-    description="按项目集中查看需求文档，并从需求入口进入对应的测试点列表。",
-    breadcrumb=["测试点中心"],
-)
-
-
-st.html("""
-<div class="tp-page-intro">
-    集中管理项目需求入口，选择需求名称即可查看该需求下的测试点。
-</div>
-""")
 
 
 # ============================================================
@@ -746,6 +731,20 @@ if open_document_id:
     }
     del st.query_params["open_test_points_document"]
     st.switch_page("pages/15_测试点列表.py")
+
+# 仅在确认不需要跳转后渲染当前页面标题，避免跳转时残留「测试点中心」标题。
+render_header(
+    title="测试点中心",
+    description="按项目集中查看需求文档，并从需求入口进入对应的测试点列表。",
+    breadcrumb=["测试点中心"],
+)
+
+st.html("""
+<div class="tp-page-intro">
+    集中管理项目需求入口，选择需求名称即可查看该需求下的测试点。
+</div>
+""")
+
 selected_project = project_options[selected_project_id]
 project_name = html.escape(str(selected_project.get("project_name") or selected_project.get("name") or "未命名项目"))
 project_description = html.escape(str(selected_project.get("description") or "暂无项目描述"))
