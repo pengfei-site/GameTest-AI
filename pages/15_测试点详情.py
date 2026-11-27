@@ -1282,7 +1282,7 @@ document_name = html.escape(str(
     selected_document.get("document_name") or "未命名文档"
 ))
 version_label = html.escape(
-    f"V{selected_document.get('version', '?')}"
+    f"当前版本：Ver. {selected_document.get('version', '?')}"
 )
 document_status = (
     "已删除" if selected_document.get("is_deleted")
