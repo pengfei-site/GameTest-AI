@@ -171,7 +171,7 @@ with st.container(border=True, key="requirement-detail-card"):
             is_current_active = bool(current.get("is_active")) and not bool(current.get("is_deleted"))
             st.session_state[status_key] = is_current_active
             st.checkbox(
-                "使用中" if is_current_active else ("已删除" if current.get("is_deleted") else "已废弃"),
+                "设置使用中",
                 disabled=bool(current.get("is_deleted")),
                 key=status_key,
                 on_change=_save_document_version_checkbox_state,
@@ -482,7 +482,7 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
             # 避免切换有效记录后旧记录仍显示为勾选。
             st.session_state[checkbox_key] = analysis_is_active
             st.checkbox(
-                    "使用中" if analysis_is_active else "已废弃",
+                    "设置使用中",
                 key=checkbox_key,
                     disabled=not bool(current.get("is_active")) or bool(current.get("is_deleted")),
                 on_change=_save_analysis_checkbox_state,
