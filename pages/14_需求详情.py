@@ -212,10 +212,16 @@ with analysis_action_col:
         except Exception as exc:
             st.error(f"需求分析或自动保存失败：{exc}")
 with test_point_action_col:
-    if st.button("测试点", key=f"open_test_point_list_{project_id}", type="primary", width="stretch"):
+    if st.button("查看测试点", key=f"open_test_point_list_{project_id}", type="primary", width="stretch"):
+        active_analysis = next(
+            (item for item in current_analyses if item.get("is_active")),
+            None,
+        )
         st.session_state["test_point_context"] = {
             "project_id": str(project_id),
             "document_id": str(current.get("id") or ""),
+            "requirement_analysis_id": str(active_analysis.get("id") or "") if active_analysis else "",
+            "filter_by_analysis": True,
         }
         st.switch_page("pages/15_测试点详情.py")
 with original_action_col:
