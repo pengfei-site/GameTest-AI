@@ -612,6 +612,7 @@ def calculate_statistics(points):
     statistics = {
         "total": 0,
         "pending": 0,
+        "ai_needs_review": 0,
         "approved": 0,
         "rejected": 0,
         "other": 0,
@@ -626,6 +627,9 @@ def calculate_statistics(points):
             continue
 
         statistics["total"] += 1
+
+        if point.get("ai_review_status") == "needs_review":
+            statistics["ai_needs_review"] += 1
 
         status = point.get("manual_review_status")
 
@@ -1531,11 +1535,11 @@ if MANUAL_REVIEW_ENABLED:
             "请检查数据库中的 manual_review_status。"
         )
 
-    metric_cols = st.columns(4, gap="small")
+    metric_cols = st.columns(5, gap="small")
     for col, label, value in zip(
         metric_cols,
-        ("测试点总数", "待审核", "已通过", "已驳回"),
-        ("total", "pending", "approved", "rejected"),
+        ("测试点总数", "待审核", "已通过", "已驳回", "待复核"),
+        ("total", "pending", "approved", "rejected", "ai_needs_review"),
     ):
         with col:
             col.metric(label, statistics.get(value, 0))
@@ -1544,7 +1548,7 @@ else:
     with metric_cols[0]:
         st.metric("测试点总数", statistics["total"])
     with metric_cols[1]:
-        st.metric("待审核测试点", statistics["pending"])
+        st.metric("待复核测试点", statistics["ai_needs_review"])
 
 # ============================================================
 # 5. 测试点筛选
