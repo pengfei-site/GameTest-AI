@@ -1456,10 +1456,7 @@ for point in test_points:
         if point.get("batch_id") not in (None, "")
         else "__NO_BATCH__"
     )
-    matches_batch = (
-        selected_batch_key == "__ALL__"
-        or point_batch_key == selected_batch_key
-    )
+    matches_batch = point_batch_key == selected_batch_key
     if matches_search and matches_status and matches_batch:
         filtered_test_points.append(point)
 
@@ -1469,7 +1466,7 @@ for batch_id, batch_points in document_batch_points.items():
     batch_key = (
         str(batch_id) if batch_id not in (None, "") else "__NO_BATCH__"
     )
-    if selected_batch_key != "__ALL__" and batch_key != selected_batch_key:
+    if batch_key != selected_batch_key:
         continue
 
     pending_batch_points = [
