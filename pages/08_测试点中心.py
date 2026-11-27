@@ -833,12 +833,14 @@ for key, versions in requirement_groups.items():
 
 with get_connection() as conn:
     project_stats_row = conn.execute("""
-        SELECT COUNT(*) AS total
+        SELECT
+            COUNT(*) AS total,
+            SUM(CASE WHEN tp.manual_review_status = 'pending' THEN 1 ELSE 0 END) AS pending
         FROM test_points tp
         JOIN generation_batches gb ON gb.id = tp.batch_id
         WHERE gb.project_id = ? AND tp.is_deleted = 0
     """, (selected_project_id,)).fetchone()
-project_stats = dict(project_stats_row) if project_stats_row else {"total": 0}
+project_stats = dict(project_stats_row) if project_stats_row else {"total": 0, "pending": 0}
 project_col, stats_col = st.columns([1.15, 1.85], gap="medium", vertical_alignment="center")
 with project_col:
     with st.container(key="test_point_project_picker_shell"):
@@ -856,7 +858,11 @@ with project_col:
                         st.session_state["test_point_list_project"] = project_id
                         st.rerun()
 with stats_col:
-    st.metric("测试点总数", project_stats.get("total") or 0)
+    total_col, pending_col = st.columns(2, gap="medium")
+    with total_col:
+        st.metric("测试点总数", project_stats.get("total") or 0)
+    with pending_col:
+        st.metric("待审核测试点", project_stats.get("pending") or 0)
 
 
 # ============================================================
