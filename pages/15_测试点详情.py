@@ -1344,7 +1344,7 @@ with st.container(key="tp-scope-summary-card"):
             "批次筛选",
             options=list(batch_filter_options.keys()),
             key=f"test_point_batch_filter_{selected_document_id}",
-            help="选择批次后，仅展示该批次的测试点及批量审核入口。",
+            label_visibility="collapsed",
         )
     st.html(f"""
     <div class="tp-scope-summary-value">所属项目：{project_name}　·　{version_label}　·　版本状态：{document_status}　·　创建时间：{document_created_at}　·　测试点批次数：{batch_count} 个</div>
