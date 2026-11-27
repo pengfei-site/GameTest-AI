@@ -217,12 +217,19 @@ with test_point_action_col:
             (item for item in current_analyses if item.get("is_active")),
             None,
         )
+        selected_document_id = str(current.get("id") or "")
+        selected_analysis_id = str(active_analysis.get("id") or "") if active_analysis else ""
         st.session_state["test_point_context"] = {
             "project_id": str(project_id),
-            "document_id": str(current.get("id") or ""),
-            "requirement_analysis_id": str(active_analysis.get("id") or "") if active_analysis else "",
+            "document_id": selected_document_id,
+            "requirement_analysis_id": selected_analysis_id,
             "filter_by_analysis": True,
         }
+        # 同步写入 URL，避免测试点详情页刷新后丢失当前需求版本及分析记录定位。
+        st.query_params["tp_project_id"] = str(project_id)
+        st.query_params["tp_document_id"] = selected_document_id
+        st.query_params["tp_analysis_id"] = selected_analysis_id
+        st.query_params["tp_filter_by_analysis"] = "1"
         st.switch_page("pages/15_测试点详情.py")
 with original_action_col:
     if st.button("查看原文", key="view_original_document", type="primary", width="stretch"):
