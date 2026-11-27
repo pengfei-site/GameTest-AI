@@ -13,6 +13,7 @@ from database.repositories.test_point_repository import (
     get_test_point,
     list_test_points_by_document_version,
     list_test_point_history,
+    soft_delete_test_point,
 )
 
 from core.schemas import TestPointEditableContent
@@ -246,6 +247,13 @@ if st.session_state.pop("test_point_edit_success", False):
         "测试点编辑成功，修改历史已保存。"
         "人工审核状态已重置为 pending，AI 审核状态保持不变。"
     )
+
+delete_success_message = st.session_state.pop(
+    "test_point_delete_success_message",
+    None,
+)
+if delete_success_message:
+    st.success(delete_success_message)
 
 
 # ============================================================
@@ -716,6 +724,35 @@ def render_test_point_history_dialog(test_point_id, point_label):
 
                 if before_data is None and after_data is None:
                     st.info("该条历史记录没有可展示的快照数据。")
+
+
+@st.dialog("确认逻辑删除测试点", width="small")
+def render_delete_test_point_dialog(test_point_id, point_label):
+    """确认后执行逻辑删除，并由 Repository 同步写入操作历史。"""
+
+    st.warning(
+        f"确定要逻辑删除测试点「{point_label}」吗？"
+        "删除后该测试点将从默认列表中隐藏，但记录和操作历史会保留。"
+    )
+
+    if st.button(
+        "确认删除",
+        key=f"confirm_delete_test_point_{test_point_id}",
+        type="primary",
+        width="stretch",
+    ):
+        try:
+            soft_delete_test_point(test_point_id)
+        except Exception as exc:
+            st.error(f"逻辑删除测试点失败：{exc}")
+            return
+
+        st.session_state["test_point_delete_success_message"] = (
+            f"测试点 {point_label} 已逻辑删除，操作历史已保存。"
+        )
+        if st.session_state.get("expanded_test_point_id") == test_point_id:
+            st.session_state.pop("expanded_test_point_id", None)
+        st.rerun()
 
 
 # ============================================================
@@ -1461,10 +1498,12 @@ else:
         box-shadow: none;
         cursor: pointer;
     }
-    /* 操作列按钮整体提升到透明点击层上方，确保编辑和查看历史均可点击。 */
+    /* 操作列按钮整体提升到透明点击层上方，确保编辑、查看历史和删除均可点击。 */
     [class*="st-key-tp-list-row-"] [class*="st-key-open_edit_test_point_"],
     [class*="st-key-tp-list-row-"] [class*="st-key-edit_test_point_disabled_"],
-    [class*="st-key-tp-list-row-"] [class*="st-key-open_test_point_history_"] {
+    [class*="st-key-tp-list-row-"] [class*="st-key-open_test_point_history_"],
+    [class*="st-key-tp-list-row-"] [class*="st-key-open_delete_test_point_"],
+    [class*="st-key-tp-list-row-"] [class*="st-key-delete_test_point_disabled_"] {
         position: relative;
         z-index: 3;
         pointer-events: auto;
@@ -1477,10 +1516,10 @@ else:
     </style>
     """)
 
-    header_cols = st.columns([14, 34, 13, 13, 9, 17], gap="small")
+    header_cols = st.columns([14, 36, 14, 14, 22], gap="small")
     for col, label in zip(
         header_cols,
-        ("测试点编号", "测试点名称", "人工审核状态", "AI审核状态", "逻辑删除", "操作"),
+        ("测试点编号", "测试点名称", "人工审核状态", "AI审核状态", "操作"),
     ):
         with col:
             st.html(f'<div class="tp-list-header-cell">{label}</div>')
@@ -1505,8 +1544,6 @@ else:
             "approved": "tp-list-tag-success",
             "rejected": "tp-list-tag-danger",
         }.get(manual_status, "tp-list-tag-neutral")
-        deleted_label = "是" if is_deleted else "否"
-        deleted_class = "tp-list-tag-danger" if is_deleted else "tp-list-tag-neutral"
         is_expanded = expanded_test_point_id == point_internal_id
         arrow = "▾" if is_expanded else "▸"
 
@@ -1523,7 +1560,7 @@ else:
                     st.session_state["expanded_test_point_id"] = point_internal_id
                 st.rerun()
 
-            row_cols = st.columns([14, 34, 13, 13, 9, 17], gap="small")
+            row_cols = st.columns([14, 36, 14, 14, 22], gap="small")
             with row_cols[0]:
                 st.html(
                     f'<div class="tp-list-row-cell tp-list-id-cell">'
@@ -1539,12 +1576,7 @@ else:
             with row_cols[3]:
                 st.html(f'<div class="tp-list-row-cell">{ai_status}</div>')
             with row_cols[4]:
-                st.html(
-                    f'<div class="tp-list-row-cell"><span class="tp-list-tag {deleted_class}">'
-                    f'{deleted_label}</span></div>'
-                )
-            with row_cols[5]:
-                action_cols = st.columns(2, gap="small")
+                action_cols = st.columns(3, gap="small")
                 with action_cols[0]:
                     if is_deleted:
                         st.button(
@@ -1569,6 +1601,25 @@ else:
                         help="查看当前测试点的操作历史记录",
                     ):
                         render_test_point_history_dialog(
+                            point_internal_id,
+                            point.get("point_id") or point_internal_id,
+                        )
+                with action_cols[2]:
+                    if is_deleted:
+                        st.button(
+                            "已删除",
+                            key=f"delete_test_point_disabled_{point_internal_id}",
+                            disabled=True,
+                            width="stretch",
+                            help="该测试点已经逻辑删除",
+                        )
+                    elif st.button(
+                        "删除",
+                        key=f"open_delete_test_point_{point_internal_id}",
+                        width="stretch",
+                        help="逻辑删除当前测试点，保留记录和操作历史",
+                    ):
+                        render_delete_test_point_dialog(
                             point_internal_id,
                             point.get("point_id") or point_internal_id,
                         )
