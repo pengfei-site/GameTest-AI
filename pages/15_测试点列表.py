@@ -837,161 +837,126 @@ if context_project_id in project_options:
 if st.session_state.get("test_point_list_page_project") not in project_options:
     st.session_state["test_point_list_page_project"] = next(iter(project_options))
 
-# 将项目、需求文档和版本放在同一筛选面板中，按选择依赖顺序从左到右排列。
-with st.container(border=True):
-    st.markdown("#### 🧭 筛选范围")
-    st.caption("先确定项目，再选择需求文档和对应版本；下方统计与列表会同步更新。")
+# 保留当前查看范围摘要卡片，范围沿用页面状态或页面跳转上下文。
+context_project_id = str(navigation_context.get("project_id") or "")
+selected_project_id = (
+    context_project_id
+    if context_project_id in project_options
+    else str(st.session_state.get("test_point_list_page_project") or "")
+)
+if selected_project_id not in project_options:
+    selected_project_id = next(iter(project_options))
+st.session_state["test_point_list_page_project"] = selected_project_id
 
-    project_col, document_col, version_col = st.columns(
-        [1.0, 1.35, 0.95],
-        gap="large",
+selected_project = project_options[selected_project_id]
+
+try:
+    documents = list_documents(
+        project_id=selected_project_id,
+        include_deleted=True,
     )
+except Exception as exc:
+    st.error(f"读取需求文档失败：{exc}")
+    st.stop()
 
-    with project_col:
-        selected_project_id = st.selectbox(
-            "所属项目",
-            options=list(project_options.keys()),
-            format_func=lambda value: (
-                project_options[value].get("project_name")
-                or project_options[value].get("name")
-                or "未命名项目"
-            ),
-            key="test_point_list_page_project",
-        )
+if not documents:
+    st.info("当前项目暂无需求文档，请先在需求中心创建或导入需求文档。")
+    st.stop()
 
-    selected_project = project_options[selected_project_id]
+# 默认不展示已删除版本；若从需求详情页明确进入某个已删除版本，则保留该版本。
+context_document_id = str(navigation_context.get("document_id") or "")
+documents = [
+    document for document in documents
+    if not document.get("is_deleted")
+    or str(document.get("id")) == context_document_id
+]
 
-    try:
-        documents = list_documents(
-            project_id=selected_project_id,
-            include_deleted=True,
-        )
-    except Exception as exc:
-        st.error(f"读取需求文档失败：{exc}")
-        st.stop()
+documents_by_key = {}
+for document in documents:
+    document_key = str(document.get("document_key") or document.get("id"))
+    documents_by_key.setdefault(document_key, []).append(document)
 
-    if not documents:
-        st.info("当前项目暂无需求文档，请先在需求中心创建或导入需求文档。")
-        st.stop()
-
-    # 默认不展示已删除版本；若从需求详情页明确进入某个已删除版本，则保留该版本。
-    context_document_id = str(navigation_context.get("document_id") or "")
-    documents = [
+document_keys = list(documents_by_key.keys())
+context_document = next(
+    (
         document for document in documents
-        if not document.get("is_deleted")
-        or str(document.get("id")) == context_document_id
-    ]
+        if str(document.get("id")) == context_document_id
+    ),
+    None,
+)
+if context_document_id and not context_document:
+    st.error("无法定位需求详情页选中的文档版本，请返回需求详情页重新进入。")
+    st.stop()
 
-    documents_by_key = {}
-    for document in documents:
-        document_key = str(document.get("document_key") or document.get("id"))
-        documents_by_key.setdefault(document_key, []).append(document)
+document_key_widget = "test_point_list_page_document_key"
+context_document_key = (
+    str(context_document.get("document_key") or context_document.get("id"))
+    if context_document else ""
+)
+selected_document_key = (
+    context_document_key
+    if context_document_key in documents_by_key
+    else str(st.session_state.get(document_key_widget) or "")
+)
+if selected_document_key not in documents_by_key:
+    selected_document_key = document_keys[0]
+st.session_state[document_key_widget] = selected_document_key
 
-    document_keys = list(documents_by_key.keys())
-    context_document = next(
+version_options = {
+    str(document["id"]): document
+    for document in documents_by_key[selected_document_key]
+}
+version_widget_key = (
+    f"test_point_list_page_version_{selected_project_id}_{selected_document_key}"
+)
+saved_version_id = (
+    context_document_id
+    if context_document_id in version_options
+    else str(st.session_state.get(version_widget_key) or "")
+)
+if saved_version_id not in version_options:
+    active_version_id = next(
         (
-            document for document in documents
-            if str(document.get("id")) == context_document_id
+            document_id for document_id, document in version_options.items()
+            if document.get("is_active")
         ),
         None,
     )
-    if context_document_id and not context_document:
-        st.error("无法定位需求详情页选中的文档版本，请返回需求详情页重新进入。")
-        st.stop()
+    saved_version_id = active_version_id or next(iter(version_options))
+selected_document_id = saved_version_id
+st.session_state[version_widget_key] = selected_document_id
 
-    if context_document:
-        context_document_key = str(
-            context_document.get("document_key") or context_document.get("id")
-        )
-        st.session_state["test_point_list_page_document_key"] = context_document_key
+selected_document = version_options[selected_document_id]
 
-    document_key_widget = "test_point_list_page_document_key"
-    if st.session_state.get(document_key_widget) not in documents_by_key:
-        st.session_state[document_key_widget] = document_keys[0]
-
-    with document_col:
-        selected_document_key = st.selectbox(
-            "需求文档",
-            options=document_keys,
-            format_func=lambda value: (
-                documents_by_key[value][0].get("document_name")
-                or value
-            ),
-            key=document_key_widget,
-        )
-
-    version_options = {
-        str(document["id"]): document
-        for document in documents_by_key[selected_document_key]
-    }
-    if (
-        context_document
-        and str(context_document.get("document_key") or context_document.get("id"))
-        == selected_document_key
-        and context_document_id in version_options
-    ):
-        st.session_state[
-            f"test_point_list_page_version_{selected_project_id}_{selected_document_key}"
-        ] = context_document_id
-
-    version_widget_key = (
-        f"test_point_list_page_version_{selected_project_id}_{selected_document_key}"
-    )
-    if st.session_state.get(version_widget_key) not in version_options:
-        active_version_id = next(
-            (
-                document_id for document_id, document in version_options.items()
-                if document.get("is_active")
-            ),
-            None,
-        )
-        st.session_state[version_widget_key] = (
-            active_version_id or next(iter(version_options))
-        )
-
-    with version_col:
-        selected_document_id = st.selectbox(
-            "需求版本",
-            options=list(version_options.keys()),
-            format_func=lambda value: (
-                f"V{version_options[value].get('version', '?')}"
-                f"{' · 当前有效' if version_options[value].get('is_active') else ''}"
-            ),
-            key=version_widget_key,
-        )
-
-    selected_document = version_options[selected_document_id]
-
-    project_name = html.escape(str(
-        selected_project.get("project_name")
-        or selected_project.get("name")
-        or "未命名项目"
-    ))
-    document_name = html.escape(str(
-        selected_document.get("document_name") or "未命名文档"
-    ))
-    version_label = html.escape(
-        f"V{selected_document.get('version', '?')}"
-    )
-    active_label = (
-        '<span class="tp-scope-active">当前有效版本</span>'
-        if selected_document.get("is_active")
-        else '<span class="tp-scope-history">历史版本</span>'
-    )
-    st.html(f"""
-    <div class="tp-scope-summary">
-        <div class="tp-scope-summary-label">当前查看范围</div>
-        <div class="tp-scope-summary-value">
-            <span>{project_name}</span>
-            <span class="tp-scope-separator">/</span>
-            <span>{document_name}</span>
-            <span class="tp-scope-version">{version_label}</span>
-            {active_label}
-        </div>
-        <div class="tp-scope-summary-hint">测试点统计、审核和列表内容均限定在此需求文档版本内</div>
+project_name = html.escape(str(
+    selected_project.get("project_name")
+    or selected_project.get("name")
+    or "未命名项目"
+))
+document_name = html.escape(str(
+    selected_document.get("document_name") or "未命名文档"
+))
+version_label = html.escape(
+    f"V{selected_document.get('version', '?')}"
+)
+active_label = (
+    '<span class="tp-scope-active">当前有效版本</span>'
+    if selected_document.get("is_active")
+    else '<span class="tp-scope-history">历史版本</span>'
+)
+st.html(f"""
+<div class="tp-scope-summary">
+    <div class="tp-scope-summary-label">当前查看范围</div>
+    <div class="tp-scope-summary-value">
+        <span>{project_name}</span>
+        <span class="tp-scope-separator">/</span>
+        <span>{document_name}</span>
+        <span class="tp-scope-version">{version_label}</span>
+        {active_label}
     </div>
-    """)
-
+    <div class="tp-scope-summary-hint">测试点统计、审核和列表内容均限定在此需求文档版本内</div>
+</div>
+""")
 
 # ============================================================
 # 2. 查询当前需求版本的全部测试点
