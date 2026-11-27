@@ -141,6 +141,18 @@ class TestGenerationBatchEffectiveStatus(unittest.TestCase):
             "obsolete",
         )
 
+    def test_setting_batch_obsolete_unchecks_its_effective_status(self):
+        batch = self._create_batch("analysis-v1-a")
+        batch_repository.set_generation_batch_effective(batch["id"])
+
+        result = batch_repository.set_generation_batch_obsolete(batch["id"])
+
+        self.assertEqual(result["batch_status"], "obsolete")
+        self.assertEqual(
+            batch_repository.get_generation_batch(batch["id"])["batch_status"],
+            "obsolete",
+        )
+
     def test_missing_batch_cannot_be_set_effective(self):
         with self.assertRaises(ValueError):
             batch_repository.set_generation_batch_effective("missing-batch")
