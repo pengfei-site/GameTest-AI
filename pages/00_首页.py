@@ -570,7 +570,7 @@ features = [
     {
         "title": "测试点中心",
         "description": "生成、审核和管理 AI 测试点及批次。",
-        "path": "pages/08_测试点列表.py",
+        "path": "pages/08_测试点中心.py",
         "icon": "🎯",
     },
     {
