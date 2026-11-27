@@ -14,6 +14,7 @@ from database.repositories.test_point_repository import (
     list_test_points_by_document_version,
     list_test_point_history,
     soft_delete_test_point,
+    restore_test_point,
 )
 
 from core.schemas import TestPointEditableContent
@@ -244,6 +245,13 @@ delete_success_message = st.session_state.pop(
 )
 if delete_success_message:
     st.success(delete_success_message)
+
+restore_success_message = st.session_state.pop(
+    "test_point_restore_success_message",
+    None,
+)
+if restore_success_message:
+    st.success(restore_success_message)
 
 # ============================================================
 # 通用函数
@@ -732,6 +740,34 @@ def render_delete_test_point_dialog(test_point_id, point_label):
         if st.session_state.get("expanded_test_point_id") == test_point_id:
             st.session_state.pop("expanded_test_point_id", None)
         st.rerun()
+
+
+@st.dialog("确认恢复测试点", width="small")
+def render_restore_test_point_dialog(test_point_id, point_label):
+    """确认后恢复已逻辑删除的测试点，并由 Repository 同步写入操作历史。"""
+
+    st.warning(
+        f"确定要恢复测试点「{point_label}」吗？"
+        "恢复后该测试点将重新出现在默认列表中，并保留原有内容和审核状态。"
+    )
+
+    if st.button(
+        "确认恢复",
+        key=f"confirm_restore_test_point_{test_point_id}",
+        type="primary",
+        width="stretch",
+    ):
+        try:
+            restore_test_point(test_point_id)
+        except Exception as exc:
+            st.error(f"恢复测试点失败：{exc}")
+            return
+
+        st.session_state["test_point_restore_success_message"] = (
+            f"测试点 {point_label} 已恢复，操作历史已保存。"
+        )
+        st.rerun()
+
 
 # ============================================================
 # 测试点编辑
@@ -1471,6 +1507,7 @@ else:
     [class*="st-key-tp-list-row-"] [class*="st-key-edit_test_point_disabled_"],
     [class*="st-key-tp-list-row-"] [class*="st-key-open_test_point_history_"],
     [class*="st-key-tp-list-row-"] [class*="st-key-open_delete_test_point_"],
+    [class*="st-key-tp-list-row-"] [class*="st-key-open_restore_test_point_"],
     [class*="st-key-tp-list-row-"] [class*="st-key-delete_test_point_disabled_"] {
         position: relative;
         z-index: 3;
@@ -1574,13 +1611,16 @@ else:
                         )
                 with action_cols[2]:
                     if is_deleted:
-                        st.button(
-                            "已删除",
-                            key=f"delete_test_point_disabled_{point_internal_id}",
-                            disabled=True,
+                        if st.button(
+                            "恢复",
+                            key=f"open_restore_test_point_{point_internal_id}",
                             width="stretch",
-                            help="该测试点已经逻辑删除",
-                        )
+                            help="恢复当前已逻辑删除的测试点",
+                        ):
+                            render_restore_test_point_dialog(
+                                point_internal_id,
+                                point.get("point_id") or point_internal_id,
+                            )
                     elif st.button(
                         "删除",
                         key=f"open_delete_test_point_{point_internal_id}",
