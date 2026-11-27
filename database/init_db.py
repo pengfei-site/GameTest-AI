@@ -679,6 +679,59 @@ def init_db():
                 """
             )
 
+        # 数据库级约束：同一需求文档版本只能有一个有效生成批次。
+        conn.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS
+            trg_generation_batches_single_effective_insert
+            BEFORE INSERT ON generation_batches
+            WHEN NEW.batch_status = 'effective'
+             AND EXISTS (
+                SELECT 1
+                FROM generation_batches AS existing_batch
+                JOIN requirement_analyses AS existing_analysis
+                    ON existing_analysis.id = existing_batch.requirement_analysis_id
+                JOIN requirement_analyses AS new_analysis
+                    ON new_analysis.id = NEW.requirement_analysis_id
+                WHERE existing_batch.batch_status = 'effective'
+                  AND existing_batch.id != NEW.id
+                  AND existing_analysis.document_id = new_analysis.document_id
+             )
+            BEGIN
+                SELECT RAISE(
+                    ABORT,
+                    'A requirement version can have only one effective generation batch'
+                );
+            END
+            """
+        )
+        conn.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS
+            trg_generation_batches_single_effective_update
+            BEFORE UPDATE OF batch_status, requirement_analysis_id
+            ON generation_batches
+            WHEN NEW.batch_status = 'effective'
+             AND EXISTS (
+                SELECT 1
+                FROM generation_batches AS existing_batch
+                JOIN requirement_analyses AS existing_analysis
+                    ON existing_analysis.id = existing_batch.requirement_analysis_id
+                JOIN requirement_analyses AS new_analysis
+                    ON new_analysis.id = NEW.requirement_analysis_id
+                WHERE existing_batch.batch_status = 'effective'
+                  AND existing_batch.id != NEW.id
+                  AND existing_analysis.document_id = new_analysis.document_id
+             )
+            BEGIN
+                SELECT RAISE(
+                    ABORT,
+                    'A requirement version can have only one effective generation batch'
+                );
+            END
+            """
+        )
+
         # 创建全部查询索引
         for sql in indexes:
             conn.execute(sql)
