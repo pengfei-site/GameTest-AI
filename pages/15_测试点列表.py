@@ -1143,6 +1143,20 @@ else:
         overflow-wrap: anywhere;
     }
     .tp-list-id-cell { color: #606266; white-space: nowrap; }
+    [class*="st-key-tp-point-title-"] [data-testid="stButton"] button {
+        min-height: 40px;
+        padding: 0 10px;
+        border: 0;
+        background: transparent;
+        color: #2563EB;
+        text-align: left;
+        justify-content: flex-start;
+        white-space: normal;
+    }
+    [class*="st-key-tp-point-title-"] [data-testid="stButton"] button:hover {
+        color: #1D4ED8;
+        background: #EFF6FF;
+    }
     [class*="st-key-tp-list-row-"] {
         border-bottom: 1px solid #EBEEF5;
         background: #FFFFFF;
@@ -1197,7 +1211,21 @@ else:
             with row_cols[0]:
                 st.html(f'<div class="tp-list-row-cell tp-list-id-cell">{point_id}</div>')
             with row_cols[1]:
-                st.html(f'<div class="tp-list-row-cell">{point_title}</div>')
+                is_expanded = (
+                    str(st.session_state.get("expanded_test_point_id") or "")
+                    == str(point_internal_id)
+                )
+                if st.button(
+                    f"{'▾' if is_expanded else '▸'} {get_point_title(point)}",
+                    key=f"toggle_test_point_content_{point_internal_id}",
+                    width="stretch",
+                    help="点击展开或收起测试点内容",
+                ):
+                    if is_expanded:
+                        st.session_state.pop("expanded_test_point_id", None)
+                    else:
+                        st.session_state["expanded_test_point_id"] = str(point_internal_id)
+                    st.rerun()
             with row_cols[2]:
                 st.html(
                     f'<div class="tp-list-row-cell"><span class="tp-list-tag {manual_status_class}">'
@@ -1226,6 +1254,16 @@ else:
                     help="编辑当前测试点",
                 ):
                     render_edit_dialog(point)
+
+        if (
+            str(st.session_state.get("expanded_test_point_id") or "")
+            == str(point_internal_id)
+        ):
+            with st.container(border=True):
+                show_content(
+                    f"测试点内容 · {get_point_title(point)}",
+                    point.get("current_content"),
+                )
 
 
 # ============================================================
