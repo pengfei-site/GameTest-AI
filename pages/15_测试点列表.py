@@ -1344,7 +1344,6 @@ for col, label, value in zip(
 # ============================================================
 
 st.divider()
-st.subheader("测试点列表")
 
 search_col, filter_col = st.columns(
     [12, 1],
