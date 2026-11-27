@@ -930,18 +930,11 @@ else:
             + "&open_test_points_analysis="
             + __import__("urllib.parse", fromlist=["quote"]).quote(active_analysis_id)
         )
-        if entry["active"]:
-            status_html = '<span class="gt-tapd-status gt-tapd-status-active">有效版本</span>'
-        elif entry["has_available"]:
-            status_html = '<span class="gt-tapd-status gt-tapd-status-deleted">暂无有效版本</span>'
-        else:
-            status_html = '<span class="gt-tapd-status gt-tapd-status-deleted">版本均已删除</span>'
         table_rows.append(
             "<tr>"
             f'<td class="gt-tapd-name"><a href="{html.escape(detail_url, quote=True)}" title="查看该需求版本下的测试点">{html.escape(document_name)}</a></td>'
             f'<td class="gt-tapd-version">{html.escape(version_label)}</td>'
             f'<td class="gt-tapd-type">{html.escape(analysis_label)}</td>'
-            f'<td class="gt-tapd-state">{status_html}</td>'
             "</tr>"
         )
 
@@ -982,13 +975,11 @@ else:
     .gt-tapd-table tbody tr:last-child td { border-bottom: 0; }
     .gt-tapd-table tbody tr:hover td { background: #F8FAFD; }
     .gt-tapd-table thead th:nth-child(1),
-    .gt-tapd-table tbody td:nth-child(1) { width: 60%; }
+    .gt-tapd-table tbody td:nth-child(1) { width: 55%; }
     .gt-tapd-table thead th:nth-child(2),
-    .gt-tapd-table tbody td:nth-child(2) { width: 12%; color: #606266; }
+    .gt-tapd-table tbody td:nth-child(2) { width: 18%; color: #606266; }
     .gt-tapd-table thead th:nth-child(3),
-    .gt-tapd-table tbody td:nth-child(3) { width: 12%; color: #606266; }
-    .gt-tapd-table thead th:nth-child(4),
-    .gt-tapd-table tbody td:nth-child(4) { width: 16%; }
+    .gt-tapd-table tbody td:nth-child(3) { width: 27%; color: #606266; }
     .gt-tapd-table .gt-tapd-name a {
         color: #303133;
         text-decoration: none;
@@ -998,16 +989,6 @@ else:
         color: #6D5CE7;
         text-decoration: underline;
     }
-    .gt-tapd-status {
-        display: inline-block;
-        padding: 3px 9px;
-        border-radius: 3px;
-        font-size: 12px;
-        line-height: 18px;
-        white-space: nowrap;
-    }
-    .gt-tapd-status-active { color: #67C23A; background: #F0F9EB; }
-    .gt-tapd-status-deleted { color: #E6A23C; background: #FDF6EC; }
     @media (max-width: 640px) {
         .gt-tapd-table { min-width: 560px; }
     }
@@ -1015,7 +996,7 @@ else:
     """)
     table_html = (
         '<div class="gt-tapd-wrap"><table class="gt-tapd-table">'
-        '<thead><tr><th>需求名称</th><th>当前版本</th><th>当前分析记录</th><th>状态</th></tr></thead>'
+        '<thead><tr><th>需求名称</th><th>当前版本</th><th>当前分析记录</th></tr></thead>'
         '<tbody>' + "".join(table_rows) + '</tbody></table></div>'
     )
     st.html(table_html)
