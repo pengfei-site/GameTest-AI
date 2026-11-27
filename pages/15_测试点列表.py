@@ -310,6 +310,158 @@ def show_content(title, content):
         st.code(str(content))
 
 
+def render_test_point_meta_cards(point):
+    """紧凑展示测试点基本信息与审核信息。"""
+
+    def safe_text(value, fallback="暂无"):
+        if value is None or not str(value).strip():
+            return fallback
+        return html.escape(str(value))
+
+    def status_pill(value):
+        raw = str(value or "").strip()
+        labels = {
+            "pending": "待审核",
+            "approved": "已通过",
+            "rejected": "已驳回",
+        }
+        css_class = {
+            "pending": "pending",
+            "approved": "approved",
+            "rejected": "rejected",
+        }.get(raw, "neutral")
+        label = labels.get(raw, raw or "未知")
+        return (
+            f'<span class="tp-meta-status {css_class}">'
+            f'{html.escape(label)}</span>'
+        )
+
+    basic_items = [
+        ("内部 ID", point.get("id")),
+        ("测试点编号", point.get("point_id")),
+        ("所属批次", point.get("batch_id")),
+        ("创建时间", format_local_datetime(point.get("created_at"))),
+        ("更新时间", format_local_datetime(point.get("updated_at"))),
+    ]
+    basic_html = "".join(
+        f'<div class="tp-meta-item">'
+        f'<div class="tp-meta-label">{label}</div>'
+        f'<div class="tp-meta-value">{safe_text(value)}</div>'
+        f'</div>'
+        for label, value in basic_items
+    )
+
+    comment = safe_text(point.get("manual_comment"))
+    reviewed_at = safe_text(
+        format_local_datetime(point.get("reviewed_at"))
+    )
+    ai_status = status_pill(point.get("ai_review_status"))
+    manual_status = status_pill(point.get("manual_review_status"))
+
+    st.html(f"""
+    <style>
+    .tp-meta-card {{
+        height: 100%;
+        box-sizing: border-box;
+        padding: 13px 15px;
+        border: 1px solid #E8E6F0;
+        border-radius: 9px;
+        background: #FFFFFF;
+        color: #303133;
+    }}
+    .tp-meta-card-title {{
+        margin: 0 0 11px;
+        color: #302B50;
+        font-size: 14px;
+        line-height: 1.4;
+        font-weight: 700;
+    }}
+    .tp-meta-grid {{
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 14px;
+    }}
+    .tp-meta-item {{ min-width: 0; }}
+    .tp-meta-label {{
+        margin-bottom: 3px;
+        color: #858298;
+        font-size: 11px;
+        line-height: 1.4;
+    }}
+    .tp-meta-value {{
+        color: #302D43;
+        font-size: 12px;
+        line-height: 1.5;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }}
+    .tp-meta-status-row {{
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 11px;
+    }}
+    .tp-meta-status-block {{
+        min-width: 0;
+        padding: 8px 9px;
+        border-radius: 7px;
+        background: #F7F7FA;
+    }}
+    .tp-meta-status {{
+        display: inline-block;
+        max-width: 100%;
+        padding: 2px 7px;
+        border-radius: 4px;
+        font-size: 11px;
+        line-height: 1.5;
+        font-weight: 650;
+        overflow-wrap: anywhere;
+    }}
+    .tp-meta-status.pending {{ color: #A66A00; background: #FFF3D6; }}
+    .tp-meta-status.approved {{ color: #18794E; background: #E6F6EE; }}
+    .tp-meta-status.rejected {{ color: #A83232; background: #FDEAEA; }}
+    .tp-meta-status.neutral {{ color: #77758B; background: #F0EFF4; }}
+    .tp-meta-review-detail {{
+        padding-top: 9px;
+        margin-top: 9px;
+        border-top: 1px solid #EEEFF2;
+    }}
+    @media (max-width: 640px) {{
+        .tp-meta-grid {{ grid-template-columns: minmax(0, 1fr); }}
+        .tp-meta-status-row {{ grid-template-columns: minmax(0, 1fr); }}
+    }}
+    </style>
+    <div class="tp-meta-card">
+        <div class="tp-meta-card-title">基本信息</div>
+        <div class="tp-meta-grid">{basic_html}</div>
+    </div>
+    """)
+    st.html(f"""
+    <div class="tp-meta-card">
+        <div class="tp-meta-card-title">审核信息</div>
+        <div class="tp-meta-status-row">
+            <div class="tp-meta-status-block">
+                <div class="tp-meta-label">AI 审核状态</div>
+                {ai_status}
+            </div>
+            <div class="tp-meta-status-block">
+                <div class="tp-meta-label">人工审核状态</div>
+                {manual_status}
+            </div>
+        </div>
+        <div class="tp-meta-review-detail">
+            <div class="tp-meta-label">人工审核意见 / 驳回原因</div>
+            <div class="tp-meta-value">{comment}</div>
+        </div>
+        <div class="tp-meta-review-detail">
+            <div class="tp-meta-label">审核时间</div>
+            <div class="tp-meta-value">{reviewed_at}</div>
+        </div>
+    </div>
+    """)
+
+
 def render_structured_test_point_content(content, point_id):
     """以紧凑的结构化卡片展示测试点业务内容，不展示原始 JSON。"""
 
@@ -1406,40 +1558,7 @@ else:
 
             if is_expanded:
                 with st.container(border=True):
-                    info_col, review_col = st.columns(2)
-
-                    with info_col:
-                        st.subheader("基本信息")
-                        st.write("内部 ID：", point.get("id"))
-                        st.write("测试点编号：", point.get("point_id"))
-                        st.write("所属批次：", point.get("batch_id"))
-                        st.write(
-                            "创建时间：",
-                            format_local_datetime(point.get("created_at")),
-                        )
-                        st.write(
-                            "更新时间：",
-                            format_local_datetime(point.get("updated_at")),
-                        )
-
-                    with review_col:
-                        st.subheader("审核信息")
-                        st.write(
-                            "AI 审核状态：",
-                            point.get("ai_review_status", "未知"),
-                        )
-                        st.write(
-                            "人工审核状态：",
-                            point.get("manual_review_status", "未知"),
-                        )
-                        st.write(
-                            "人工审核意见 / 驳回原因：",
-                            point.get("manual_comment") or "暂无",
-                        )
-                        st.write(
-                            "审核时间：",
-                            format_local_datetime(point.get("reviewed_at")),
-                        )
+                    render_test_point_meta_cards(point)
 
                     st.divider()
                     st.subheader("测试点内容")
