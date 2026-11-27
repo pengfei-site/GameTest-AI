@@ -1555,6 +1555,25 @@ else:
         padding: 0 10px;
         font-size: 12px;
     }
+
+    /* 删除与恢复属于危险/状态变更操作，统一使用红色按钮。 */
+    [class*="st-key-tp-list-row-"] [class*="st-key-open_delete_test_point_"] [data-testid="stButton"] button,
+    [class*="st-key-tp-list-row-"] [class*="st-key-open_restore_test_point_"] [data-testid="stButton"] button {
+        color: #FFFFFF !important;
+        background: #F56C6C !important;
+        border-color: #F56C6C !important;
+    }
+    [class*="st-key-tp-list-row-"] [class*="st-key-open_delete_test_point_"] [data-testid="stButton"] button:hover,
+    [class*="st-key-tp-list-row-"] [class*="st-key-open_restore_test_point_"] [data-testid="stButton"] button:hover {
+        color: #FFFFFF !important;
+        background: #F78989 !important;
+        border-color: #F78989 !important;
+    }
+    [class*="st-key-tp-list-row-"] [class*="st-key-open_delete_test_point_"] [data-testid="stButton"] button:active,
+    [class*="st-key-tp-list-row-"] [class*="st-key-open_restore_test_point_"] [data-testid="stButton"] button:active {
+        background: #DD6161 !important;
+        border-color: #DD6161 !important;
+    }
     </style>
     """)
 
