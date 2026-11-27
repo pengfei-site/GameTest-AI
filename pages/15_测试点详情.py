@@ -20,6 +20,12 @@ from database.repositories.test_point_repository import (
 from core.schemas import TestPointEditableContent
 from core.time_utils import format_local_datetime
 from core.testpoint_edit_service import edit_test_point
+from database.repositories.generation_batch_repository import (
+    get_generation_batch,
+    set_generation_batch_effective,
+    set_generation_batch_obsolete,
+)
+
 from core.testpoint_review_service import (
     approve_test_point,
     reject_test_point,
@@ -1352,11 +1358,41 @@ with st.container(key="tp-scope-summary-card"):
             key=batch_filter_widget_key,
             label_visibility="collapsed",
         )
-    st.html(f"""
-    <div class="tp-scope-summary-value">所属项目：{project_name}　·　{version_label}　·　版本状态：{document_status}　·　创建时间：{document_created_at}　·　测试点批次数：{batch_count} 个</div>
-    """)
+    selected_batch_key = batch_filter_options[selected_batch_label]
+    selected_batch = (
+        get_generation_batch(selected_batch_key)
+        if selected_batch_key != "__NO_BATCH__"
+        else None
+    )
+    batch_is_effective = bool(
+        selected_batch and selected_batch.get("batch_status") == "effective"
+    )
+    batch_status_label = "使用中" if batch_is_effective else "已废弃"
 
-selected_batch_key = batch_filter_options[selected_batch_label]
+    status_col, effective_checkbox_col = st.columns(
+        [8, 1.2],
+        vertical_alignment="center",
+        gap="small",
+    )
+    with status_col:
+        st.html(f"""
+        <div class="tp-scope-summary-value">所属项目：{project_name}　·　{version_label}　·　批次状态：{batch_status_label}　·　创建时间：{document_created_at}　·　测试点批次数：{batch_count} 个</div>
+        """)
+    with effective_checkbox_col:
+        set_as_effective = st.checkbox(
+            "设为使用中",
+            value=batch_is_effective,
+            key=f"generation_batch_effective_{selected_document_id}_{selected_batch_key}",
+            disabled=selected_batch is None,
+        )
+
+    if selected_batch is not None and set_as_effective != batch_is_effective:
+        if set_as_effective:
+            set_generation_batch_effective(selected_batch_key)
+        else:
+            set_generation_batch_obsolete(selected_batch_key)
+        st.rerun()
+
 selected_batch_points = [
     point for point in all_document_points
     if (
