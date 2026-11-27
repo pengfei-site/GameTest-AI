@@ -1003,7 +1003,7 @@ else:
     """)
     table_html = (
         '<div class="gt-tapd-wrap"><table class="gt-tapd-table">'
-        '<thead><tr><th>需求名称</th><th>当前版本</th><th>有效分析记录</th><th>状态</th></tr></thead>'
+        '<thead><tr><th>需求名称</th><th>当前版本</th><th>当前分析记录</th><th>状态</th></tr></thead>'
         '<tbody>' + "".join(table_rows) + '</tbody></table></div>'
     )
     st.html(table_html)
