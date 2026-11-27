@@ -310,6 +310,137 @@ def show_content(title, content):
         st.code(str(content))
 
 
+def render_structured_test_point_content(content, point_id):
+    """以紧凑的结构化卡片展示测试点业务内容，不展示原始 JSON。"""
+
+    if not isinstance(content, dict):
+        content = {}
+
+    category_labels = {
+        "positive": "正向测试",
+        "negative": "反向测试",
+        "boundary": "边界测试",
+        "exception": "异常测试",
+        "state": "状态测试",
+        "data": "数据测试",
+    }
+
+    def display_value(value):
+        if value is None or not str(value).strip():
+            return "暂无内容"
+        return html.escape(str(value)).replace("\\n", "<br>")
+
+    category = str(content.get("category") or "").strip()
+    priority = str(content.get("priority") or "").strip()
+    category_label = category_labels.get(category, category or "未分类")
+    priority_label = priority or "未设置"
+    title = display_value(content.get("title"))
+    objective = display_value(content.get("test_objective"))
+    coverage = display_value(content.get("coverage_description"))
+    source_rule = display_value(content.get("source_rule"))
+    requirement_id = display_value(content.get("requirement_id"))
+    safe_point_id = html.escape(str(point_id or "未知编号"))
+
+    st.html(f"""
+    <style>
+    .tp-content-card {{
+        color: #303133;
+        font-size: 13px;
+        line-height: 1.65;
+    }}
+    .tp-content-heading {{
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin-bottom: 5px;
+    }}
+    .tp-content-tag {{
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: #EEF2FF;
+        color: #5145A5;
+        font-size: 11px;
+        font-weight: 600;
+    }}
+    .tp-content-tag-priority {{
+        background: #FFF4E5;
+        color: #A15C00;
+    }}
+    .tp-content-id {{
+        color: #909399;
+        font-size: 11px;
+    }}
+    .tp-content-title {{
+        color: #25243A;
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+        margin-bottom: 12px;
+    }}
+    .tp-content-section {{
+        padding: 9px 11px;
+        margin-top: 7px;
+        border: 1px solid #ECEBF2;
+        border-radius: 7px;
+        background: #FFFFFF;
+    }}
+    .tp-content-section-label {{
+        color: #77758B;
+        font-size: 11px;
+        font-weight: 650;
+        margin-bottom: 3px;
+    }}
+    .tp-content-section-value {{
+        color: #303133;
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }}
+    .tp-content-footer {{
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 6px;
+        padding-top: 9px;
+        margin-top: 9px;
+        border-top: 1px solid #ECEBF2;
+        color: #77758B;
+        font-size: 11px;
+    }}
+    .tp-content-footer strong {{
+        color: #4B4860;
+        font-weight: 600;
+    }}
+    </style>
+    <div class="tp-content-card">
+        <div class="tp-content-heading">
+            <span class="tp-content-tag">{html.escape(category_label)}</span>
+            <span class="tp-content-tag tp-content-tag-priority">{html.escape(priority_label)}</span>
+            <span class="tp-content-id">{safe_point_id}</span>
+        </div>
+        <div class="tp-content-title">{title}</div>
+        <div class="tp-content-section">
+            <div class="tp-content-section-label">测试目标</div>
+            <div class="tp-content-section-value">{objective}</div>
+        </div>
+        <div class="tp-content-section">
+            <div class="tp-content-section-label">覆盖描述</div>
+            <div class="tp-content-section-value">{coverage}</div>
+        </div>
+        <div class="tp-content-section">
+            <div class="tp-content-section-label">来源规则</div>
+            <div class="tp-content-section-value">{source_rule}</div>
+        </div>
+        <div class="tp-content-footer">
+            <span>需求编号</span>
+            <strong>{requirement_id}</strong>
+        </div>
+    </div>
+    """)
+
+
 def calculate_statistics(points):
     """
     根据测试点实际记录计算统计数据。
@@ -1311,9 +1442,10 @@ else:
                         )
 
                     st.divider()
-                    show_content(
-                        "测试点内容",
+                    st.subheader("测试点内容")
+                    render_structured_test_point_content(
                         point.get("current_content"),
+                        point.get("point_id"),
                     )
 
 
