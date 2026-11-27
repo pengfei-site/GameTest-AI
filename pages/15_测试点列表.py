@@ -1459,9 +1459,10 @@ else:
         box-shadow: none;
         cursor: pointer;
     }
-    /* 编辑按钮位于透明点击层上方，避免展开层影响编辑操作。 */
+    /* 操作列按钮整体提升到透明点击层上方，确保编辑和查看历史均可点击。 */
     [class*="st-key-tp-list-row-"] [class*="st-key-open_edit_test_point_"],
-    [class*="st-key-tp-list-row-"] [class*="st-key-edit_test_point_disabled_"] {
+    [class*="st-key-tp-list-row-"] [class*="st-key-edit_test_point_disabled_"],
+    [class*="st-key-tp-list-row-"] [class*="st-key-open_test_point_history_"] {
         position: relative;
         z-index: 3;
         pointer-events: auto;
