@@ -368,7 +368,7 @@ def edit_test_point(
     - current_content 更新为人工编辑后的内容
     - 人工审核状态恢复为 pending
     - 清空当前审核意见和审核时间
-    - 保留 AI 审查状态
+    - 将 AI 审核状态重置为 approved
     - 保存完整编辑前后快照
     - 同一事务中写入 edited 历史
     """
@@ -405,24 +405,21 @@ def edit_test_point(
 
         content_json = _serialize(new_content)
 
-        # 编辑前完整快照。
-        before_data = {
-            "point_id": row["point_id"],
-            "original_content": json.loads(row["original_content"]),
-            "current_content": json.loads(row["current_content"]),
-            "ai_review_status": row["ai_review_status"],
-            "manual_review_status": row["manual_review_status"],
-            "manual_comment": row["manual_comment"],
-            "reviewed_at": row["reviewed_at"],
-            "is_deleted": row["is_deleted"],
-            "deleted_at": row["deleted_at"],
-        }
+        # 编辑前完整快照：保留 test_points 当前记录的全部字段。
+        before_data = dict(row)
+        before_data["original_content"] = json.loads(
+            before_data["original_content"]
+        )
+        before_data["current_content"] = json.loads(
+            before_data["current_content"]
+        )
 
         conn.execute(
             """
             UPDATE test_points
             SET
                 current_content = ?,
+                ai_review_status = 'approved',
                 manual_review_status = 'pending',
                 manual_comment = '',
                 reviewed_at = NULL,
@@ -444,22 +441,14 @@ def edit_test_point(
             (test_point_id,)
         ).fetchone()
 
-        # 编辑后完整快照。
-        after_data = {
-            "point_id": updated_row["point_id"],
-            "original_content": json.loads(
-                updated_row["original_content"]
-            ),
-            "current_content": json.loads(
-                updated_row["current_content"]
-            ),
-            "ai_review_status": updated_row["ai_review_status"],
-            "manual_review_status": updated_row["manual_review_status"],
-            "manual_comment": updated_row["manual_comment"],
-            "reviewed_at": updated_row["reviewed_at"],
-            "is_deleted": updated_row["is_deleted"],
-            "deleted_at": updated_row["deleted_at"],
-        }
+        # 编辑后完整快照：保留 test_points 更新后的全部字段。
+        after_data = dict(updated_row)
+        after_data["original_content"] = json.loads(
+            after_data["original_content"]
+        )
+        after_data["current_content"] = json.loads(
+            after_data["current_content"]
+        )
 
         conn.execute(
             """
