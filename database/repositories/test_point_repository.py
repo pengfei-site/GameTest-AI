@@ -272,12 +272,13 @@ def list_test_points_by_document_version(
     document_id: str,
     include_deleted: bool = False,
     manual_review_status: str | None = None,
+    requirement_analysis_id: str | None = None,
 ) -> list[dict]:
     """
     查询指定需求文档版本下的全部测试点。
 
-    一个需求文档版本可能关联多条需求分析记录及多个生成批次，
-    因此通过 generation_batches 和 requirement_analyses 进行关联。
+    默认查询需求文档版本下的全部分析记录所生成的测试点；
+    传入 requirement_analysis_id 时，仅查询该有效分析记录生成的测试点。
     """
     if not project_id or not document_id:
         raise ValueError("项目 ID 和需求文档版本 ID 不能为空")
@@ -297,6 +298,10 @@ def list_test_points_by_document_version(
     """
 
     params = [project_id, document_id]
+
+    if requirement_analysis_id is not None:
+        sql += " AND ra.id = ? AND ra.is_active = 1"
+        params.append(requirement_analysis_id)
 
     if not include_deleted:
         sql += " AND tp.is_deleted = 0"
