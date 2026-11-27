@@ -1540,7 +1540,11 @@ if MANUAL_REVIEW_ENABLED:
         with col:
             col.metric(label, statistics.get(value, 0))
 else:
-    st.metric("测试点总数", statistics["total"])
+    metric_cols = st.columns(2, gap="small")
+    with metric_cols[0]:
+        st.metric("测试点总数", statistics["total"])
+    with metric_cols[1]:
+        st.metric("待审核测试点", statistics["pending"])
 
 # ============================================================
 # 5. 测试点筛选
