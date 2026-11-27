@@ -662,6 +662,23 @@ def init_db():
             conn.execute("ALTER TABLE requirement_analyses ADD COLUMN is_active INTEGER NOT NULL DEFAULT 0 CHECK (is_active IN (0, 1))")
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_requirement_analyses_single_active ON requirement_analyses(document_id) WHERE is_active = 1")
 
+
+        # 兼容已有数据库：增加测试点生成批次的有效状态。
+        batch_columns = {
+            row["name"]
+            for row in conn.execute(
+                "PRAGMA table_info(generation_batches)"
+            ).fetchall()
+        }
+        if "batch_status" not in batch_columns:
+            conn.execute(
+                """
+                ALTER TABLE generation_batches
+                ADD COLUMN batch_status TEXT NOT NULL DEFAULT 'obsolete'
+                CHECK (batch_status IN ('effective', 'obsolete'))
+                """
+            )
+
         # 创建全部查询索引
         for sql in indexes:
             conn.execute(sql)
