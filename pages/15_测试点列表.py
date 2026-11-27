@@ -1343,33 +1343,31 @@ for col, label, value in zip(
 st.divider()
 st.subheader("测试点列表")
 
-with st.container(border=True):
-    filter_col1, filter_col2 = st.columns(2)
+filter_row_cols = st.columns([2.8, 1.35, 1.35], gap="medium")
 
-    with filter_col1:
-        include_deleted = st.checkbox(
-            "显示已逻辑删除的测试点",
-            value=False,
-            key=f"test_point_include_deleted_{selected_document_id}",
-        )
+with filter_row_cols[1]:
+    include_deleted = st.checkbox(
+        "显示已逻辑删除的测试点",
+        value=False,
+        key=f"test_point_include_deleted_{selected_document_id}",
+    )
 
-    with filter_col2:
-        status_options = {
-            "全部": None,
-            "待审核": "pending",
-            "已通过": "approved",
-            "已驳回": "rejected",
-        }
+status_options = {
+    "全部": None,
+    "待审核": "pending",
+    "已通过": "approved",
+    "已驳回": "rejected",
+}
 
-        selected_status_label = st.selectbox(
-            "人工审核状态筛选",
-            options=list(status_options.keys()),
-            key=f"test_point_status_filter_{selected_document_id}",
-        )
+with filter_row_cols[2]:
+    selected_status_label = st.selectbox(
+        "人工审核状态筛选",
+        options=list(status_options.keys()),
+        key=f"test_point_status_filter_{selected_document_id}",
+        label_visibility="collapsed",
+    )
 
-selected_status = status_options[
-    selected_status_label
-]
+selected_status = status_options[selected_status_label]
 
 try:
     test_points = list_test_points_by_document_version(
@@ -1401,11 +1399,12 @@ for batch_id, batch_points in document_batch_points.items():
             batch_id,
         )
 
-st.caption(
-    f"当前筛选结果：{len(test_points)} 条 | "
-    f"当前需求版本有效总数：{statistics['total']} 条 | "
-    f"已删除总数：{statistics['deleted']} 条"
-)
+with filter_row_cols[0]:
+    st.caption(
+        f"当前筛选结果：{len(test_points)} 条 | "
+        f"当前需求版本有效总数：{statistics['total']} 条 | "
+        f"已删除总数：{statistics['deleted']} 条"
+    )
 
 if include_deleted:
     st.info("当前已开启逻辑删除记录展示。")
