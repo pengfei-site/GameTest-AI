@@ -1662,8 +1662,9 @@ else:
         font-size: 13px;
         overflow-wrap: anywhere;
     }
-    /* 行容器不再使用负外边距，由列表父容器统一控制行间距。 */
+    /* 保留原有行间距压缩规则，避免测试点记录之间的距离变大。 */
     [class*="st-key-tp-list-row-"] {
+        margin-bottom: -1rem !important;
         padding-top: 0 !important;
         padding-bottom: 0 !important;
     }
