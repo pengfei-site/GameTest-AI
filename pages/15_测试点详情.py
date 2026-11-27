@@ -1260,15 +1260,6 @@ has_active_version = any(
 )
 if not has_active_version:
     st.info("当前无有效需求版本的测试点可查看。")
-    if st.button(
-        "测试点生成",
-        key=f"open_testpoint_generation_no_active_version_{selected_project_id}_{selected_document_key}",
-        type="primary",
-        width="stretch",
-        help="前往 AI 测试点生成页面，选择项目及已保存的结构化需求分析后生成测试点",
-    ):
-        st.session_state["testpoint_generation_project"] = selected_project_id
-        st.switch_page("pages/09_AI测试点生成.py")
     st.stop()
 
 version_widget_key = (
