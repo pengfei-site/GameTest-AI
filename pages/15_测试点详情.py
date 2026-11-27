@@ -28,6 +28,7 @@ from database.repositories.generation_batch_repository import (
 )
 
 from core.testpoint_review_service import (
+    MANUAL_REVIEW_ENABLED,
     approve_test_point,
     reject_test_point,
     batch_approve_test_points,
@@ -964,6 +965,10 @@ def render_single_review_actions(test_point):
     AI 审核状态仅展示为参考，不作为人工审核的限制条件。
     """
 
+    if not MANUAL_REVIEW_ENABLED:
+        st.info("人工审核流程已暂时关闭。")
+        return
+
     if test_point.get("is_deleted"):
         st.info("已逻辑删除的测试点不能进行人工审核。")
         return
@@ -1046,6 +1051,10 @@ def render_batch_review_actions(batch_points, batch_id):
     从当前批次全部记录中筛选可审核对象。
     不受列表当前的状态筛选影响。
     """
+
+    if not MANUAL_REVIEW_ENABLED:
+        st.info("人工审核流程已暂时关闭。")
+        return
 
     pending_points = [
         point
@@ -1477,31 +1486,66 @@ selected_batch_points = [
 ]
 statistics = calculate_statistics(selected_batch_points)
 
-if statistics["other"] > 0:
-    st.warning(
-        f"发现 {statistics['other']} 条其他人工审核状态的测试点，"
-        "请检查数据库中的 manual_review_status。"
-    )
+if MANUAL_REVIEW_ENABLED:
+    if statistics["other"] > 0:
+        st.warning(
+            f"发现 {statistics['other']} 条其他人工审核状态的测试点，"
+            "请检查数据库中的 manual_review_status。"
+        )
 
-metric_cols = st.columns(4, gap="small")
-for col, label, value in zip(
-    metric_cols,
-    ("测试点总数", "待审核", "已通过", "已驳回"),
-    ("total", "pending", "approved", "rejected"),
-):
-    with col:
-        col.metric(label, statistics.get(value, 0))
+    metric_cols = st.columns(4, gap="small")
+    for col, label, value in zip(
+        metric_cols,
+        ("测试点总数", "待审核", "已通过", "已驳回"),
+        ("total", "pending", "approved", "rejected"),
+    ):
+        with col:
+            col.metric(label, statistics.get(value, 0))
+else:
+    st.metric("测试点总数", statistics["total"])
 
 # ============================================================
 # 5. 测试点筛选
 # ============================================================
 
-search_col, filter_col = st.columns(
-    [12, 1],
-    vertical_alignment="center",
-    gap="small",
-)
-with search_col:
+if MANUAL_REVIEW_ENABLED:
+    search_col, filter_col = st.columns(
+        [12, 1],
+        vertical_alignment="center",
+        gap="small",
+    )
+    with search_col:
+        test_point_search = st.text_input(
+            "搜索测试点",
+            placeholder="搜索测试点编号或名称…",
+            key=f"test_point_list_search_{selected_document_id}",
+            label_visibility="collapsed",
+            width="stretch",
+        )
+
+    status_options = {
+        "全部": None,
+        "待审核": "pending",
+        "已通过": "approved",
+        "已驳回": "rejected",
+    }
+    with filter_col:
+        with st.popover(
+            "筛选",
+            icon=":material/filter_list:",
+            help="筛选测试点",
+            width="stretch",
+        ):
+            st.markdown("**人工审核状态**")
+            selected_status_label = st.radio(
+                "人工审核状态筛选",
+                options=list(status_options.keys()),
+                key=f"test_point_status_filter_v2_{selected_document_id}",
+                label_visibility="collapsed",
+            )
+
+    selected_status = status_options[selected_status_label]
+else:
     test_point_search = st.text_input(
         "搜索测试点",
         placeholder="搜索测试点编号或名称…",
@@ -1509,29 +1553,7 @@ with search_col:
         label_visibility="collapsed",
         width="stretch",
     )
-
-status_options = {
-    "全部": None,
-    "待审核": "pending",
-    "已通过": "approved",
-    "已驳回": "rejected",
-}
-with filter_col:
-    with st.popover(
-        "筛选",
-        icon=":material/filter_list:",
-        help="筛选测试点",
-        width="stretch",
-    ):
-        st.markdown("**人工审核状态**")
-        selected_status_label = st.radio(
-            "人工审核状态筛选",
-            options=list(status_options.keys()),
-            key=f"test_point_status_filter_v2_{selected_document_id}",
-            label_visibility="collapsed",
-        )
-
-selected_status = status_options[selected_status_label]
+    selected_status = None
 
 include_deleted_key = f"test_point_include_deleted_{selected_document_id}"
 include_deleted = bool(st.session_state.get(include_deleted_key, False))
@@ -1584,30 +1606,31 @@ for point in test_points:
 
 test_points = filtered_test_points
 
-for batch_id, batch_points in document_batch_points.items():
-    batch_key = (
-        str(batch_id) if batch_id not in (None, "") else "__NO_BATCH__"
-    )
-    if batch_key != selected_batch_key:
-        continue
-
-    pending_batch_points = [
-        point for point in batch_points
-        if not point.get("is_deleted")
-        and point.get("manual_review_status") == "pending"
-    ]
-    if not pending_batch_points:
-        continue
-
-    with st.expander(
-        f"批量人工审核 · 批次 {str(batch_id)[:8]}",
-        expanded=False,
-    ):
-        render_batch_review_actions(
-            batch_points,
-            batch_id,
+if MANUAL_REVIEW_ENABLED:
+    for batch_id, batch_points in document_batch_points.items():
+        batch_key = (
+            str(batch_id) if batch_id not in (None, "") else "__NO_BATCH__"
         )
-
+        if batch_key != selected_batch_key:
+            continue
+    
+        pending_batch_points = [
+            point for point in batch_points
+            if not point.get("is_deleted")
+            and point.get("manual_review_status") == "pending"
+        ]
+        if not pending_batch_points:
+            continue
+    
+        with st.expander(
+            f"批量人工审核 · 批次 {str(batch_id)[:8]}",
+            expanded=False,
+        ):
+            render_batch_review_actions(
+                batch_points,
+                batch_id,
+            )
+    
 statistics_cols = st.columns([10.8, 1.2], vertical_alignment="center")
 with statistics_cols[0]:
     st.caption(
