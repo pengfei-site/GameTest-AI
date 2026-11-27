@@ -1668,10 +1668,10 @@ else:
     </style>
     """)
 
-    header_cols = st.columns([14, 36, 14, 14, 22], gap="small")
+    header_cols = st.columns([18, 47, 35], gap="small")
     for col, label in zip(
         header_cols,
-        ("测试点编号", "测试点名称", "人工审核状态", "AI审核状态", "操作"),
+        ("测试点编号", "测试点名称", "操作"),
     ):
         with col:
             st.html(f'<div class="tp-list-header-cell">{label}</div>')
@@ -1682,20 +1682,8 @@ else:
         point_internal_id = point.get("id")
         point_id = html.escape(str(point.get("point_id") or "未知编号"))
         point_title = html.escape(str(get_point_title(point)))
-        manual_status = point.get("manual_review_status", "未知")
-        manual_status_label = {
-            "pending": "待审核",
-            "approved": "已通过",
-            "rejected": "已驳回",
-        }.get(manual_status, str(manual_status))
-        ai_status = html.escape(str(point.get("ai_review_status") or "未知"))
         is_deleted = bool(point.get("is_deleted"))
 
-        manual_status_class = {
-            "pending": "tp-list-tag-warning",
-            "approved": "tp-list-tag-success",
-            "rejected": "tp-list-tag-danger",
-        }.get(manual_status, "tp-list-tag-neutral")
         is_expanded = expanded_test_point_id == point_internal_id
         arrow = "▾" if is_expanded else "▸"
 
@@ -1712,7 +1700,7 @@ else:
                     st.session_state["expanded_test_point_id"] = point_internal_id
                 st.rerun()
 
-            row_cols = st.columns([14, 36, 14, 14, 22], gap="small")
+            row_cols = st.columns([18, 47, 35], gap="small")
             with row_cols[0]:
                 st.html(
                     f'<div class="tp-list-row-cell tp-list-id-cell">'
@@ -1721,13 +1709,6 @@ else:
             with row_cols[1]:
                 st.html(f'<div class="tp-list-row-cell">{point_title}</div>')
             with row_cols[2]:
-                st.html(
-                    f'<div class="tp-list-row-cell"><span class="tp-list-tag {manual_status_class}">'
-                    f'{html.escape(manual_status_label)}</span></div>'
-                )
-            with row_cols[3]:
-                st.html(f'<div class="tp-list-row-cell">{ai_status}</div>')
-            with row_cols[4]:
                 action_cols = st.columns(3, gap="small")
                 with action_cols[0]:
                     if is_deleted:
