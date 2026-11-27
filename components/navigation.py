@@ -28,7 +28,7 @@ def get_pages():
 
         "AI 测试中心": [
             st.Page(
-                "pages/08_测试点列表.py",
+                "pages/08_测试点中心.py",
                 title="测试点中心",
                 icon="🎯",
                 url_path="test-point-list",
