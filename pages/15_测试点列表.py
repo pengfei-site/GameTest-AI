@@ -26,7 +26,6 @@ from core.testpoint_review_service import (
     batch_reject_test_points,
 )
 
-
 # ============================================================
 # 页面样式
 # ============================================================
@@ -211,7 +210,6 @@ st.html("""
 </style>
 """)
 
-
 # ============================================================
 # 页面 Header
 # ============================================================
@@ -221,14 +219,6 @@ render_header(
     description="按需求文档版本统一查看和维护 AI 生成的测试点，支持人工编辑、单条审核和批量审核。",
     breadcrumb=["测试点列表"],
 )
-
-
-st.html("""
-<div class="tp-page-intro">
-    先选择项目、需求文档及版本，再查看该版本下的测试点、审核状态和操作历史。
-</div>
-""")
-
 
 # ============================================================
 # 操作成功反馈
@@ -255,7 +245,6 @@ delete_success_message = st.session_state.pop(
 if delete_success_message:
     st.success(delete_success_message)
 
-
 # ============================================================
 # 通用函数
 # ============================================================
@@ -269,13 +258,11 @@ def format_project(project):
 
     return f"{name}（{project.get('id', '')}）"
 
-
 def format_batch(batch):
     return (
         f"{format_local_datetime(batch.get('generated_at'))} | "
         f"{batch.get('id', '')}"
     )
-
 
 def format_test_point(point):
     point_id = (
@@ -290,7 +277,6 @@ def format_test_point(point):
         f"AI审核：{point.get('ai_review_status', '未知')}"
     )
 
-
 def get_point_title(point):
     content = point.get("current_content") or {}
 
@@ -304,7 +290,6 @@ def get_point_title(point):
 
     return "测试点内容"
 
-
 def show_content(title, content):
     st.subheader(title)
 
@@ -316,7 +301,6 @@ def show_content(title, content):
 
     else:
         st.code(str(content))
-
 
 def render_test_point_meta_cards(point):
     """紧凑展示测试点基本信息与审核信息。"""
@@ -469,7 +453,6 @@ def render_test_point_meta_cards(point):
     </div>
     """)
 
-
 def render_structured_test_point_content(content, point_id):
     """以紧凑的结构化卡片展示测试点业务内容，不展示原始 JSON。"""
 
@@ -600,7 +583,6 @@ def render_structured_test_point_content(content, point_id):
     </div>
     """)
 
-
 def calculate_statistics(points):
     """
     根据测试点实际记录计算统计数据。
@@ -641,7 +623,6 @@ def calculate_statistics(points):
 
     return statistics
 
-
 # ============================================================
 # 测试点操作历史
 # ============================================================
@@ -656,7 +637,6 @@ HISTORY_ACTION_LABELS = {
     "deleted": "删除测试点",
     "restored": "恢复测试点",
 }
-
 
 @st.dialog("测试点操作历史", width="large")
 def render_test_point_history_dialog(test_point_id, point_label):
@@ -725,7 +705,6 @@ def render_test_point_history_dialog(test_point_id, point_label):
                 if before_data is None and after_data is None:
                     st.info("该条历史记录没有可展示的快照数据。")
 
-
 @st.dialog("确认逻辑删除测试点", width="small")
 def render_delete_test_point_dialog(test_point_id, point_label):
     """确认后执行逻辑删除，并由 Repository 同步写入操作历史。"""
@@ -753,7 +732,6 @@ def render_delete_test_point_dialog(test_point_id, point_label):
         if st.session_state.get("expanded_test_point_id") == test_point_id:
             st.session_state.pop("expanded_test_point_id", None)
         st.rerun()
-
 
 # ============================================================
 # 测试点编辑
@@ -921,7 +899,6 @@ def render_edit_form(test_point):
             except (ValueError, TypeError, RuntimeError) as exc:
                 st.error(f"测试点编辑失败：{exc}")
 
-
 @st.dialog("人工编辑测试点", width="large")
 def render_edit_dialog(test_point):
     """在弹窗中复用现有的人工编辑表单。"""
@@ -929,7 +906,6 @@ def render_edit_dialog(test_point):
         f"测试点编号：{test_point.get('point_id') or test_point.get('id')}"
     )
     render_edit_form(test_point)
-
 
 # ============================================================
 # 单条人工审核
@@ -1013,7 +989,6 @@ def render_single_review_actions(test_point):
 
             except Exception as exc:
                 st.error(f"测试点驳回失败：{exc}")
-
 
 # ============================================================
 # 批量人工审核
@@ -1128,7 +1103,6 @@ def render_batch_review_actions(batch_points, batch_id):
 
             except Exception as exc:
                 st.error(f"批量审核失败：{exc}")
-
 
 # ============================================================
 # 1. 项目、需求文档及版本选择
@@ -1326,7 +1300,6 @@ for col, label, value in zip(
     with col:
         col.metric(label, statistics.get(value, 0))
 
-
 # ============================================================
 # 5. 测试点筛选
 # ============================================================
@@ -1362,7 +1335,6 @@ selected_status = status_options[
     selected_status_label
 ]
 
-
 try:
     test_points = list_test_points_by_document_version(
         project_id=selected_project_id,
@@ -1374,7 +1346,6 @@ try:
 except Exception as exc:
     st.error(f"读取测试点列表失败：{exc}")
     st.stop()
-
 
 for batch_id, batch_points in document_batch_points.items():
     pending_batch_points = [
@@ -1394,17 +1365,14 @@ for batch_id, batch_points in document_batch_points.items():
             batch_id,
         )
 
-
 st.caption(
     f"当前筛选结果：{len(test_points)} 条 | "
     f"当前需求版本有效总数：{statistics['total']} 条 | "
     f"已删除总数：{statistics['deleted']} 条"
 )
 
-
 if include_deleted:
     st.info("当前已开启逻辑删除记录展示。")
-
 
 # ============================================================
 # 6. 测试点列表展示
