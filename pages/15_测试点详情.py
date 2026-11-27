@@ -1306,8 +1306,6 @@ except Exception as exc:
     st.error(f"读取当前需求版本测试点失败：{exc}")
     st.stop()
 
-statistics = calculate_statistics(all_document_points)
-
 # 批量审核服务要求同一次操作中的测试点属于同一个生成批次，
 # 因此将当前需求版本的测试点按 batch_id 分组，分别提供批量审核入口。
 document_batch_points = {}
@@ -1319,7 +1317,7 @@ batch_count = len({
     for point in all_document_points
     if point.get("batch_id") not in (None, "")
 })
-batch_filter_options = {"全部批次": "__ALL__"}
+batch_filter_options = {}
 for batch_id, batch_points in document_batch_points.items():
     batch_key = str(batch_id) if batch_id not in (None, "") else "__NO_BATCH__"
     batch_label = (
@@ -1328,6 +1326,14 @@ for batch_id, batch_points in document_batch_points.items():
         else f"批次 {batch_key}（{len(batch_points)} 条）"
     )
     batch_filter_options[batch_label] = batch_key
+
+# 当前版本暂无测试点时保留一个不可产生结果的占位选项，避免筛选控件无选项。
+if not batch_filter_options:
+    batch_filter_options = {"暂无批次": "__NO_BATCH__"}
+
+batch_filter_widget_key = f"test_point_batch_filter_{selected_document_id}"
+if st.session_state.get(batch_filter_widget_key) not in batch_filter_options:
+    st.session_state.pop(batch_filter_widget_key, None)
 
 with st.container(key="tp-scope-summary-card"):
     scope_title_col, batch_filter_col = st.columns(
@@ -1343,7 +1349,7 @@ with st.container(key="tp-scope-summary-card"):
         selected_batch_label = st.selectbox(
             "批次筛选",
             options=list(batch_filter_options.keys()),
-            key=f"test_point_batch_filter_{selected_document_id}",
+            key=batch_filter_widget_key,
             label_visibility="collapsed",
         )
     st.html(f"""
@@ -1351,6 +1357,15 @@ with st.container(key="tp-scope-summary-card"):
     """)
 
 selected_batch_key = batch_filter_options[selected_batch_label]
+selected_batch_points = [
+    point for point in all_document_points
+    if (
+        str(point.get("batch_id"))
+        if point.get("batch_id") not in (None, "")
+        else "__NO_BATCH__"
+    ) == selected_batch_key
+]
+statistics = calculate_statistics(selected_batch_points)
 
 if statistics["other"] > 0:
     st.warning(
