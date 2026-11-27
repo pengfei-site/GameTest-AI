@@ -149,69 +149,62 @@ st.html("""
     font-size: 0.75rem;
 }
 
-/* 测试点列表卡片：沿用需求详情页结构化需求条目的视觉样式。 */
-.tp-list-card {
+/* 测试点列表：与需求列表保持一致的表格行样式。 */
+.tp-list-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
     background: #FFFFFF;
-    border: 1px solid #E8ECF3;
-    border-radius: 10px;
-    padding: 14px 16px;
-    margin: 9px 0;
-    box-shadow: 0 1px 3px rgba(31,41,55,.025);
 }
-.tp-list-card-head {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    flex-wrap: wrap;
-    color: #30364A;
+.tp-list-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+    color: #303133;
     font-size: 13px;
-    line-height: 1.6;
 }
-.tp-list-id {
-    display: inline-flex;
-    align-items: center;
-    color: #5D50A8;
-    background: #F1EFFF;
-    border: 1px solid #E6E1FF;
-    border-radius: 6px;
-    padding: 4px 8px;
-    font-size: 11px;
-    font-weight: 750;
-    letter-spacing: .2px;
+.tp-list-table thead th {
+    height: 42px;
+    padding: 0 14px;
+    text-align: left;
+    white-space: nowrap;
+    color: #606266;
+    background: #F5F7FA;
+    border-bottom: 1px solid #E4E7ED;
+    font-weight: 600;
 }
-.tp-list-card-title {
-    color: #30364A;
-    font-size: 13px;
-    font-weight: 650;
+.tp-list-table tbody td {
+    height: 48px;
+    padding: 7px 14px;
+    border-bottom: 1px solid #EBEEF5;
+    vertical-align: middle;
+    background: #FFFFFF;
     overflow-wrap: anywhere;
 }
+.tp-list-table tbody tr:last-child td { border-bottom: 0; }
+.tp-list-table tbody tr:hover td { background: #F8FAFD; }
+.tp-list-table th:nth-child(1), .tp-list-table td:nth-child(1) { width: 15%; }
+.tp-list-table th:nth-child(2), .tp-list-table td:nth-child(2) { width: 43%; }
+.tp-list-table th:nth-child(3), .tp-list-table td:nth-child(3) { width: 14%; }
+.tp-list-table th:nth-child(4), .tp-list-table td:nth-child(4) { width: 14%; }
+.tp-list-table th:nth-child(5), .tp-list-table td:nth-child(5) { width: 14%; }
 .tp-list-tag {
     display: inline-block;
-    border-radius: 20px;
     padding: 3px 9px;
-    font-size: 11px;
-    font-weight: 650;
+    border-radius: 3px;
+    font-size: 12px;
     line-height: 18px;
     white-space: nowrap;
 }
-.tp-list-tag-success { color: #24734B; background: #EAF7EF; border: 1px solid #D8F0E1; }
-.tp-list-tag-warning { color: #9A5A0B; background: #FFF4E2; border: 1px solid #F7E4C2; }
-.tp-list-tag-danger { color: #A83232; background: #FDEAEA; border: 1px solid #F6D4D4; }
-.tp-list-tag-neutral { color: #64748B; background: #F3F5F9; border: 1px solid #E7EAF1; }
-.tp-list-card-meta {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px 18px;
-    margin-top: 10px;
-    color: #7B8496;
-    font-size: 12px;
-    line-height: 1.75;
-    overflow-wrap: anywhere;
-}
+.tp-list-tag-success { color: #67C23A; background: #F0F9EB; }
+.tp-list-tag-warning { color: #E6A23C; background: #FDF6EC; }
+.tp-list-tag-danger { color: #F56C6C; background: #FEF0F0; }
+.tp-list-tag-neutral { color: #909399; background: #F4F4F5; }
+.tp-list-id { color: #606266; white-space: nowrap; }
 @media (max-width: 640px) {
-    .tp-list-card { padding: 12px 13px; }
-    .tp-list-card-meta { gap: 5px 12px; }
+    .tp-list-table { min-width: 760px; }
 }
 
 </style>
@@ -1116,10 +1109,10 @@ if not test_points:
     st.info("当前筛选条件下没有测试点。")
 
 else:
-    for index, point in enumerate(test_points, start=1):
+    table_rows = []
+    for point in test_points:
         point_id = html.escape(str(point.get("point_id") or "未知编号"))
         point_title = html.escape(str(get_point_title(point)))
-        internal_id = html.escape(str(point.get("id") or ""))
         manual_status = point.get("manual_review_status", "未知")
         manual_status_label = {
             "pending": "待审核",
@@ -1134,28 +1127,25 @@ else:
             "approved": "tp-list-tag-success",
             "rejected": "tp-list-tag-danger",
         }.get(manual_status, "tp-list-tag-neutral")
-        deleted_html = (
-            '<span class="tp-list-tag tp-list-tag-danger">已删除</span>'
-            if is_deleted else ""
+        deleted_label = "是" if is_deleted else "否"
+        deleted_class = "tp-list-tag-danger" if is_deleted else "tp-list-tag-neutral"
+
+        table_rows.append(
+            "<tr>"
+            f'<td class="tp-list-id">{point_id}</td>'
+            f'<td>{point_title}</td>'
+            f'<td><span class="tp-list-tag {manual_status_class}">{html.escape(manual_status_label)}</span></td>'
+            f'<td>{html.escape(ai_status)}</td>'
+            f'<td><span class="tp-list-tag {deleted_class}">{deleted_label}</span></td>'
+            "</tr>"
         )
 
-        st.html(f"""
-        <div class="tp-list-card">
-            <div class="tp-list-card-head">
-                <span class="tp-list-id">{point_id}</span>
-                <strong class="tp-list-card-title">{point_title}</strong>
-                <span class="tp-list-tag {manual_status_class}">{html.escape(manual_status_label)}</span>
-                <span class="tp-list-tag tp-list-tag-neutral">AI：{html.escape(ai_status)}</span>
-                {deleted_html}
-            </div>
-            <div class="tp-list-card-meta">
-                <span>人工审核：{html.escape(manual_status_label)}</span>
-                <span>AI 审核：{html.escape(ai_status)}</span>
-                <span>逻辑删除：{"是" if is_deleted else "否"}</span>
-                <span>内部 ID：{internal_id}</span>
-            </div>
-        </div>
-        """)
+    table_html = (
+        '<div class="tp-list-wrap"><table class="tp-list-table">'
+        '<thead><tr><th>测试点编号</th><th>测试点名称</th><th>人工审核状态</th><th>AI审核状态</th><th>逻辑删除</th></tr></thead>'
+        '<tbody>' + "".join(table_rows) + '</tbody></table></div>'
+    )
+    st.html(table_html)
 
 
 # ============================================================
