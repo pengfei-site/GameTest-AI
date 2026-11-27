@@ -1648,7 +1648,7 @@ else:
         white-space: nowrap;
     }
     /* 表头与数据行共用一个容器，关闭 Streamlit 组件之间的默认纵向间距。 */
-    [class*="st-key-tp-list-shell-"] > div[data-testid="stVerticalBlock"] {
+    [class*="st-key-tp-list-shell"] > div[data-testid="stVerticalBlock"] {
         gap: 0 !important;
     }
     .tp-list-row-cell {
