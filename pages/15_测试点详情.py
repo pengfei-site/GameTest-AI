@@ -1870,6 +1870,7 @@ else:
                 with row_cols[2]:
                     ai_review_status = str(point.get("ai_review_status") or "").strip()
                     ai_status_labels = {
+                        "approved": ("通过", "tp-list-tag-success"),
                         "passed": ("通过", "tp-list-tag-success"),
                         "needs_review": ("待复核", "tp-list-tag-warning"),
                         "failed": ("失败", "tp-list-tag-danger"),
