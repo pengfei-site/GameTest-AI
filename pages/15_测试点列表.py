@@ -1380,6 +1380,9 @@ with filter_col:
 
 selected_status = status_options[selected_status_label]
 
+include_deleted_key = f"test_point_include_deleted_{selected_document_id}"
+include_deleted = bool(st.session_state.get(include_deleted_key, False))
+
 try:
     test_points = list_test_points_by_document_version(
         project_id=selected_project_id,
@@ -1436,10 +1439,9 @@ with statistics_cols[0]:
         f"已删除总数：{statistics['deleted']} 条"
     )
 with statistics_cols[1]:
-    include_deleted = st.checkbox(
+    st.checkbox(
         "显示已删除",
-        value=False,
-        key=f"test_point_include_deleted_{selected_document_id}",
+        key=include_deleted_key,
     )
 
 if include_deleted:
