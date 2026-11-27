@@ -1283,24 +1283,13 @@ document_name = html.escape(str(
 version_label = html.escape(
     f"V{selected_document.get('version', '?')}"
 )
-active_label = (
-    '<span class="tp-scope-active">当前有效版本</span>'
-    if selected_document.get("is_active")
-    else '<span class="tp-scope-history">历史版本</span>'
+document_status = (
+    "已删除" if selected_document.get("is_deleted")
+    else ("有效" if selected_document.get("is_active") else "已废弃")
 )
-st.html(f"""
-<div class="tp-scope-summary">
-    <div class="tp-scope-summary-label">当前查看范围</div>
-    <div class="tp-scope-summary-value">
-        <span>{project_name}</span>
-        <span class="tp-scope-separator">/</span>
-        <span>{document_name}</span>
-        <span class="tp-scope-version">{version_label}</span>
-        {active_label}
-    </div>
-    <div class="tp-scope-summary-hint">测试点统计、审核和列表内容均限定在此需求文档版本内</div>
-</div>
-""")
+document_created_at = html.escape(str(
+    format_local_datetime(selected_document.get("created_at")) or "暂无"
+))
 
 # ============================================================
 # 2. 查询当前需求版本的全部测试点
@@ -1323,6 +1312,28 @@ statistics = calculate_statistics(all_document_points)
 document_batch_points = {}
 for point in all_document_points:
     document_batch_points.setdefault(point.get("batch_id"), []).append(point)
+
+batch_count = len({
+    str(point.get("batch_id"))
+    for point in all_document_points
+    if point.get("batch_id") not in (None, "")
+})
+st.html(f"""
+<div class="tp-scope-summary">
+    <div class="tp-scope-summary-value">
+        <span>所属项目：{project_name}</span>
+        <span class="tp-scope-separator">·</span>
+        <span>需求：{document_name}</span>
+        <span class="tp-scope-version">{version_label}</span>
+        <span class="tp-scope-separator">·</span>
+        <span>版本状态：{document_status}</span>
+        <span class="tp-scope-separator">·</span>
+        <span>创建时间：{document_created_at}</span>
+        <span class="tp-scope-separator">·</span>
+        <span>测试点批次数：{batch_count} 个</span>
+    </div>
+</div>
+""")
 
 if statistics["other"] > 0:
     st.warning(
