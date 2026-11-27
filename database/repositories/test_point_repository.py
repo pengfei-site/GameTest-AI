@@ -266,6 +266,63 @@ def list_test_points(
     ]
 
 
+
+def list_test_points_by_document_version(
+    project_id: str,
+    document_id: str,
+    include_deleted: bool = False,
+    manual_review_status: str | None = None,
+) -> list[dict]:
+    """
+    查询指定需求文档版本下的全部测试点。
+
+    一个需求文档版本可能关联多条需求分析记录及多个生成批次，
+    因此通过 generation_batches 和 requirement_analyses 进行关联。
+    """
+    if not project_id or not document_id:
+        raise ValueError("项目 ID 和需求文档版本 ID 不能为空")
+
+    sql = """
+        SELECT tp.*
+        FROM test_points tp
+        INNER JOIN generation_batches gb
+            ON gb.id = tp.batch_id
+        INNER JOIN requirement_analyses ra
+            ON ra.id = gb.requirement_analysis_id
+        INNER JOIN documents d
+            ON d.id = ra.document_id
+           AND d.project_id = gb.project_id
+        WHERE gb.project_id = ?
+          AND ra.document_id = ?
+    """
+
+    params = [project_id, document_id]
+
+    if not include_deleted:
+        sql += " AND tp.is_deleted = 0"
+
+    if manual_review_status is not None:
+        if manual_review_status not in {
+            "pending",
+            "approved",
+            "rejected",
+        }:
+            raise ValueError("无效的人工审核状态")
+
+        sql += " AND tp.manual_review_status = ?"
+        params.append(manual_review_status)
+
+    sql += " ORDER BY tp.point_id ASC, tp.created_at ASC"
+
+    with get_connection() as conn:
+        rows = conn.execute(sql, params).fetchall()
+
+    return [
+        _parse_test_point(row)
+        for row in rows
+    ]
+
+
 def list_test_point_history(
     test_point_id: str,
 ) -> list[dict]:
