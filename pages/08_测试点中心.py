@@ -910,7 +910,7 @@ else:
         version_label = f"Ver. {document.get('version') or 1}"
         active_analysis = active_analysis_by_document.get(document_id)
         analysis_label = (
-            f"【分析记录 {analysis_record_numbers.get(str(active_analysis.get('id') or ''), '')}】"
+            f"分析记录 {analysis_record_numbers.get(str(active_analysis.get('id') or ''), '')}"
             if active_analysis
             else "暂无有效分析记录"
         )
