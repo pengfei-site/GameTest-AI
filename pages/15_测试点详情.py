@@ -1647,6 +1647,15 @@ else:
         font-weight: 600;
         white-space: nowrap;
     }
+    /* 缩小表头与第一条测试点记录之间的默认纵向留白。 */
+    [class*="st-key-tp-list-header-"] {
+        margin-bottom: -1rem !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+    [class*="st-key-tp-list-header-"] > div[data-testid="stVerticalBlock"] {
+        gap: 0 !important;
+    }
     .tp-list-row-cell {
         height: 48px;
         min-height: 48px;
@@ -1754,13 +1763,15 @@ else:
     </style>
     """)
 
-    header_cols = st.columns([18, 47, 35], gap="small")
-    for col, label in zip(
-        header_cols,
-        ("测试点编号", "测试点名称", "操作"),
-    ):
-        with col:
-            st.html(f'<div class="tp-list-header-cell">{label}</div>')
+    # 将表头与首条测试点记录放入独立容器，并抵消 Streamlit 默认纵向间距。
+    with st.container(key="tp-list-header"):
+        header_cols = st.columns([18, 47, 35], gap="small")
+        for col, label in zip(
+            header_cols,
+            ("测试点编号", "测试点名称", "操作"),
+        ):
+            with col:
+                st.html(f'<div class="tp-list-header-cell">{label}</div>')
 
     expanded_test_point_id = st.session_state.get("expanded_test_point_id")
 
