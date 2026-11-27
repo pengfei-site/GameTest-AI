@@ -198,6 +198,45 @@ def set_generation_batch_effective(batch_id: str) -> dict:
 
 
 
+def set_generation_batch_obsolete(batch_id: str) -> dict:
+    """将指定批次设为已废弃，允许所属需求版本暂时没有有效批次。"""
+
+    with get_connection(write=True) as conn:
+        conn.execute("BEGIN IMMEDIATE")
+
+        batch = conn.execute(
+            """
+            SELECT id
+            FROM generation_batches
+            WHERE id = ?
+            """,
+            (batch_id,),
+        ).fetchone()
+
+        if batch is None:
+            raise ValueError("生成批次不存在")
+
+        conn.execute(
+            """
+            UPDATE generation_batches
+            SET batch_status = 'obsolete'
+            WHERE id = ?
+            """,
+            (batch_id,),
+        )
+
+        row = conn.execute(
+            """
+            SELECT *
+            FROM generation_batches
+            WHERE id = ?
+            """,
+            (batch_id,),
+        ).fetchone()
+
+    return _parse_batch(row)
+
+
 def get_generation_batch(batch_id: str) -> dict | None:
     """根据批次 ID 查询单条生成批次。"""
 
