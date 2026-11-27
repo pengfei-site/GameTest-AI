@@ -8,6 +8,7 @@ from components.header import render_header
 from database.repositories.project_repository import list_projects
 
 from database.repositories.document_repository import list_documents
+from database.repositories.requirement_repository import list_requirement_analyses
 
 from database.repositories.test_point_repository import (
     get_test_point,
@@ -1339,6 +1340,30 @@ batch_count = len({
     for point in all_document_points
     if point.get("batch_id") not in (None, "")
 })
+
+# 当前需求版本的有效分析记录，用于跳转到测试点生成流程。
+try:
+    current_analyses = list_requirement_analyses(
+        project_id=selected_project_id,
+        document_id=selected_document_id,
+    )
+except Exception as exc:
+    st.error(f"读取当前需求版本的分析记录失败：{exc}")
+    st.stop()
+
+active_analysis = next(
+    (item for item in current_analyses if item.get("is_active")),
+    None,
+)
+active_analysis_id = str(active_analysis.get("id") or "") if active_analysis else ""
+
+# 仅当当前分析范围内存在未逻辑删除、且关联生成批次的测试点时，
+# 才认为当前界面存在可展示的测试点批次。
+has_displayable_batches = any(
+    not point.get("is_deleted")
+    and point.get("batch_id") not in (None, "")
+    for point in all_document_points
+)
 batch_filter_options = {}
 for batch_id, batch_points in document_batch_points.items():
     batch_key = str(batch_id) if batch_id not in (None, "") else "__NO_BATCH__"
@@ -1408,6 +1433,39 @@ with st.container(key="tp-scope-summary-card"):
         else:
             set_generation_batch_obsolete(selected_batch_key)
         st.rerun()
+
+# 卡片下方快捷入口：生成/重新生成沿用现有 AI 测试点生成页面；
+# 查看测试用例直接进入测试用例管理页面。
+generation_action_col, testcase_action_col = st.columns(2, gap="medium")
+with generation_action_col:
+    generation_button_label = (
+        "重新生成测试点" if has_displayable_batches else "测试点生成"
+    )
+    if st.button(
+        generation_button_label,
+        key=f"open_testpoint_generation_{selected_document_id}",
+        type="primary",
+        width="stretch",
+        disabled=not active_analysis_id,
+        help=(
+            "基于当前版本的有效需求分析记录重新生成测试点"
+            if has_displayable_batches
+            else "基于当前版本的有效需求分析记录生成测试点"
+        ) if active_analysis_id else "当前需求版本没有有效分析记录，无法生成测试点",
+    ):
+        st.session_state["testpoint_generation_project"] = selected_project_id
+        st.session_state[
+            f"testpoint_generation_analysis_{selected_project_id}"
+        ] = active_analysis_id
+        st.switch_page("pages/09_AI测试点生成.py")
+with testcase_action_col:
+    if st.button(
+        "查看测试用例",
+        key=f"open_testcase_management_{selected_document_id}",
+        type="primary",
+        width="stretch",
+    ):
+        st.switch_page("pages/12_测试用例管理.py")
 
 selected_batch_points = [
     point for point in all_document_points
