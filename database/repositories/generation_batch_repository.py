@@ -137,6 +137,67 @@ def create_generation_batch(
     return _parse_batch(row)
 
 
+
+def set_generation_batch_effective(batch_id: str) -> dict:
+    """将批次设为所属需求版本的唯一有效批次，原有效批次自动废弃。"""
+
+    with get_connection(write=True) as conn:
+        # 先获取 SQLite 写锁，避免并发设置时出现多个有效批次。
+        conn.execute("BEGIN IMMEDIATE")
+
+        batch = conn.execute(
+            """
+            SELECT
+                gb.id,
+                gb.requirement_analysis_id,
+                ra.document_id
+            FROM generation_batches AS gb
+            JOIN requirement_analyses AS ra
+                ON ra.id = gb.requirement_analysis_id
+            WHERE gb.id = ?
+            """,
+            (batch_id,),
+        ).fetchone()
+
+        if batch is None:
+            raise ValueError("生成批次不存在，或关联的需求版本不存在")
+
+        # 同一策划文档版本（document_id）下，先将所有批次设为废弃。
+        conn.execute(
+            """
+            UPDATE generation_batches
+            SET batch_status = 'obsolete'
+            WHERE requirement_analysis_id IN (
+                SELECT id
+                FROM requirement_analyses
+                WHERE document_id = ?
+            )
+            """,
+            (batch["document_id"],),
+        )
+
+        conn.execute(
+            """
+            UPDATE generation_batches
+            SET batch_status = 'effective'
+            WHERE id = ?
+            """,
+            (batch_id,),
+        )
+
+        row = conn.execute(
+            """
+            SELECT *
+            FROM generation_batches
+            WHERE id = ?
+            """,
+            (batch_id,),
+        ).fetchone()
+
+    return _parse_batch(row)
+
+
+
 def get_generation_batch(batch_id: str) -> dict | None:
     """根据批次 ID 查询单条生成批次。"""
 
