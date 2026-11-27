@@ -1655,6 +1655,16 @@ else:
     [class*="st-key-tp-list-shell"] [data-testid="stElementContainer"] {
         margin-block: 0 !important;
     }
+    /* 表头由 st.columns 渲染；压缩承载表头的组件容器底部外边距，
+       避免 Streamlit 在表头和第一条记录之间额外插入一段空白。 */
+    [class*="st-key-tp-list-shell"] [data-testid="stElementContainer"]:has(.tp-list-header-cell) {
+        margin-bottom: -1rem !important;
+        padding-bottom: 0 !important;
+    }
+    /* 第一条记录紧贴表头；后续记录仍沿用各行原有的间距规则。 */
+    [class*="st-key-tp-list-row-"]:first-of-type {
+        margin-top: -1rem !important;
+    }
     .tp-list-row-cell {
         height: 48px;
         min-height: 48px;
