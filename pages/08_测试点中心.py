@@ -776,11 +776,16 @@ for key, versions in requirement_groups.items():
         "has_available": bool(available_versions),
     })
 
-project_stats = {
-    "total": len(requirement_items),
-    "active": sum(1 for item in requirement_items if item["active"]),
-    "versions": len(project_documents),
-}
+with get_connection() as conn:
+    project_stats_row = conn.execute("""
+        SELECT COUNT(*) AS total,
+               SUM(CASE WHEN tp.manual_review_status = 'approved' THEN 1 ELSE 0 END) AS approved,
+               SUM(CASE WHEN tp.manual_review_status = 'pending' THEN 1 ELSE 0 END) AS pending
+        FROM test_points tp
+        JOIN generation_batches gb ON gb.id = tp.batch_id
+        WHERE gb.project_id = ? AND tp.is_deleted = 0
+    """, (selected_project_id,)).fetchone()
+project_stats = dict(project_stats_row) if project_stats_row else {"total": 0, "approved": 0, "pending": 0}
 project_col, stats_col = st.columns([1.15, 1.85], gap="medium", vertical_alignment="center")
 with project_col:
     with st.container(key="test_point_project_picker_shell"):
@@ -799,7 +804,7 @@ with project_col:
                         st.rerun()
 with stats_col:
     metric_cols = st.columns(3, gap="small")
-    for col, label, value in zip(metric_cols, ("需求数量", "有效需求", "需求版本"), ("total", "active", "versions")):
+    for col, label, value in zip(metric_cols, ("测试点总数", "已通过", "待审核"), ("total", "approved", "pending")):
         with col:
             st.metric(label, project_stats.get(value) or 0)
 
@@ -878,23 +883,39 @@ else:
         font-size: 13px;
         font-weight: 600;
     }
-    .tp-requirement-row {
-        border: 1px solid #EBEEF5;
-        border-top: 0;
-        background: #FFFFFF;
-        padding: 4px 8px;
+    div[class*="st-key-tp_requirement_row_"] {
+        background: #FFFFFF !important;
+        border: 1px solid #EBEEF5 !important;
+        border-top: 0 !important;
+        border-radius: 0 !important;
+        padding: 4px 8px !important;
     }
-    .tp-requirement-row:last-child {
-        border-radius: 0 0 8px 8px;
+    div[class*="st-key-tp_requirement_row_"] [data-testid="stHorizontalBlock"],
+    div[class*="st-key-tp_requirement_row_"] [data-testid="column"] {
+        background: #FFFFFF !important;
+    }
+    div[class*="st-key-tp_requirement_row_"]:last-of-type {
+        border-radius: 0 0 8px 8px !important;
     }
     div[class*="st-key-open_test_points_for_requirement_"] button {
+        display: flex !important;
         justify-content: flex-start !important;
+        text-align: left !important;
         color: #303133 !important;
-        background: transparent !important;
+        background: #FFFFFF !important;
         border: 0 !important;
         box-shadow: none !important;
-        padding-left: 6px !important;
+        padding: 0 6px !important;
         font-weight: 500 !important;
+    }
+    div[class*="st-key-open_test_points_for_requirement_"] button > div {
+        width: 100% !important;
+        justify-content: flex-start !important;
+        text-align: left !important;
+    }
+    div[class*="st-key-open_test_points_for_requirement_"] button p {
+        width: 100% !important;
+        text-align: left !important;
     }
     div[class*="st-key-open_test_points_for_requirement_"] button:hover {
         color: #6D5CE7 !important;
