@@ -1661,10 +1661,7 @@ else:
         margin-bottom: -1rem !important;
         padding-bottom: 0 !important;
     }
-    /* 第一条记录紧贴表头；后续记录仍沿用各行原有的间距规则。 */
-    [class*="st-key-tp-list-row-"]:first-of-type {
-        margin-top: -1rem !important;
-    }
+    /* 不额外上移第一条记录，避免与表头发生重叠。 */
     .tp-list-row-cell {
         height: 48px;
         min-height: 48px;
