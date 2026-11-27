@@ -201,7 +201,9 @@ def format_batch(batch):
         status or "未知状态",
     )
 
-    return f"{created_at} | {status_label} | {batch_id}"
+    batch_status_label = "有效" if batch.get("batch_status") == "effective" else "废弃"
+
+    return f"{created_at} | {batch_status_label} | {status_label} | {batch_id}"
 
 
 def format_analysis(analysis):
