@@ -1259,7 +1259,7 @@ has_active_version = any(
     for document in version_options.values()
 )
 if not has_active_version:
-    st.info("当前无有效的需求分析记录可查看。")
+    st.info("当前无有效需求分析记录的测试点可查看。")
     st.stop()
 
 version_widget_key = (
