@@ -107,47 +107,50 @@ st.html("""
 .tp-record-meta {color:#77758b;font-size:.82rem;margin-top:6px;}
 .tp-pill {display:inline-block;border-radius:999px;padding:3px 9px;font-size:.76rem;font-weight:650;background:#f0eef8;color:#6254a4;margin-left:6px;}
 .tp-pill.pending {background:#fff4d6;color:#8a6200}.tp-pill.approved {background:#e6f6ee;color:#18794e}.tp-pill.rejected {background:#fdeaea;color:#a83232}
+/* 当前查看范围卡片：沿用需求版本管理中需求文档卡片的视觉样式。 */
 .tp-scope-summary {
-    margin-top: 0.9rem;
-    padding: 12px 15px;
-    border: 1px solid #e8e6f2;
+    margin: 7px 0;
+    padding: 10px 12px;
+    border: 1px solid #E8EAF2;
     border-radius: 10px;
-    background: linear-gradient(110deg, #faf9ff 0%, #ffffff 72%);
+    background: #FFFFFF;
 }
 .tp-scope-summary-label {
-    color: #858298;
-    font-size: 0.76rem;
-    margin-bottom: 5px;
+    color: #172033;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
 }
 .tp-scope-summary-value {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: 7px;
-    color: #302b50;
-    font-size: 0.92rem;
-    font-weight: 650;
+    color: #172033;
+    font-size: 13px;
+    font-weight: 700;
 }
-.tp-scope-separator { color: #aaa6bb; font-weight: 400; }
+.tp-scope-separator { color: #8490A3; font-weight: 400; }
 .tp-scope-version {
     padding: 2px 8px;
     border-radius: 6px;
-    background: #efedfb;
-    color: #6254a4;
-    font-size: 0.78rem;
+    background: #F3F5F9;
+    color: #64748B;
+    font-size: 11px;
+    font-weight: 500;
 }
 .tp-scope-active, .tp-scope-history {
     padding: 2px 8px;
     border-radius: 6px;
-    font-size: 0.74rem;
+    font-size: 11px;
     font-weight: 600;
 }
-.tp-scope-active { background: #e8f6ee; color: #18794e; }
-.tp-scope-history { background: #f1f0f5; color: #77758b; }
+.tp-scope-active { background: #F0F9EB; color: #67C23A; }
+.tp-scope-history { background: #F1F5F9; color: #64748B; }
 .tp-scope-summary-hint {
-    margin-top: 5px;
-    color: #9290a2;
-    font-size: 0.75rem;
+    margin-top: 4px;
+    color: #8490A3;
+    font-size: 11px;
 }
 
 /* 测试点列表：与需求列表保持一致的表格行样式。 */
