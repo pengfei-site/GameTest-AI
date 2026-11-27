@@ -1343,13 +1343,18 @@ for col, label, value in zip(
 st.divider()
 st.subheader("测试点列表")
 
-filter_row_cols = st.columns([2.8, 1.35, 1.35], gap="medium")
-
-with filter_row_cols[1]:
-    include_deleted = st.checkbox(
-        "显示已逻辑删除的测试点",
-        value=False,
-        key=f"test_point_include_deleted_{selected_document_id}",
+search_col, filter_col = st.columns(
+    [12, 1],
+    vertical_alignment="center",
+    gap="small",
+)
+with search_col:
+    test_point_search = st.text_input(
+        "搜索测试点",
+        placeholder="搜索测试点编号或名称…",
+        key=f"test_point_list_search_{selected_document_id}",
+        label_visibility="collapsed",
+        width="stretch",
     )
 
 status_options = {
@@ -1358,14 +1363,26 @@ status_options = {
     "已通过": "approved",
     "已驳回": "rejected",
 }
-
-with filter_row_cols[2]:
-    selected_status_label = st.selectbox(
-        "人工审核状态筛选",
-        options=list(status_options.keys()),
-        key=f"test_point_status_filter_{selected_document_id}",
-        label_visibility="collapsed",
-    )
+with filter_col:
+    with st.popover(
+        "筛选",
+        icon=":material/filter_list:",
+        help="筛选测试点",
+        width="stretch",
+    ):
+        st.markdown("**人工审核状态**")
+        selected_status_label = st.radio(
+            "人工审核状态筛选",
+            options=list(status_options.keys()),
+            key=f"test_point_status_filter_v2_{selected_document_id}",
+            label_visibility="collapsed",
+        )
+        st.divider()
+        include_deleted = st.checkbox(
+            "显示已逻辑删除的测试点",
+            value=False,
+            key=f"test_point_include_deleted_{selected_document_id}",
+        )
 
 selected_status = status_options[selected_status_label]
 
@@ -1374,12 +1391,30 @@ try:
         project_id=selected_project_id,
         document_id=selected_document_id,
         include_deleted=include_deleted,
-        manual_review_status=selected_status,
     )
-
 except Exception as exc:
     st.error(f"读取测试点列表失败：{exc}")
     st.stop()
+
+search_text = test_point_search.strip().lower()
+filtered_test_points = []
+for point in test_points:
+    point_content = point.get("current_content") or {}
+    point_name = get_point_title(point)
+    point_id_text = str(point.get("point_id") or point.get("id") or "")
+    matches_search = (
+        not search_text
+        or search_text in point_id_text.lower()
+        or search_text in str(point_name).lower()
+    )
+    matches_status = (
+        selected_status is None
+        or point.get("manual_review_status") == selected_status
+    )
+    if matches_search and matches_status:
+        filtered_test_points.append(point)
+
+test_points = filtered_test_points
 
 for batch_id, batch_points in document_batch_points.items():
     pending_batch_points = [
@@ -1399,12 +1434,11 @@ for batch_id, batch_points in document_batch_points.items():
             batch_id,
         )
 
-with filter_row_cols[0]:
-    st.caption(
-        f"当前筛选结果：{len(test_points)} 条 | "
-        f"当前需求版本有效总数：{statistics['total']} 条 | "
-        f"已删除总数：{statistics['deleted']} 条"
-    )
+st.caption(
+    f"当前筛选结果：{len(test_points)} 条 | "
+    f"当前需求版本有效总数：{statistics['total']} 条 | "
+    f"已删除总数：{statistics['deleted']} 条"
+)
 
 if include_deleted:
     st.info("当前已开启逻辑删除记录展示。")
