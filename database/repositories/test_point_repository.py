@@ -72,14 +72,18 @@ def create_test_points(
     batch_id: str,
     points: list,
     review_report=None,
+    manual_review_status: str = "pending",
 ) -> list[dict]:
     """
     批量创建测试点。
 
     original_content 和 current_content 初始内容一致。
-    人工审核状态默认为 pending。
+    人工审核状态由调用方指定，默认保持 pending。
     每条测试点创建时同步写入 created 历史。
     """
+
+    if manual_review_status not in {"pending", "approved"}:
+        raise ValueError("无效的初始人工审核状态")
 
     if not points:
         raise ValueError("测试点列表不能为空")
@@ -156,7 +160,7 @@ def create_test_points(
                     ai_review_status,
                     manual_review_status
                 )
-                VALUES (?, ?, ?, ?, ?, ?, 'pending')
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     point_uuid,
@@ -165,6 +169,7 @@ def create_test_points(
                     content_json,
                     content_json,
                     ai_status,
+                    manual_review_status,
                 )
             )
 
