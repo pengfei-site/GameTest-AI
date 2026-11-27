@@ -25,6 +25,7 @@ from core.schemas import TestPointEditableContent
 from core.time_utils import format_local_datetime
 from core.testpoint_edit_service import edit_test_point
 from core.testpoint_review_service import (
+    MANUAL_REVIEW_ENABLED,
     approve_test_point,
     reject_test_point,
     batch_approve_test_points,
@@ -507,6 +508,10 @@ def render_single_review_actions(test_point):
     AI 审核状态仅展示为参考，不作为人工审核的限制条件。
     """
 
+    if not MANUAL_REVIEW_ENABLED:
+        st.info("人工审核流程已暂时关闭。")
+        return
+
     if test_point.get("is_deleted"):
         st.info("已逻辑删除的测试点不能进行人工审核。")
         return
@@ -590,6 +595,10 @@ def render_batch_review_actions(batch_points, batch_id):
     从当前批次全部记录中筛选可审核对象。
     不受列表当前的状态筛选影响。
     """
+
+    if not MANUAL_REVIEW_ENABLED:
+        st.info("人工审核流程已暂时关闭。")
+        return
 
     pending_points = [
         point
@@ -818,14 +827,12 @@ for key, versions in requirement_groups.items():
 
 with get_connection() as conn:
     project_stats_row = conn.execute("""
-        SELECT COUNT(*) AS total,
-               SUM(CASE WHEN tp.manual_review_status = 'approved' THEN 1 ELSE 0 END) AS approved,
-               SUM(CASE WHEN tp.manual_review_status = 'pending' THEN 1 ELSE 0 END) AS pending
+        SELECT COUNT(*) AS total
         FROM test_points tp
         JOIN generation_batches gb ON gb.id = tp.batch_id
         WHERE gb.project_id = ? AND tp.is_deleted = 0
     """, (selected_project_id,)).fetchone()
-project_stats = dict(project_stats_row) if project_stats_row else {"total": 0, "approved": 0, "pending": 0}
+project_stats = dict(project_stats_row) if project_stats_row else {"total": 0}
 project_col, stats_col = st.columns([1.15, 1.85], gap="medium", vertical_alignment="center")
 with project_col:
     with st.container(key="test_point_project_picker_shell"):
@@ -843,10 +850,7 @@ with project_col:
                         st.session_state["test_point_list_project"] = project_id
                         st.rerun()
 with stats_col:
-    metric_cols = st.columns(3, gap="small")
-    for col, label, value in zip(metric_cols, ("测试点总数", "已通过", "待审核"), ("total", "approved", "pending")):
-        with col:
-            st.metric(label, project_stats.get(value) or 0)
+    st.metric("测试点总数", project_stats.get("total") or 0)
 
 
 # ============================================================
