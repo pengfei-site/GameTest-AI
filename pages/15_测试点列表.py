@@ -1558,14 +1558,13 @@ else:
 
             if is_expanded:
                 with st.container(border=True):
-                    render_test_point_meta_cards(point)
-
-                    st.divider()
-                    st.subheader("测试点内容")
                     render_structured_test_point_content(
                         point.get("current_content"),
                         point.get("point_id"),
                     )
+
+                    st.divider()
+                    render_test_point_meta_cards(point)
 
 
 # ============================================================
