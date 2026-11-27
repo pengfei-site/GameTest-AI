@@ -2,6 +2,7 @@
 from core.schemas import RequirementAnalysis
 from core.generation_schemas import TestPointGenerationResult
 from core.testpoint_generator import generate_testpoints
+from core.testpoint_review_service import MANUAL_REVIEW_ENABLED
 
 from database.repositories.requirement_repository import (
     get_requirement_analysis,
@@ -77,6 +78,9 @@ def run_testpoint_generation(
             batch_id=batch_id,
             points=generated_points,
             review_report=generation_result.review_report,
+            manual_review_status=(
+                "pending" if MANUAL_REVIEW_ENABLED else "approved"
+            ),
         )
     else:
         created_points = []
