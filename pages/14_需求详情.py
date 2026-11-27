@@ -213,7 +213,7 @@ with test_point_action_col:
             "project_id": str(project_id),
             "document_id": str(current.get("id") or ""),
         }
-        st.switch_page("pages/08_测试点中心.py")
+        st.switch_page("pages/15_测试点列表.py")
 with original_action_col:
     if st.button("查看原文", key="view_original_document", type="primary", width="stretch"):
         st.session_state["show_original_document_dialog"] = True
