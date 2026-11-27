@@ -174,7 +174,7 @@ with st.container(border=True, key="requirement-detail-card"):
                 args=(str(current["id"]), status_key),
             )
 
-doc_id_col, analysis_action_col, original_action_col = st.columns([5, 2, 1.5], vertical_alignment="center")
+doc_id_col, analysis_action_col, test_point_action_col, original_action_col = st.columns([5, 2, 1.3, 1.5], vertical_alignment="center")
 with doc_id_col:
     st.caption(f"文档标识：{document_key}")
 current_analyses = list_requirement_analyses(
@@ -207,6 +207,10 @@ with analysis_action_col:
             st.rerun()
         except Exception as exc:
             st.error(f"需求分析或自动保存失败：{exc}")
+with test_point_action_col:
+    if st.button("测试点", key=f"open_test_point_list_{project_id}", type="primary", width="stretch"):
+        st.session_state["test_point_list_project"] = str(project_id)
+        st.switch_page("pages/08_测试点列表.py")
 with original_action_col:
     if st.button("查看原文", key="view_original_document", type="primary", width="stretch"):
         st.session_state["show_original_document_dialog"] = True
