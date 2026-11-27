@@ -1164,7 +1164,44 @@ def render_batch_review_actions(batch_points, batch_id):
 # 1. 项目、需求文档及版本选择
 # ============================================================
 
-navigation_context = st.session_state.pop("test_point_context", None) or {}
+# 定位信息写入 URL，确保浏览器刷新或重新打开页面后仍能恢复原项目、
+# 需求版本及分析记录范围；兼容旧入口通过 session_state 传递的上下文。
+navigation_context = st.session_state.get("test_point_context") or {}
+
+query_project_id = str(st.query_params.get("tp_project_id") or "")
+query_document_id = str(st.query_params.get("tp_document_id") or "")
+query_analysis_id = str(st.query_params.get("tp_analysis_id") or "")
+query_filter_by_analysis = st.query_params.get("tp_filter_by_analysis")
+
+navigation_context = {
+    "project_id": query_project_id or str(navigation_context.get("project_id") or ""),
+    "document_id": query_document_id or str(navigation_context.get("document_id") or ""),
+    "requirement_analysis_id": (
+        query_analysis_id
+        if query_analysis_id
+        else str(navigation_context.get("requirement_analysis_id") or "")
+    ),
+    "filter_by_analysis": (
+        str(query_filter_by_analysis).lower() in ("1", "true", "yes")
+        if query_filter_by_analysis is not None
+        else bool(navigation_context.get("filter_by_analysis"))
+    ),
+}
+
+# 将旧入口传入的 session 上下文同步到 URL；之后刷新即可直接从 URL 恢复。
+for query_key, context_key in (
+    ("tp_project_id", "project_id"),
+    ("tp_document_id", "document_id"),
+    ("tp_analysis_id", "requirement_analysis_id"),
+):
+    context_value = str(navigation_context.get(context_key) or "")
+    if context_value:
+        st.query_params[query_key] = context_value
+if navigation_context.get("filter_by_analysis"):
+    st.query_params["tp_filter_by_analysis"] = "1"
+elif "tp_filter_by_analysis" in st.query_params:
+    del st.query_params["tp_filter_by_analysis"]
+
 filter_by_analysis = bool(navigation_context.get("filter_by_analysis"))
 requirement_analysis_id = str(
     navigation_context.get("requirement_analysis_id") or ""
