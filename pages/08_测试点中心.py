@@ -872,8 +872,10 @@ else:
     <style>
     .tp-requirement-table-head {
         display: grid;
-        grid-template-columns: minmax(260px, 6fr) 1.2fr 1.2fr 1.6fr;
+        grid-template-columns: 60% 12% 12% 16%;
         align-items: center;
+        box-sizing: border-box;
+        width: 100%;
         min-height: 42px;
         padding: 0 14px;
         color: #606266;
@@ -884,12 +886,15 @@ else:
         font-weight: 600;
     }
     div[class*="st-key-tp_requirement_row_"] {
+        box-sizing: border-box;
+        min-height: 48px;
         background: #FFFFFF !important;
         border: 1px solid #EBEEF5 !important;
         border-top: 0 !important;
         border-radius: 0 !important;
-        padding: 4px 8px !important;
+        padding: 0 14px !important;
     }
+    div[class*="st-key-tp_requirement_row_"] [data-testid="stVerticalBlock"],
     div[class*="st-key-tp_requirement_row_"] [data-testid="stHorizontalBlock"],
     div[class*="st-key-tp_requirement_row_"] [data-testid="column"] {
         background: #FFFFFF !important;
@@ -905,8 +910,10 @@ else:
         background: #FFFFFF !important;
         border: 0 !important;
         box-shadow: none !important;
-        padding: 0 6px !important;
+        padding: 7px 0 !important;
+        font-size: 13px !important;
         font-weight: 500 !important;
+        min-height: 46px !important;
     }
     div[class*="st-key-open_test_points_for_requirement_"] button > div {
         width: 100% !important;
@@ -916,6 +923,7 @@ else:
     div[class*="st-key-open_test_points_for_requirement_"] button p {
         width: 100% !important;
         text-align: left !important;
+        color: #303133 !important;
     }
     div[class*="st-key-open_test_points_for_requirement_"] button:hover {
         color: #6D5CE7 !important;
@@ -923,9 +931,13 @@ else:
         background: #F8FAFD !important;
     }
     .tp-requirement-meta {
+        box-sizing: border-box;
         color: #606266;
         font-size: 13px;
-        padding: 8px 4px;
+        padding: 7px 0;
+        min-height: 46px;
+        display: flex;
+        align-items: center;
     }
     .tp-requirement-status {
         display: inline-block;
