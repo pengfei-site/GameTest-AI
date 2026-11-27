@@ -58,7 +58,11 @@ if not versions:
 
 active_versions = [item for item in versions if item.get("is_active") and not item.get("is_deleted")]
 default_version = active_versions[0] if active_versions else versions[0]
-version_map = {f"Ver. {item.get('version', 1)}": item for item in versions}
+version_map = {
+    f"Ver. {item.get('version', 1)}（当前有效）" if item.get("is_active") and not item.get("is_deleted")
+    else f"Ver. {item.get('version', 1)}": item
+    for item in versions
+}
 default_version_label = next(
     label for label, item in version_map.items()
     if str(item.get("id")) == str(default_version.get("id"))
