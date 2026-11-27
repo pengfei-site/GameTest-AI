@@ -906,6 +906,16 @@ version_options = {
     str(document["id"]): document
     for document in documents_by_key[selected_document_key]
 }
+
+# 当前需求没有有效版本时，不回退展示历史版本的测试点。
+has_active_version = any(
+    document.get("is_active")
+    for document in version_options.values()
+)
+if not has_active_version:
+    st.info("当前无有效需求版本的测试点可查看。")
+    st.stop()
+
 version_widget_key = (
     f"test_point_list_page_version_{selected_project_id}_{selected_document_key}"
 )
