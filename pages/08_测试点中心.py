@@ -730,12 +730,12 @@ if open_document_id:
         "document_id": str(open_document_id),
     }
     del st.query_params["open_test_points_document"]
-    st.switch_page("pages/15_测试点列表.py")
+    st.switch_page("pages/15_测试点详情.py")
 
 # 仅在确认不需要跳转后渲染当前页面标题，避免跳转时残留「测试点中心」标题。
 render_header(
     title="测试点中心",
-    description="按项目集中查看需求文档，并从需求入口进入对应的测试点列表。",
+    description="按项目集中查看需求文档，并从需求入口进入对应的测试点详情。",
     breadcrumb=["测试点中心"],
 )
 
@@ -984,6 +984,6 @@ st.caption("提示：需求文档版本查看、恢复和删除操作请前往�
 st.divider()
 
 st.info(
-    "当前页面以需求为入口组织测试点。选择需求名称后，将进入对应需求版本的测试点列表，"
-    "测试点查看、编辑和审核操作均在测试点列表页面完成。"
+    "当前页面以需求为入口组织测试点。选择需求名称后，将进入对应需求版本的测试点详情，"
+    "测试点查看、编辑和审核操作均在测试点详情页面完成。"
 )
