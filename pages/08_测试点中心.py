@@ -7,6 +7,7 @@ from components.header import render_header
 
 from database.repositories.project_repository import list_projects
 from database.repositories.document_repository import list_documents
+from database.repositories.requirement_repository import list_requirement_analyses
 
 from database.repositories.generation_batch_repository import (
     get_generation_batch,
@@ -756,6 +757,20 @@ except Exception as exc:
     st.error(f"读取项目需求列表失败：{exc}")
     st.stop()
 
+try:
+    project_analyses = list_requirement_analyses(
+        project_id=selected_project_id,
+    )
+except Exception as exc:
+    st.error(f"读取需求分析记录失败：{exc}")
+    st.stop()
+
+active_analysis_by_document = {
+    str(analysis.get("document_id")): analysis
+    for analysis in project_analyses
+    if analysis.get("is_active")
+}
+
 requirement_groups = {}
 for item in project_documents:
     requirement_groups.setdefault(item.get("document_key") or item.get("id"), []).append(item)
@@ -880,7 +895,15 @@ else:
         document_id = str(document.get("id") or "")
         document_name = str(document.get("document_name") or "未命名需求")
         version_label = f"Ver. {document.get('version') or 1}"
-        file_type = str(document.get("file_type") or "未知").upper()
+        active_analysis = active_analysis_by_document.get(document_id)
+        analysis_summary = (
+            str(active_analysis.get("summary") or "").strip()
+            if active_analysis
+            else ""
+        )
+        analysis_label = analysis_summary or (
+            "有效分析记录" if active_analysis else "暂无有效分析记录"
+        )
         detail_url = (
             "?open_test_points_document="
             + __import__("urllib.parse", fromlist=["quote"]).quote(document_id)
@@ -895,7 +918,7 @@ else:
             "<tr>"
             f'<td class="gt-tapd-name"><a href="{html.escape(detail_url, quote=True)}" title="查看该需求版本下的测试点">{html.escape(document_name)}</a></td>'
             f'<td class="gt-tapd-version">{html.escape(version_label)}</td>'
-            f'<td class="gt-tapd-type">{html.escape(file_type)}</td>'
+            f'<td class="gt-tapd-type">{html.escape(analysis_label)}</td>'
             f'<td class="gt-tapd-state">{status_html}</td>'
             "</tr>"
         )
@@ -970,7 +993,7 @@ else:
     """)
     table_html = (
         '<div class="gt-tapd-wrap"><table class="gt-tapd-table">'
-        '<thead><tr><th>需求名称</th><th>当前版本</th><th>文件类型</th><th>状态</th></tr></thead>'
+        '<thead><tr><th>需求名称</th><th>当前版本</th><th>有效分析记录</th><th>状态</th></tr></thead>'
         '<tbody>' + "".join(table_rows) + '</tbody></table></div>'
     )
     st.html(table_html)
