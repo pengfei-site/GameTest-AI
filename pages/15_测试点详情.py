@@ -1546,14 +1546,43 @@ if MANUAL_REVIEW_ENABLED:
 
     selected_status = status_options[selected_status_label]
 else:
-    test_point_search = st.text_input(
-        "搜索测试点",
-        placeholder="搜索测试点编号或名称…",
-        key=f"test_point_list_search_{selected_document_id}",
-        label_visibility="collapsed",
-        width="stretch",
+    search_col, filter_col = st.columns(
+        [12, 1],
+        vertical_alignment="center",
+        gap="small",
     )
+    with search_col:
+        test_point_search = st.text_input(
+            "搜索测试点",
+            placeholder="搜索测试点编号或名称…",
+            key=f"test_point_list_search_{selected_document_id}",
+            label_visibility="collapsed",
+            width="stretch",
+        )
+
+    ai_status_options = {
+        "全部": None,
+        "通过": "passed",
+        "待复核": "needs_review",
+        "失败": "failed",
+    }
+    with filter_col:
+        with st.popover(
+            "筛选",
+            icon=":material/filter_list:",
+            help="按 AI 审核状态筛选测试点",
+            width="stretch",
+        ):
+            st.markdown("**AI审核状态**")
+            selected_ai_status_label = st.radio(
+                "AI审核状态筛选",
+                options=list(ai_status_options.keys()),
+                key=f"test_point_ai_status_filter_{selected_document_id}",
+                label_visibility="collapsed",
+            )
+
     selected_status = None
+    selected_ai_status = ai_status_options[selected_ai_status_label]
 
 include_deleted_key = f"test_point_include_deleted_{selected_document_id}"
 include_deleted = bool(st.session_state.get(include_deleted_key, False))
@@ -1595,13 +1624,18 @@ for point in test_points:
         selected_status is None
         or point.get("manual_review_status") == selected_status
     )
+    matches_ai_status = (
+        MANUAL_REVIEW_ENABLED
+        or selected_ai_status is None
+        or point.get("ai_review_status") == selected_ai_status
+    )
     point_batch_key = (
         str(point.get("batch_id"))
         if point.get("batch_id") not in (None, "")
         else "__NO_BATCH__"
     )
     matches_batch = point_batch_key == selected_batch_key
-    if matches_search and matches_status and matches_batch:
+    if matches_search and matches_status and matches_ai_status and matches_batch:
         filtered_test_points.append(point)
 
 test_points = filtered_test_points
