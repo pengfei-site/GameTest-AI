@@ -1285,6 +1285,19 @@ context_document_key = (
     str(context_document.get("document_key") or context_document.get("id"))
     if context_document else ""
 )
+
+# 提供明确的需求详情返回入口，并保留当前项目和需求文档定位。
+# 该站内页面链接也让用户不必依赖浏览器历史即可返回原需求。
+if context_document_key:
+    st.page_link(
+        "pages/14_需求详情.py",
+        label="← 返回需求详情",
+        icon=":material/arrow_back:",
+        query_params={
+            "project_id": selected_project_id,
+            "document_key": context_document_key,
+        },
+    )
 selected_document_key = (
     context_document_key
     if context_document_key in documents_by_key
