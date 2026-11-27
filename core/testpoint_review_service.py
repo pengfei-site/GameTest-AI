@@ -1,5 +1,14 @@
 """测试点人工审核服务。"""
 
+# 临时关闭人工审核时改为 False；恢复流程时改为 True。
+MANUAL_REVIEW_ENABLED = False
+
+
+def _ensure_manual_review_enabled():
+    if not MANUAL_REVIEW_ENABLED:
+        raise RuntimeError("人工审核流程当前已暂时关闭")
+
+
 from database.repositories.test_point_repository import (
     approve_test_point as repository_approve_test_point,
     batch_approve_test_points as repository_batch_approve_test_points,
@@ -45,6 +54,7 @@ def _normalize_test_point_ids(test_point_ids: list[str]) -> list[str]:
 
 def approve_test_point(test_point_id: str, comment: str = "") -> dict:
     """人工审核通过单条测试点，审核意见可以为空。"""
+    _ensure_manual_review_enabled()
     normalized_id = _normalize_test_point_id(test_point_id)
     normalized_comment = _normalize_comment(comment)
 
@@ -63,6 +73,7 @@ def approve_test_point(test_point_id: str, comment: str = "") -> dict:
 
 def reject_test_point(test_point_id: str, reason: str) -> dict:
     """人工驳回单条测试点，必须填写驳回原因。"""
+    _ensure_manual_review_enabled()
     normalized_id = _normalize_test_point_id(test_point_id)
     normalized_reason = _normalize_comment(reason, "reason")
 
@@ -87,6 +98,7 @@ def batch_approve_test_points(
     comment: str = "",
 ) -> dict:
     """批量人工审核通过测试点，审核意见可以为空。"""
+    _ensure_manual_review_enabled()
     normalized_ids = _normalize_test_point_ids(test_point_ids)
     normalized_comment = _normalize_comment(comment)
 
@@ -109,6 +121,7 @@ def batch_reject_test_points(
     reason: str,
 ) -> dict:
     """批量人工驳回测试点，必须填写驳回原因。"""
+    _ensure_manual_review_enabled()
     normalized_ids = _normalize_test_point_ids(test_point_ids)
     normalized_reason = _normalize_comment(reason, "reason")
 
