@@ -1155,6 +1155,10 @@ def render_batch_review_actions(batch_points, batch_id):
 # ============================================================
 
 navigation_context = st.session_state.pop("test_point_context", None) or {}
+filter_by_analysis = bool(navigation_context.get("filter_by_analysis"))
+requirement_analysis_id = str(
+    navigation_context.get("requirement_analysis_id") or ""
+)
 
 try:
     projects = list_projects()
@@ -1303,13 +1307,24 @@ document_created_at = html.escape(str(
 # ============================================================
 
 try:
-    all_document_points = list_test_points_by_document_version(
-        project_id=selected_project_id,
-        document_id=selected_document_id,
-        include_deleted=True,
+    all_document_points = (
+        list_test_points_by_document_version(
+            project_id=selected_project_id,
+            document_id=selected_document_id,
+            include_deleted=True,
+            requirement_analysis_id=requirement_analysis_id,
+        )
+        if filter_by_analysis and requirement_analysis_id
+        else []
+        if filter_by_analysis
+        else list_test_points_by_document_version(
+            project_id=selected_project_id,
+            document_id=selected_document_id,
+            include_deleted=True,
+        )
     )
 except Exception as exc:
-    st.error(f"读取当前需求版本测试点失败：{exc}")
+    st.error(f"读取当前需求分析记录测试点失败：{exc}")
     st.stop()
 
 # 批量审核服务要求同一次操作中的测试点属于同一个生成批次，
@@ -1463,10 +1478,21 @@ include_deleted_key = f"test_point_include_deleted_{selected_document_id}"
 include_deleted = bool(st.session_state.get(include_deleted_key, False))
 
 try:
-    test_points = list_test_points_by_document_version(
-        project_id=selected_project_id,
-        document_id=selected_document_id,
-        include_deleted=include_deleted,
+    test_points = (
+        list_test_points_by_document_version(
+            project_id=selected_project_id,
+            document_id=selected_document_id,
+            include_deleted=include_deleted,
+            requirement_analysis_id=requirement_analysis_id,
+        )
+        if filter_by_analysis and requirement_analysis_id
+        else []
+        if filter_by_analysis
+        else list_test_points_by_document_version(
+            project_id=selected_project_id,
+            document_id=selected_document_id,
+            include_deleted=include_deleted,
+        )
     )
 except Exception as exc:
     st.error(f"读取测试点列表失败：{exc}")
