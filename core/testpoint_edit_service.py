@@ -18,7 +18,7 @@ def edit_test_point(
     1. 只接受 TestPointEditableContent 类型。
     2. 编辑字段由 Pydantic 模型限定。
     3. 具体的数据更新和历史记录由 Repository 负责。
-    4. 编辑成功后，人工审核状态重置为 pending。
+    4. 编辑成功后，人工审核状态重置为 pending，AI 审核状态重置为 approved。
     5. Repository 异常向上抛出，不伪装成成功。
     """
 
@@ -49,5 +49,6 @@ def edit_test_point(
         "success": True,
         "test_point_id": test_point_id,
         "manual_review_status": "pending",
+        "ai_review_status": "approved",
         "message": "测试点编辑成功，已保存修改历史",
     }
