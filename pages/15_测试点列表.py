@@ -7,17 +7,13 @@ from components.header import render_header
 
 from database.repositories.project_repository import list_projects
 
-from database.repositories.generation_batch_repository import (
-    get_generation_batch,
-    list_generation_batches,
-)
+from database.repositories.document_repository import list_documents
 
 from database.repositories.test_point_repository import (
     get_test_point,
-    list_test_points,
+    list_test_points_by_document_version,
     list_test_point_history,
 )
-from database.connection import get_connection
 
 from core.schemas import TestPointEditableContent
 from core.time_utils import format_local_datetime
@@ -126,14 +122,14 @@ div[data-testid="stVerticalBlock"].st-key-test_point_project_picker_shell [data-
 
 render_header(
     title="测试点列表",
-    description="查看当前项目下各批次生成的测试点，并进行筛选、审核与维护。",
+    description="按需求文档版本统一查看和维护 AI 生成的测试点，支持人工编辑、单条审核和批量审核。",
     breadcrumb=["测试点列表"],
 )
 
 
 st.html("""
 <div class="tp-page-intro">
-    查看当前项目下的测试点记录，支持按批次和审核状态筛选。
+    先选择项目、需求文档及版本，再查看该版本下的测试点、审核状态和操作历史。
 </div>
 """)
 
@@ -710,12 +706,13 @@ def render_batch_review_actions(batch_points, batch_id):
 
 
 # ============================================================
-# 1. 项目选择
+# 1. 项目、需求文档及版本选择
 # ============================================================
+
+navigation_context = st.session_state.pop("test_point_context", None) or {}
 
 try:
     projects = list_projects()
-
 except Exception as exc:
     st.error(f"读取项目列表失败：{exc}")
     st.stop()
@@ -724,132 +721,182 @@ if not projects:
     st.warning("当前没有可用项目，请先创建项目。")
     st.stop()
 
-
 project_options = {
-    project["id"]: project
+    str(project["id"]): project
     for project in projects
 }
 
-project_ids = list(project_options)
-if st.session_state.get("test_point_list_project") not in project_options:
-    st.session_state["test_point_list_project"] = project_ids[0]
-selected_project_id = st.session_state["test_point_list_project"]
+context_project_id = str(navigation_context.get("project_id") or "")
+if context_project_id in project_options:
+    st.session_state["test_point_list_page_project"] = context_project_id
+
+if st.session_state.get("test_point_list_page_project") not in project_options:
+    st.session_state["test_point_list_page_project"] = next(iter(project_options))
+
+selected_project_id = st.selectbox(
+    "所属项目",
+    options=list(project_options.keys()),
+    format_func=lambda value: (
+        project_options[value].get("project_name")
+        or project_options[value].get("name")
+        or "未命名项目"
+    ),
+    key="test_point_list_page_project",
+)
 selected_project = project_options[selected_project_id]
-project_name = html.escape(str(selected_project.get("project_name") or selected_project.get("name") or "未命名项目"))
-project_description = html.escape(str(selected_project.get("description") or "暂无项目描述"))
-project_status = selected_project.get("status", "active")
-status_label = "已归档" if project_status == "archived" else "进行中"
-status_color, status_bg = ("#64748B", "#F1F5F9") if project_status == "archived" else ("#15803D", "#DCFCE7")
-with get_connection() as conn:
-    project_stats_row = conn.execute("""
-        SELECT COUNT(*) AS total,
-               SUM(CASE WHEN tp.manual_review_status = 'approved' THEN 1 ELSE 0 END) AS approved,
-               SUM(CASE WHEN tp.manual_review_status = 'pending' THEN 1 ELSE 0 END) AS pending
-        FROM test_points tp
-        JOIN generation_batches gb ON gb.id = tp.batch_id
-        WHERE gb.project_id = ? AND tp.is_deleted = 0
-    """, (selected_project_id,)).fetchone()
-project_stats = dict(project_stats_row) if project_stats_row else {"total": 0, "approved": 0, "pending": 0}
-project_col, stats_col = st.columns([1.15, 1.85], gap="medium", vertical_alignment="center")
-with project_col:
-    with st.container(key="test_point_project_picker_shell"):
-        st.html(f'''<div style="color:#172033;padding:2px 2px 18px;min-height:92px;box-sizing:border-box"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><strong>🎮 {project_name}</strong><span style="border-radius:20px;padding:3px 8px;color:{status_color};background:{status_bg};font-size:11px">● {status_label}</span></div><div style="color:#64748B;font-size:12px;margin-top:8px">{project_description}</div><div style="color:#94A3B8;font-size:10px;margin-top:7px">项目 ID：{html.escape(str(selected_project_id))}</div></div>''')
-        with st.popover("切换项目", width="stretch"):
-            for project_id in project_ids:
-                project = project_options[project_id]
-                name = html.escape(str(project.get("project_name") or project.get("name") or "未命名项目"))
-                desc = html.escape(str(project.get("description") or "暂无项目描述"))
-                current = project_id == selected_project_id
-                color, bg = ("#64748B", "#F1F5F9") if project.get("status") == "archived" else ("#15803D", "#DCFCE7")
-                with st.container():
-                    st.html(f'<div style="border:1px solid {"#8B7CF6" if current else "#E5E7EB"};background:{"#F8F7FF" if current else "#FFF"};border-radius:11px;padding:13px 15px;margin:5px 0"><strong>🎮 {name}</strong><span style="float:right;color:{color};background:{bg};padding:3px 8px;border-radius:20px;font-size:11px">{"已归档" if project.get("status") == "archived" else "进行中"}</span><div style="color:#64748B;font-size:12px;margin-top:7px">{desc}</div><div style="color:#94A3B8;font-size:10px;margin-top:7px">项目 ID：{html.escape(str(project_id))}</div></div>')
-                    if not current and st.button("选择此项目", key=f"choose_test_point_project_{project_id}", width="stretch"):
-                        st.session_state["test_point_list_project"] = project_id
-                        st.rerun()
-with stats_col:
-    metric_cols = st.columns(3, gap="small")
-    for col, label, value in zip(metric_cols, ("测试点总数", "已通过", "待审核"), ("total", "approved", "pending")):
-        with col:
-            st.metric(label, project_stats.get(value) or 0)
-
-
-# ============================================================
-# 2. 批次选择
-# ============================================================
 
 try:
-    batches = list_generation_batches(
-        selected_project_id
-    )
-
-except Exception as exc:
-    st.error(f"读取测试点生成批次失败：{exc}")
-    st.stop()
-
-if not batches:
-    st.warning("当前项目暂无测试点生成批次。")
-    st.stop()
-
-
-batch_options = {
-    batch["id"]: batch
-    for batch in batches
-}
-
-with st.container(border=True):
-    selected_batch_id = st.selectbox(
-        "选择测试点生成批次",
-        options=list(batch_options.keys()),
-        format_func=lambda x: format_batch(
-            batch_options[x]
-        ),
-        key=f"test_point_list_batch_{selected_project_id}",
-    )
-
-
-try:
-    batch = get_generation_batch(
-        selected_batch_id
-    )
-
-except Exception as exc:
-    st.error(f"读取生成批次失败：{exc}")
-    st.stop()
-
-if not batch:
-    st.error("无法读取所选批次。")
-    st.stop()
-
-
-# ============================================================
-# 3. 获取批次全部测试点并计算统计
-# ============================================================
-
-try:
-    all_batch_points = list_test_points(
-        selected_batch_id,
+    documents = list_documents(
+        project_id=selected_project_id,
         include_deleted=True,
     )
-
 except Exception as exc:
-    st.error(f"读取批次测试点失败：{exc}")
+    st.error(f"读取需求文档失败：{exc}")
     st.stop()
 
+if not documents:
+    st.info("当前项目暂无需求文档，请先在需求中心创建或导入需求文档。")
+    st.stop()
 
-statistics = calculate_statistics(
-    all_batch_points
+# 侧边栏入口默认不展示已删除版本；若从需求详情页明确进入某个已删除版本，
+# 则保留该版本，避免静默回退到其他版本。
+context_document_id = str(navigation_context.get("document_id") or "")
+documents = [
+    document for document in documents
+    if not document.get("is_deleted")
+    or str(document.get("id")) == context_document_id
+]
+
+documents_by_key = {}
+for document in documents:
+    document_key = str(document.get("document_key") or document.get("id"))
+    documents_by_key.setdefault(document_key, []).append(document)
+
+document_keys = list(documents_by_key.keys())
+context_document_id = str(navigation_context.get("document_id") or "")
+context_document = next(
+    (
+        document for document in documents
+        if str(document.get("id")) == context_document_id
+    ),
+    None,
+)
+if context_document_id and not context_document:
+    st.error("无法定位需求详情页选中的文档版本，请返回需求详情页重新进入。")
+    st.stop()
+
+if context_document:
+    context_document_key = str(
+        context_document.get("document_key") or context_document.get("id")
+    )
+    st.session_state["test_point_list_page_document_key"] = context_document_key
+
+document_key_widget = "test_point_list_page_document_key"
+if st.session_state.get(document_key_widget) not in documents_by_key:
+    st.session_state[document_key_widget] = document_keys[0]
+
+selected_document_key = st.selectbox(
+    "需求文档",
+    options=document_keys,
+    format_func=lambda value: (
+        documents_by_key[value][0].get("document_name")
+        or value
+    ),
+    key=document_key_widget,
+)
+
+version_options = {
+    str(document["id"]): document
+    for document in documents_by_key[selected_document_key]
+}
+if (
+    context_document
+    and str(context_document.get("document_key") or context_document.get("id"))
+    == selected_document_key
+    and context_document_id in version_options
+):
+    st.session_state[
+        f"test_point_list_page_version_{selected_project_id}_{selected_document_key}"
+    ] = context_document_id
+
+version_widget_key = (
+    f"test_point_list_page_version_{selected_project_id}_{selected_document_key}"
+)
+if st.session_state.get(version_widget_key) not in version_options:
+    active_version_id = next(
+        (
+            document_id for document_id, document in version_options.items()
+            if document.get("is_active")
+        ),
+        None,
+    )
+    st.session_state[version_widget_key] = (
+        active_version_id or next(iter(version_options))
+    )
+
+selected_document_id = st.selectbox(
+    "需求文档版本",
+    options=list(version_options.keys()),
+    format_func=lambda value: (
+        f"V{version_options[value].get('version', '?')}"
+        f"{'（当前有效）' if version_options[value].get('is_active') else ''}"
+        f" · {version_options[value].get('document_name') or '未命名文档'}"
+    ),
+    key=version_widget_key,
+)
+selected_document = version_options[selected_document_id]
+
+project_name = html.escape(str(
+    selected_project.get("project_name")
+    or selected_project.get("name")
+    or "未命名项目"
+))
+document_name = html.escape(str(
+    selected_document.get("document_name") or "未命名文档"
+))
+st.caption(
+    f"当前范围：{project_name} / {document_name} / "
+    f"V{selected_document.get('version', '?')}。"
+    "仅展示当前选中版本关联的测试点。"
 )
 
 
 # ============================================================
-# 4. 批次统计数据
+# 2. 查询当前需求版本的全部测试点
 # ============================================================
+
+try:
+    all_document_points = list_test_points_by_document_version(
+        project_id=selected_project_id,
+        document_id=selected_document_id,
+        include_deleted=True,
+    )
+except Exception as exc:
+    st.error(f"读取当前需求版本测试点失败：{exc}")
+    st.stop()
+
+statistics = calculate_statistics(all_document_points)
+
+# 批量审核服务要求同一次操作中的测试点属于同一个生成批次，
+# 因此将当前需求版本的测试点按 batch_id 分组，分别提供批量审核入口。
+document_batch_points = {}
+for point in all_document_points:
+    document_batch_points.setdefault(point.get("batch_id"), []).append(point)
 
 if statistics["other"] > 0:
     st.warning(
-        f"发现 {statistics['other']} 条其他审核状态的测试点，"
+        f"发现 {statistics['other']} 条其他人工审核状态的测试点，"
         "请检查数据库中的 manual_review_status。"
     )
+
+metric_cols = st.columns(4, gap="small")
+for col, label, value in zip(
+    metric_cols,
+    ("测试点总数", "待审核", "已通过", "已驳回"),
+    ("total", "pending", "approved", "rejected"),
+):
+    with col:
+        col.metric(label, statistics.get(value, 0))
 
 
 # ============================================================
@@ -866,7 +913,7 @@ with st.container(border=True):
         include_deleted = st.checkbox(
             "显示已逻辑删除的测试点",
             value=False,
-            key=f"test_point_include_deleted_{selected_batch_id}",
+            key=f"test_point_include_deleted_{selected_document_id}",
         )
 
     with filter_col2:
@@ -880,7 +927,7 @@ with st.container(border=True):
         selected_status_label = st.selectbox(
             "人工审核状态筛选",
             options=list(status_options.keys()),
-            key=f"test_point_status_filter_{selected_batch_id}",
+            key=f"test_point_status_filter_{selected_document_id}",
         )
 
 selected_status = status_options[
@@ -889,8 +936,9 @@ selected_status = status_options[
 
 
 try:
-    test_points = list_test_points(
-        selected_batch_id,
+    test_points = list_test_points_by_document_version(
+        project_id=selected_project_id,
+        document_id=selected_document_id,
         include_deleted=include_deleted,
         manual_review_status=selected_status,
     )
@@ -900,16 +948,28 @@ except Exception as exc:
     st.stop()
 
 
-with st.expander("批量人工审核", expanded=False):
-    render_batch_review_actions(
-        all_batch_points,
-        selected_batch_id,
-    )
+for batch_id, batch_points in document_batch_points.items():
+    pending_batch_points = [
+        point for point in batch_points
+        if not point.get("is_deleted")
+        and point.get("manual_review_status") == "pending"
+    ]
+    if not pending_batch_points:
+        continue
+
+    with st.expander(
+        f"批量人工审核 · 批次 {str(batch_id)[:8]}",
+        expanded=False,
+    ):
+        render_batch_review_actions(
+            batch_points,
+            batch_id,
+        )
 
 
 st.caption(
     f"当前筛选结果：{len(test_points)} 条 | "
-    f"批次有效总数：{statistics['total']} 条 | "
+    f"当前需求版本有效总数：{statistics['total']} 条 | "
     f"已删除总数：{statistics['deleted']} 条"
 )
 
@@ -981,7 +1041,7 @@ else:
         format_func=lambda x: format_test_point(
             test_point_options[x]
         ),
-        key=f"test_point_detail_selection_{selected_batch_id}",
+        key=f"test_point_detail_selection_{selected_document_id}",
     )
 
     try:
