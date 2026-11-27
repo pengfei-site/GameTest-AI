@@ -59,8 +59,8 @@ if not versions:
 active_versions = [item for item in versions if item.get("is_active") and not item.get("is_deleted")]
 default_version = active_versions[0] if active_versions else versions[0]
 version_map = {
-    f"Ver. {item.get('version', 1)}（当前有效）" if item.get("is_active") and not item.get("is_deleted")
-    else f"Ver. {item.get('version', 1)}": item
+    f"Ver.{item.get('version', 1)} · 当前使用" if item.get("is_active") and not item.get("is_deleted")
+    else f"Ver.{item.get('version', 1)}": item
     for item in versions
 }
 default_version_label = next(
@@ -143,7 +143,7 @@ div[data-testid="stSegmentedControl"] button {{
 """)
 
 with st.container(border=True, key="requirement-detail-card"):
-    title_col, version_col = st.columns([6, 0.7], vertical_alignment="center")
+    title_col, version_col = st.columns([4.5, 1.5], vertical_alignment="center")
     with title_col:
         st.markdown(
             f'<div class="gt-detail-title">▤ {html.escape(str(default_version.get("document_name") or "未命名文档"))}</div>',
