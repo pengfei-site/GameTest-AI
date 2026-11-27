@@ -328,7 +328,7 @@ def render_structured_test_point_content(content, point_id):
     def display_value(value):
         if value is None or not str(value).strip():
             return "暂无内容"
-        return html.escape(str(value)).replace("\\n", "<br>")
+        return html.escape(str(value)).replace("\n", "<br>")
 
     category = str(content.get("category") or "").strip()
     priority = str(content.get("priority") or "").strip()
