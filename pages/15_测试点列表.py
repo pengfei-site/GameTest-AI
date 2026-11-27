@@ -650,10 +650,11 @@ HISTORY_ACTION_LABELS = {
 }
 
 
-def render_test_point_history(test_point_id):
-    """展示单个测试点的操作历史及其数据快照。"""
+@st.dialog("测试点操作历史", width="large")
+def render_test_point_history_dialog(test_point_id, point_label):
+    """在弹窗中展示单个测试点的操作历史及其数据快照。"""
 
-    st.divider()
+    st.caption(f"测试点编号：{point_label}")
     st.subheader("操作历史")
 
     try:
@@ -1473,10 +1474,10 @@ else:
     </style>
     """)
 
-    header_cols = st.columns([15, 39, 14, 14, 9, 9], gap="small")
+    header_cols = st.columns([14, 34, 13, 13, 9, 17], gap="small")
     for col, label in zip(
         header_cols,
-        ("测试点编号", "测试点名称", "人工审核状态", "AI审核状态", "逻辑删除", "编辑"),
+        ("测试点编号", "测试点名称", "人工审核状态", "AI审核状态", "逻辑删除", "操作"),
     ):
         with col:
             st.html(f'<div class="tp-list-header-cell">{label}</div>')
@@ -1519,7 +1520,7 @@ else:
                     st.session_state["expanded_test_point_id"] = point_internal_id
                 st.rerun()
 
-            row_cols = st.columns([15, 39, 14, 14, 9, 9], gap="small")
+            row_cols = st.columns([14, 34, 13, 13, 9, 17], gap="small")
             with row_cols[0]:
                 st.html(
                     f'<div class="tp-list-row-cell tp-list-id-cell">'
@@ -1540,21 +1541,34 @@ else:
                     f'{deleted_label}</span></div>'
                 )
             with row_cols[5]:
-                if is_deleted:
-                    st.button(
+                action_cols = st.columns(2, gap="small")
+                with action_cols[0]:
+                    if is_deleted:
+                        st.button(
+                            "编辑",
+                            key=f"edit_test_point_disabled_{point_internal_id}",
+                            disabled=True,
+                            width="stretch",
+                            help="已逻辑删除的测试点不能直接编辑",
+                        )
+                    elif st.button(
                         "编辑",
-                        key=f"edit_test_point_disabled_{point_internal_id}",
-                        disabled=True,
+                        key=f"open_edit_test_point_{point_internal_id}",
                         width="stretch",
-                        help="已逻辑删除的测试点不能直接编辑",
-                    )
-                elif st.button(
-                    "编辑",
-                    key=f"open_edit_test_point_{point_internal_id}",
-                    width="stretch",
-                    help="编辑当前测试点",
-                ):
-                    render_edit_dialog(point)
+                        help="编辑当前测试点",
+                    ):
+                        render_edit_dialog(point)
+                with action_cols[1]:
+                    if st.button(
+                        "查看历史",
+                        key=f"open_test_point_history_{point_internal_id}",
+                        width="stretch",
+                        help="查看当前测试点的操作历史记录",
+                    ):
+                        render_test_point_history_dialog(
+                            point_internal_id,
+                            point.get("point_id") or point_internal_id,
+                        )
 
             if is_expanded:
                 with st.container(border=True):
