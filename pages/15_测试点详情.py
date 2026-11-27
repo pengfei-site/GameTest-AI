@@ -1647,13 +1647,8 @@ else:
         font-weight: 600;
         white-space: nowrap;
     }
-    /* 缩小表头与第一条测试点记录之间的默认纵向留白。 */
-    [class*="st-key-tp-list-header-"] {
-        margin-bottom: -1rem !important;
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
-    }
-    [class*="st-key-tp-list-header-"] > div[data-testid="stVerticalBlock"] {
+    /* 表头与数据行共用一个容器，关闭 Streamlit 组件之间的默认纵向间距。 */
+    [class*="st-key-tp-list-shell-"] > div[data-testid="stVerticalBlock"] {
         gap: 0 !important;
     }
     .tp-list-row-cell {
@@ -1667,10 +1662,8 @@ else:
         font-size: 13px;
         overflow-wrap: anywhere;
     }
-    /* Streamlit 会在相邻容器之间额外插入默认纵向间距；
-       通过行容器负外边距抵消该间距，避免依赖不稳定的父级 DOM 选择器。 */
+    /* 行容器不再使用负外边距，由列表父容器统一控制行间距。 */
     [class*="st-key-tp-list-row-"] {
-        margin-bottom: -1rem !important;
         padding-top: 0 !important;
         padding-bottom: 0 !important;
     }
@@ -1763,8 +1756,8 @@ else:
     </style>
     """)
 
-    # 将表头与首条测试点记录放入独立容器，并抵消 Streamlit 默认纵向间距。
-    with st.container(key="tp-list-header"):
+    # 表头与所有测试点行放在同一容器中，使用与需求列表相同的零间距布局。
+    with st.container(key="tp-list-shell"):
         header_cols = st.columns([18, 47, 35], gap="small")
         for col, label in zip(
             header_cols,
@@ -1773,101 +1766,101 @@ else:
             with col:
                 st.html(f'<div class="tp-list-header-cell">{label}</div>')
 
-    expanded_test_point_id = st.session_state.get("expanded_test_point_id")
+        expanded_test_point_id = st.session_state.get("expanded_test_point_id")
 
-    for point in test_points:
-        point_internal_id = point.get("id")
-        point_id = html.escape(str(point.get("point_id") or "未知编号"))
-        point_title = html.escape(str(get_point_title(point)))
-        is_deleted = bool(point.get("is_deleted"))
+        for point in test_points:
+            point_internal_id = point.get("id")
+            point_id = html.escape(str(point.get("point_id") or "未知编号"))
+            point_title = html.escape(str(get_point_title(point)))
+            is_deleted = bool(point.get("is_deleted"))
 
-        is_expanded = expanded_test_point_id == point_internal_id
-        arrow = "▾" if is_expanded else "▸"
+            is_expanded = expanded_test_point_id == point_internal_id
+            arrow = "▾" if is_expanded else "▸"
 
-        with st.container(key=f"tp-list-row-{point_internal_id}"):
-            if st.button(
-                "展开/收起测试点内容",
-                key=f"expand-test-point-{point_internal_id}",
-                help="点击此行展开或收起测试点内容",
-                width="stretch",
-            ):
-                if is_expanded:
-                    st.session_state.pop("expanded_test_point_id", None)
-                else:
-                    st.session_state["expanded_test_point_id"] = point_internal_id
-                st.rerun()
+            with st.container(key=f"tp-list-row-{point_internal_id}"):
+                if st.button(
+                    "展开/收起测试点内容",
+                    key=f"expand-test-point-{point_internal_id}",
+                    help="点击此行展开或收起测试点内容",
+                    width="stretch",
+                ):
+                    if is_expanded:
+                        st.session_state.pop("expanded_test_point_id", None)
+                    else:
+                        st.session_state["expanded_test_point_id"] = point_internal_id
+                    st.rerun()
 
-            row_cols = st.columns([18, 47, 35], gap="small")
-            with row_cols[0]:
-                st.html(
-                    f'<div class="tp-list-row-cell tp-list-id-cell">'
-                    f'<span class="tp-list-expand-arrow">{arrow}</span>{point_id}</div>'
-                )
-            with row_cols[1]:
-                st.html(f'<div class="tp-list-row-cell">{point_title}</div>')
-            with row_cols[2]:
-                action_cols = st.columns(3, gap="small")
-                with action_cols[0]:
-                    if is_deleted:
-                        st.button(
+                row_cols = st.columns([18, 47, 35], gap="small")
+                with row_cols[0]:
+                    st.html(
+                        f'<div class="tp-list-row-cell tp-list-id-cell">'
+                        f'<span class="tp-list-expand-arrow">{arrow}</span>{point_id}</div>'
+                    )
+                with row_cols[1]:
+                    st.html(f'<div class="tp-list-row-cell">{point_title}</div>')
+                with row_cols[2]:
+                    action_cols = st.columns(3, gap="small")
+                    with action_cols[0]:
+                        if is_deleted:
+                            st.button(
+                                "编辑",
+                                key=f"edit_test_point_disabled_{point_internal_id}",
+                                disabled=True,
+                                type="primary",
+                                width="stretch",
+                                help="已逻辑删除的测试点不能直接编辑",
+                            )
+                        elif st.button(
                             "编辑",
-                            key=f"edit_test_point_disabled_{point_internal_id}",
-                            disabled=True,
+                            key=f"open_edit_test_point_{point_internal_id}",
                             type="primary",
                             width="stretch",
-                            help="已逻辑删除的测试点不能直接编辑",
-                        )
-                    elif st.button(
-                        "编辑",
-                        key=f"open_edit_test_point_{point_internal_id}",
-                        type="primary",
-                        width="stretch",
-                        help="编辑当前测试点",
-                    ):
-                        render_edit_dialog(point)
-                with action_cols[1]:
-                    if st.button(
-                        "查看历史",
-                        key=f"open_test_point_history_{point_internal_id}",
-                        type="primary",
-                        width="stretch",
-                        help="查看当前测试点的操作历史记录",
-                    ):
-                        render_test_point_history_dialog(
-                            point_internal_id,
-                            point.get("point_id") or point_internal_id,
-                        )
-                with action_cols[2]:
-                    if is_deleted:
-                        if st.button(
-                            "恢复",
-                            key=f"open_restore_test_point_{point_internal_id}",
-                            type="primary",
-                            width="stretch",
-                            help="恢复当前已逻辑删除的测试点",
+                            help="编辑当前测试点",
                         ):
-                            render_restore_test_point_dialog(
+                            render_edit_dialog(point)
+                    with action_cols[1]:
+                        if st.button(
+                            "查看历史",
+                            key=f"open_test_point_history_{point_internal_id}",
+                            type="primary",
+                            width="stretch",
+                            help="查看当前测试点的操作历史记录",
+                        ):
+                            render_test_point_history_dialog(
                                 point_internal_id,
                                 point.get("point_id") or point_internal_id,
                             )
-                    elif st.button(
-                        "删除",
-                        key=f"open_delete_test_point_{point_internal_id}",
-                        type="primary",
-                        width="stretch",
-                        help="逻辑删除当前测试点，保留记录和操作历史",
-                    ):
-                        render_delete_test_point_dialog(
-                            point_internal_id,
-                            point.get("point_id") or point_internal_id,
+                    with action_cols[2]:
+                        if is_deleted:
+                            if st.button(
+                                "恢复",
+                                key=f"open_restore_test_point_{point_internal_id}",
+                                type="primary",
+                                width="stretch",
+                                help="恢复当前已逻辑删除的测试点",
+                            ):
+                                render_restore_test_point_dialog(
+                                    point_internal_id,
+                                    point.get("point_id") or point_internal_id,
+                                )
+                        elif st.button(
+                            "删除",
+                            key=f"open_delete_test_point_{point_internal_id}",
+                            type="primary",
+                            width="stretch",
+                            help="逻辑删除当前测试点，保留记录和操作历史",
+                        ):
+                            render_delete_test_point_dialog(
+                                point_internal_id,
+                                point.get("point_id") or point_internal_id,
+                            )
+
+                if is_expanded:
+                    with st.container(border=True):
+                        render_structured_test_point_content(
+                            point.get("current_content"),
+                            point.get("point_id"),
                         )
 
-            if is_expanded:
-                with st.container(border=True):
-                    render_structured_test_point_content(
-                        point.get("current_content"),
-                        point.get("point_id"),
-                    )
-
-                    st.divider()
-                    render_test_point_meta_cards(point)
+                        st.divider()
+                        render_test_point_meta_cards(point)
