@@ -1144,8 +1144,14 @@ else:
         font-size: 13px;
         overflow-wrap: anywhere;
     }
-    /* 列表行按需求列表的紧凑表格节奏排列，取消 Streamlit 默认纵向块间距。 */
-    div[data-testid="stVerticalBlock"]:has(> [class*="st-key-tp-list-row-"]) {
+    /* Streamlit 会在相邻容器之间额外插入默认纵向间距；
+       通过行容器负外边距抵消该间距，避免依赖不稳定的父级 DOM 选择器。 */
+    [class*="st-key-tp-list-row-"] {
+        margin-bottom: -1rem !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+    [class*="st-key-tp-list-row-"] > div[data-testid="stVerticalBlock"] {
         gap: 0 !important;
     }
     .tp-list-id-cell { color: #606266; white-space: nowrap; }
