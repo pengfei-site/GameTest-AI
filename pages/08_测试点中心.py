@@ -735,6 +735,17 @@ project_ids = list(project_options)
 if st.session_state.get("test_point_list_project") not in project_options:
     st.session_state["test_point_list_project"] = project_ids[0]
 selected_project_id = st.session_state["test_point_list_project"]
+
+# 需求表格中的名称链接通过当前页面查询参数触发页面跳转，
+# 在这里恢复原有的 session_state 上下文后再进入测试点列表。
+open_document_id = st.query_params.get("open_test_points_document")
+if open_document_id:
+    st.session_state["test_point_context"] = {
+        "project_id": str(selected_project_id),
+        "document_id": str(open_document_id),
+    }
+    del st.query_params["open_test_points_document"]
+    st.switch_page("pages/15_测试点列表.py")
 selected_project = project_options[selected_project_id]
 project_name = html.escape(str(selected_project.get("project_name") or selected_project.get("name") or "未命名项目"))
 project_description = html.escape(str(selected_project.get("description") or "暂无项目描述"))
@@ -868,84 +879,86 @@ for entry in requirement_items:
 if not filtered_requirements:
     st.info("暂无符合条件的需求文档。")
 else:
+    table_rows = []
+    for entry in filtered_requirements:
+        document = entry["document"]
+        document_id = str(document.get("id") or "")
+        document_name = str(document.get("document_name") or "未命名需求")
+        version_label = f"Ver. {document.get('version') or 1}"
+        file_type = str(document.get("file_type") or "未知").upper()
+        detail_url = (
+            "?open_test_points_document="
+            + __import__("urllib.parse", fromlist=["quote"]).quote(document_id)
+        )
+        if entry["active"]:
+            status_html = '<span class="gt-tapd-status gt-tapd-status-active">有效版本</span>'
+        elif entry["has_available"]:
+            status_html = '<span class="gt-tapd-status gt-tapd-status-deleted">暂无有效版本</span>'
+        else:
+            status_html = '<span class="gt-tapd-status gt-tapd-status-deleted">版本均已删除</span>'
+        table_rows.append(
+            "<tr>"
+            f'<td class="gt-tapd-name"><a href="{html.escape(detail_url, quote=True)}" title="查看该需求版本下的测试点">{html.escape(document_name)}</a></td>'
+            f'<td class="gt-tapd-version">{html.escape(version_label)}</td>'
+            f'<td class="gt-tapd-type">{html.escape(file_type)}</td>'
+            f'<td class="gt-tapd-state">{status_html}</td>'
+            "</tr>"
+        )
+
     st.html("""
     <style>
-    .tp-requirement-table-head {
-        display: grid;
-        grid-template-columns: 60% 12% 12% 16%;
-        align-items: center;
-        box-sizing: border-box;
+    .gt-tapd-wrap {
         width: 100%;
-        min-height: 42px;
+        overflow-x: auto;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        background: #FFFFFF;
+    }
+    .gt-tapd-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        table-layout: fixed;
+        color: #303133;
+        font-size: 13px;
+    }
+    .gt-tapd-table thead th {
+        height: 42px;
         padding: 0 14px;
+        text-align: left;
+        white-space: nowrap;
         color: #606266;
         background: #F5F7FA;
-        border: 1px solid #E4E7ED;
-        border-radius: 8px 8px 0 0;
-        font-size: 13px;
+        border-bottom: 1px solid #E4E7ED;
         font-weight: 600;
     }
-    /* Streamlit 默认会在同级容器之间添加较大的纵向 gap。
-       需求行需要连续排列，因此仅收紧包含需求行的列表容器。 */
-    div[data-testid="stVerticalBlock"]:has(> div[class*="st-key-tp_requirement_row_"]) {
-        gap: 0 !important;
-        row-gap: 0 !important;
+    .gt-tapd-table tbody td {
+        height: 48px;
+        padding: 7px 14px;
+        border-bottom: 1px solid #EBEEF5;
+        vertical-align: middle;
+        background: #FFFFFF;
     }
-    div[class*="st-key-tp_requirement_row_"] {
-        box-sizing: border-box;
-        min-height: 48px;
-        background: #FFFFFF !important;
-        border: 1px solid #EBEEF5 !important;
-        border-top: 0 !important;
-        border-radius: 0 !important;
-        padding: 0 14px !important;
+    .gt-tapd-table tbody tr:last-child td { border-bottom: 0; }
+    .gt-tapd-table tbody tr:hover td { background: #F8FAFD; }
+    .gt-tapd-table thead th:nth-child(1),
+    .gt-tapd-table tbody td:nth-child(1) { width: 60%; }
+    .gt-tapd-table thead th:nth-child(2),
+    .gt-tapd-table tbody td:nth-child(2) { width: 12%; color: #606266; }
+    .gt-tapd-table thead th:nth-child(3),
+    .gt-tapd-table tbody td:nth-child(3) { width: 12%; color: #606266; }
+    .gt-tapd-table thead th:nth-child(4),
+    .gt-tapd-table tbody td:nth-child(4) { width: 16%; }
+    .gt-tapd-table .gt-tapd-name a {
+        color: #303133;
+        text-decoration: none;
+        font-weight: 500;
     }
-    div[class*="st-key-tp_requirement_row_"] [data-testid="stVerticalBlock"],
-    div[class*="st-key-tp_requirement_row_"] [data-testid="stHorizontalBlock"],
-    div[class*="st-key-tp_requirement_row_"] [data-testid="column"] {
-        background: #FFFFFF !important;
+    .gt-tapd-table .gt-tapd-name a:hover {
+        color: #6D5CE7;
+        text-decoration: underline;
     }
-    div[class*="st-key-tp_requirement_row_"]:last-of-type {
-        border-radius: 0 0 8px 8px !important;
-    }
-    div[class*="st-key-open_test_points_for_requirement_"] button {
-        display: flex !important;
-        justify-content: flex-start !important;
-        text-align: left !important;
-        color: #303133 !important;
-        background: #FFFFFF !important;
-        border: 0 !important;
-        box-shadow: none !important;
-        padding: 7px 0 !important;
-        font-size: 13px !important;
-        font-weight: 500 !important;
-        min-height: 46px !important;
-    }
-    div[class*="st-key-open_test_points_for_requirement_"] button > div {
-        width: 100% !important;
-        justify-content: flex-start !important;
-        text-align: left !important;
-    }
-    div[class*="st-key-open_test_points_for_requirement_"] button p {
-        width: 100% !important;
-        text-align: left !important;
-        color: #303133 !important;
-    }
-    div[class*="st-key-open_test_points_for_requirement_"] button:hover {
-        color: #6D5CE7 !important;
-        text-decoration: underline !important;
-        background: #F8FAFD !important;
-    }
-    .tp-requirement-meta {
-        box-sizing: border-box;
-        color: #606266;
-        font-size: 13px;
-        padding: 7px 0;
-        min-height: 46px;
-        display: flex;
-        align-items: center;
-    }
-    .tp-requirement-status {
+    .gt-tapd-status {
         display: inline-block;
         padding: 3px 9px;
         border-radius: 3px;
@@ -953,72 +966,19 @@ else:
         line-height: 18px;
         white-space: nowrap;
     }
-    .tp-requirement-status-active {
-        color: #67C23A;
-        background: #F0F9EB;
-    }
-    .tp-requirement-status-inactive {
-        color: #E6A23C;
-        background: #FDF6EC;
+    .gt-tapd-status-active { color: #67C23A; background: #F0F9EB; }
+    .gt-tapd-status-deleted { color: #E6A23C; background: #FDF6EC; }
+    @media (max-width: 640px) {
+        .gt-tapd-table { min-width: 560px; }
     }
     </style>
-    <div class="tp-requirement-table-head">
-        <span>需求名称</span>
-        <span>当前版本</span>
-        <span>文件类型</span>
-        <span>状态</span>
-    </div>
     """)
-    for index, entry in enumerate(filtered_requirements):
-        document = entry["document"]
-        document_id = str(document.get("id") or "")
-        document_name = str(document.get("document_name") or "未命名需求")
-        version_label = f"Ver. {document.get('version') or 1}"
-        file_type = str(document.get("file_type") or "未知").upper()
-        if entry["active"]:
-            status_label = "有效版本"
-            status_class = "tp-requirement-status-active"
-        elif entry["has_available"]:
-            status_label = "暂无有效版本"
-            status_class = "tp-requirement-status-inactive"
-        else:
-            status_label = "版本均已删除"
-            status_class = "tp-requirement-status-inactive"
-
-        with st.container(key=f"tp_requirement_row_{index}"):
-            name_col, version_col, type_col, status_col = st.columns(
-                [6, 1.2, 1.2, 1.6],
-                vertical_alignment="center",
-                gap="small",
-            )
-            with name_col:
-                if st.button(
-                    document_name,
-                    key=f"open_test_points_for_requirement_{document_id}",
-                    type="tertiary",
-                    width="stretch",
-                    help="查看该需求版本下的测试点",
-                ):
-                    st.session_state["test_point_context"] = {
-                        "project_id": str(selected_project_id),
-                        "document_id": document_id,
-                    }
-                    st.switch_page("pages/15_测试点列表.py")
-            with version_col:
-                st.markdown(
-                    f'<div class="tp-requirement-meta">{html.escape(version_label)}</div>',
-                    unsafe_allow_html=True,
-                )
-            with type_col:
-                st.markdown(
-                    f'<div class="tp-requirement-meta">{html.escape(file_type)}</div>',
-                    unsafe_allow_html=True,
-                )
-            with status_col:
-                st.markdown(
-                    f'<div class="tp-requirement-meta"><span class="tp-requirement-status {status_class}">{status_label}</span></div>',
-                    unsafe_allow_html=True,
-                )
+    table_html = (
+        '<div class="gt-tapd-wrap"><table class="gt-tapd-table">'
+        '<thead><tr><th>需求名称</th><th>当前版本</th><th>文件类型</th><th>状态</th></tr></thead>'
+        '<tbody>' + "".join(table_rows) + '</tbody></table></div>'
+    )
+    st.html(table_html)
 
 st.caption("提示：需求文档版本查看、恢复和删除操作请前往「需求版本管理」页面。")
 
