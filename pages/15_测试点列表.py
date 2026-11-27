@@ -1354,8 +1354,6 @@ for col, label, value in zip(
 # 5. 测试点筛选
 # ============================================================
 
-st.divider()
-
 search_col, filter_col = st.columns(
     [12, 1],
     vertical_alignment="center",
