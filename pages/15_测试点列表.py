@@ -106,11 +106,48 @@ st.html("""
 .tp-record-meta {color:#77758b;font-size:.82rem;margin-top:6px;}
 .tp-pill {display:inline-block;border-radius:999px;padding:3px 9px;font-size:.76rem;font-weight:650;background:#f0eef8;color:#6254a4;margin-left:6px;}
 .tp-pill.pending {background:#fff4d6;color:#8a6200}.tp-pill.approved {background:#e6f6ee;color:#18794e}.tp-pill.rejected {background:#fdeaea;color:#a83232}
-div[data-testid="stVerticalBlock"].st-key-test_point_project_picker_shell {position:relative!important;height:132px!important;min-height:132px!important;max-height:132px!important;box-sizing:border-box;overflow:visible!important;background:#fff!important;border:1px solid #E7EAF1!important;border-radius:12px!important;padding:12px 18px!important;box-shadow:0 2px 8px rgba(23,32,51,.04);transition:border-color .15s,box-shadow .15s;}
-div[data-testid="stVerticalBlock"].st-key-test_point_project_picker_shell:hover {border-color:#C9C4E8!important;box-shadow:0 3px 10px rgba(23,32,51,.06);}
-div[data-testid="stVerticalBlock"].st-key-test_point_project_picker_shell::after {content:"⌄";position:absolute;right:16px;bottom:12px;z-index:3;color:#8490A3;font-size:20px;line-height:1;font-weight:600;pointer-events:none;}
-div[data-testid="stVerticalBlock"].st-key-test_point_project_picker_shell [data-testid="stPopover"] {position:static!important;z-index:2!important;}
-div[data-testid="stVerticalBlock"].st-key-test_point_project_picker_shell [data-testid="stPopover"] button[aria-haspopup="dialog"] {position:absolute!important;inset:0!important;z-index:5!important;display:block!important;width:100%!important;height:132px!important;min-height:132px!important;max-height:132px!important;max-width:none!important;margin:0!important;padding:0!important;opacity:0!important;color:transparent!important;background:transparent!important;border:0!important;box-shadow:none!important;cursor:pointer!important;}
+.tp-scope-summary {
+    margin-top: 0.9rem;
+    padding: 12px 15px;
+    border: 1px solid #e8e6f2;
+    border-radius: 10px;
+    background: linear-gradient(110deg, #faf9ff 0%, #ffffff 72%);
+}
+.tp-scope-summary-label {
+    color: #858298;
+    font-size: 0.76rem;
+    margin-bottom: 5px;
+}
+.tp-scope-summary-value {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    color: #302b50;
+    font-size: 0.92rem;
+    font-weight: 650;
+}
+.tp-scope-separator { color: #aaa6bb; font-weight: 400; }
+.tp-scope-version {
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #efedfb;
+    color: #6254a4;
+    font-size: 0.78rem;
+}
+.tp-scope-active, .tp-scope-history {
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.74rem;
+    font-weight: 600;
+}
+.tp-scope-active { background: #e8f6ee; color: #18794e; }
+.tp-scope-history { background: #f1f0f5; color: #77758b; }
+.tp-scope-summary-hint {
+    margin-top: 5px;
+    color: #9290a2;
+    font-size: 0.75rem;
+}
 
 </style>
 """)
@@ -733,132 +770,160 @@ if context_project_id in project_options:
 if st.session_state.get("test_point_list_page_project") not in project_options:
     st.session_state["test_point_list_page_project"] = next(iter(project_options))
 
-selected_project_id = st.selectbox(
-    "所属项目",
-    options=list(project_options.keys()),
-    format_func=lambda value: (
-        project_options[value].get("project_name")
-        or project_options[value].get("name")
-        or "未命名项目"
-    ),
-    key="test_point_list_page_project",
-)
-selected_project = project_options[selected_project_id]
+# 将项目、需求文档和版本放在同一筛选面板中，按选择依赖顺序从左到右排列。
+with st.container(border=True):
+    st.markdown("#### 🧭 筛选范围")
+    st.caption("先确定项目，再选择需求文档和对应版本；下方统计与列表会同步更新。")
 
-try:
-    documents = list_documents(
-        project_id=selected_project_id,
-        include_deleted=True,
+    project_col, document_col, version_col = st.columns(
+        [1.0, 1.35, 0.95],
+        gap="large",
     )
-except Exception as exc:
-    st.error(f"读取需求文档失败：{exc}")
-    st.stop()
 
-if not documents:
-    st.info("当前项目暂无需求文档，请先在需求中心创建或导入需求文档。")
-    st.stop()
+    with project_col:
+        selected_project_id = st.selectbox(
+            "所属项目",
+            options=list(project_options.keys()),
+            format_func=lambda value: (
+                project_options[value].get("project_name")
+                or project_options[value].get("name")
+                or "未命名项目"
+            ),
+            key="test_point_list_page_project",
+        )
 
-# 侧边栏入口默认不展示已删除版本；若从需求详情页明确进入某个已删除版本，
-# 则保留该版本，避免静默回退到其他版本。
-context_document_id = str(navigation_context.get("document_id") or "")
-documents = [
-    document for document in documents
-    if not document.get("is_deleted")
-    or str(document.get("id")) == context_document_id
-]
+    selected_project = project_options[selected_project_id]
 
-documents_by_key = {}
-for document in documents:
-    document_key = str(document.get("document_key") or document.get("id"))
-    documents_by_key.setdefault(document_key, []).append(document)
+    try:
+        documents = list_documents(
+            project_id=selected_project_id,
+            include_deleted=True,
+        )
+    except Exception as exc:
+        st.error(f"读取需求文档失败：{exc}")
+        st.stop()
 
-document_keys = list(documents_by_key.keys())
-context_document_id = str(navigation_context.get("document_id") or "")
-context_document = next(
-    (
+    if not documents:
+        st.info("当前项目暂无需求文档，请先在需求中心创建或导入需求文档。")
+        st.stop()
+
+    # 默认不展示已删除版本；若从需求详情页明确进入某个已删除版本，则保留该版本。
+    context_document_id = str(navigation_context.get("document_id") or "")
+    documents = [
         document for document in documents
-        if str(document.get("id")) == context_document_id
-    ),
-    None,
-)
-if context_document_id and not context_document:
-    st.error("无法定位需求详情页选中的文档版本，请返回需求详情页重新进入。")
-    st.stop()
+        if not document.get("is_deleted")
+        or str(document.get("id")) == context_document_id
+    ]
 
-if context_document:
-    context_document_key = str(
-        context_document.get("document_key") or context_document.get("id")
-    )
-    st.session_state["test_point_list_page_document_key"] = context_document_key
+    documents_by_key = {}
+    for document in documents:
+        document_key = str(document.get("document_key") or document.get("id"))
+        documents_by_key.setdefault(document_key, []).append(document)
 
-document_key_widget = "test_point_list_page_document_key"
-if st.session_state.get(document_key_widget) not in documents_by_key:
-    st.session_state[document_key_widget] = document_keys[0]
-
-selected_document_key = st.selectbox(
-    "需求文档",
-    options=document_keys,
-    format_func=lambda value: (
-        documents_by_key[value][0].get("document_name")
-        or value
-    ),
-    key=document_key_widget,
-)
-
-version_options = {
-    str(document["id"]): document
-    for document in documents_by_key[selected_document_key]
-}
-if (
-    context_document
-    and str(context_document.get("document_key") or context_document.get("id"))
-    == selected_document_key
-    and context_document_id in version_options
-):
-    st.session_state[
-        f"test_point_list_page_version_{selected_project_id}_{selected_document_key}"
-    ] = context_document_id
-
-version_widget_key = (
-    f"test_point_list_page_version_{selected_project_id}_{selected_document_key}"
-)
-if st.session_state.get(version_widget_key) not in version_options:
-    active_version_id = next(
+    document_keys = list(documents_by_key.keys())
+    context_document = next(
         (
-            document_id for document_id, document in version_options.items()
-            if document.get("is_active")
+            document for document in documents
+            if str(document.get("id")) == context_document_id
         ),
         None,
     )
-    st.session_state[version_widget_key] = (
-        active_version_id or next(iter(version_options))
+    if context_document_id and not context_document:
+        st.error("无法定位需求详情页选中的文档版本，请返回需求详情页重新进入。")
+        st.stop()
+
+    if context_document:
+        context_document_key = str(
+            context_document.get("document_key") or context_document.get("id")
+        )
+        st.session_state["test_point_list_page_document_key"] = context_document_key
+
+    document_key_widget = "test_point_list_page_document_key"
+    if st.session_state.get(document_key_widget) not in documents_by_key:
+        st.session_state[document_key_widget] = document_keys[0]
+
+    with document_col:
+        selected_document_key = st.selectbox(
+            "需求文档",
+            options=document_keys,
+            format_func=lambda value: (
+                documents_by_key[value][0].get("document_name")
+                or value
+            ),
+            key=document_key_widget,
+        )
+
+    version_options = {
+        str(document["id"]): document
+        for document in documents_by_key[selected_document_key]
+    }
+    if (
+        context_document
+        and str(context_document.get("document_key") or context_document.get("id"))
+        == selected_document_key
+        and context_document_id in version_options
+    ):
+        st.session_state[
+            f"test_point_list_page_version_{selected_project_id}_{selected_document_key}"
+        ] = context_document_id
+
+    version_widget_key = (
+        f"test_point_list_page_version_{selected_project_id}_{selected_document_key}"
     )
+    if st.session_state.get(version_widget_key) not in version_options:
+        active_version_id = next(
+            (
+                document_id for document_id, document in version_options.items()
+                if document.get("is_active")
+            ),
+            None,
+        )
+        st.session_state[version_widget_key] = (
+            active_version_id or next(iter(version_options))
+        )
 
-selected_document_id = st.selectbox(
-    "需求文档版本",
-    options=list(version_options.keys()),
-    format_func=lambda value: (
-        f"V{version_options[value].get('version', '?')}"
-        f"{'（当前有效）' if version_options[value].get('is_active') else ''}"
-        f" · {version_options[value].get('document_name') or '未命名文档'}"
-    ),
-    key=version_widget_key,
-)
-selected_document = version_options[selected_document_id]
+    with version_col:
+        selected_document_id = st.selectbox(
+            "需求版本",
+            options=list(version_options.keys()),
+            format_func=lambda value: (
+                f"V{version_options[value].get('version', '?')}"
+                f"{' · 当前有效' if version_options[value].get('is_active') else ''}"
+            ),
+            key=version_widget_key,
+        )
 
-project_name = html.escape(str(
-    selected_project.get("project_name")
-    or selected_project.get("name")
-    or "未命名项目"
-))
-document_name = html.escape(str(
-    selected_document.get("document_name") or "未命名文档"
-))
-st.caption(
-    f"当前范围：{project_name} / {document_name} / "
-    f"V{selected_document.get('version', '?')}。"
-    "仅展示当前选中版本关联的测试点。"
-)
+    selected_document = version_options[selected_document_id]
+
+    project_name = html.escape(str(
+        selected_project.get("project_name")
+        or selected_project.get("name")
+        or "未命名项目"
+    ))
+    document_name = html.escape(str(
+        selected_document.get("document_name") or "未命名文档"
+    ))
+    version_label = html.escape(
+        f"V{selected_document.get('version', '?')}"
+    )
+    active_label = (
+        '<span class="tp-scope-active">当前有效版本</span>'
+        if selected_document.get("is_active")
+        else '<span class="tp-scope-history">历史版本</span>'
+    )
+    st.html(f"""
+    <div class="tp-scope-summary">
+        <div class="tp-scope-summary-label">当前查看范围</div>
+        <div class="tp-scope-summary-value">
+            <span>{project_name}</span>
+            <span class="tp-scope-separator">/</span>
+            <span>{document_name}</span>
+            <span class="tp-scope-version">{version_label}</span>
+            {active_label}
+        </div>
+        <div class="tp-scope-summary-hint">测试点统计、审核和列表内容均限定在此需求文档版本内</div>
+    </div>
+    """)
 
 
 # ============================================================
