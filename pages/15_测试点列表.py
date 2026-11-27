@@ -1118,7 +1118,7 @@ if not test_points:
     st.info("当前筛选条件下没有测试点。")
 
 else:
-    # 使用 Streamlit 原生按钮承载每行编辑操作，保持表格列表布局。
+    # 使用透明按钮覆盖每条测试点的列表行，点击行内空白/内容区域展开或收起。
     st.html("""
     <style>
     .tp-list-header-cell {
@@ -1143,7 +1143,16 @@ else:
         overflow-wrap: anywhere;
     }
     .tp-list-id-cell { color: #606266; white-space: nowrap; }
+    .tp-list-expand-arrow {
+        display: inline-block;
+        width: 18px;
+        color: #909399;
+        font-size: 12px;
+        text-align: center;
+        margin-right: 4px;
+    }
     [class*="st-key-tp-list-row-"] {
+        position: relative;
         border-bottom: 1px solid #EBEEF5;
         background: #FFFFFF;
         padding: 0 2px;
@@ -1154,8 +1163,39 @@ else:
     [class*="st-key-tp-list-row-"] [data-testid="stHorizontalBlock"] {
         align-items: center;
         gap: 0.35rem;
+        position: relative;
+        z-index: 1;
+        pointer-events: none;
     }
-    [class*="st-key-tp-list-row-"] [data-testid="stButton"] button {
+    /* 透明点击层只覆盖列表行，不覆盖下方展开内容。 */
+    [class*="st-key-tp-list-row-"] [class*="st-key-expand-test-point-"] {
+        position: absolute !important;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 48px;
+        z-index: 2;
+        pointer-events: auto;
+    }
+    [class*="st-key-tp-list-row-"] [class*="st-key-expand-test-point-"] button {
+        width: 100%;
+        min-height: 48px;
+        height: 48px;
+        padding: 0;
+        opacity: 0;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+        cursor: pointer;
+    }
+    /* 编辑按钮位于透明点击层上方，避免展开层影响编辑操作。 */
+    [class*="st-key-tp-list-row-"] [class*="st-key-open_edit_test_point_"],
+    [class*="st-key-tp-list-row-"] [class*="st-key-edit_test_point_disabled_"] {
+        position: relative;
+        z-index: 3;
+        pointer-events: auto;
+    }
+    [class*="st-key-tp-list-row-"] [data-testid="stButton"] button:not([kind="secondary"]) {
         min-height: 30px;
         padding: 0 10px;
         font-size: 12px;
@@ -1170,6 +1210,8 @@ else:
     ):
         with col:
             st.html(f'<div class="tp-list-header-cell">{label}</div>')
+
+    expanded_test_point_id = st.session_state.get("expanded_test_point_id")
 
     for point in test_points:
         point_internal_id = point.get("id")
@@ -1191,11 +1233,28 @@ else:
         }.get(manual_status, "tp-list-tag-neutral")
         deleted_label = "是" if is_deleted else "否"
         deleted_class = "tp-list-tag-danger" if is_deleted else "tp-list-tag-neutral"
+        is_expanded = expanded_test_point_id == point_internal_id
+        arrow = "▾" if is_expanded else "▸"
 
         with st.container(key=f"tp-list-row-{point_internal_id}"):
+            if st.button(
+                "展开/收起测试点内容",
+                key=f"expand-test-point-{point_internal_id}",
+                help="点击此行展开或收起测试点内容",
+                width="stretch",
+            ):
+                if is_expanded:
+                    st.session_state.pop("expanded_test_point_id", None)
+                else:
+                    st.session_state["expanded_test_point_id"] = point_internal_id
+                st.rerun()
+
             row_cols = st.columns([15, 39, 14, 14, 9, 9], gap="small")
             with row_cols[0]:
-                st.html(f'<div class="tp-list-row-cell tp-list-id-cell">{point_id}</div>')
+                st.html(
+                    f'<div class="tp-list-row-cell tp-list-id-cell">'
+                    f'<span class="tp-list-expand-arrow">{arrow}</span>{point_id}</div>'
+                )
             with row_cols[1]:
                 st.html(f'<div class="tp-list-row-cell">{point_title}</div>')
             with row_cols[2]:
@@ -1226,6 +1285,13 @@ else:
                     help="编辑当前测试点",
                 ):
                     render_edit_dialog(point)
+
+            if is_expanded:
+                with st.container(border=True):
+                    show_content(
+                        "测试点内容",
+                        point.get("current_content"),
+                    )
 
 
 # ============================================================
