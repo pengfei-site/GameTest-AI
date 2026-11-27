@@ -735,14 +735,20 @@ selected_project_id = st.session_state["test_point_list_project"]
 # 在这里恢复原有的 session_state 上下文后再进入测试点列表。
 open_document_id = st.query_params.get("open_test_points_document")
 if open_document_id:
+    open_analysis_id = str(
+        st.query_params.get("open_test_points_analysis") or ""
+    )
     st.session_state["test_point_context"] = {
         "project_id": str(selected_project_id),
         "document_id": str(open_document_id),
-        "requirement_analysis_id": str(
-            st.query_params.get("open_test_points_analysis") or ""
-        ),
+        "requirement_analysis_id": open_analysis_id,
         "filter_by_analysis": True,
     }
+    # 新的需求入口覆盖 URL 中可能残留的旧定位信息。
+    st.query_params["tp_project_id"] = str(selected_project_id)
+    st.query_params["tp_document_id"] = str(open_document_id)
+    st.query_params["tp_analysis_id"] = open_analysis_id
+    st.query_params["tp_filter_by_analysis"] = "1"
     del st.query_params["open_test_points_document"]
     if "open_test_points_analysis" in st.query_params:
         del st.query_params["open_test_points_analysis"]
