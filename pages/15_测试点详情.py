@@ -1319,25 +1319,26 @@ for batch_id, batch_points in document_batch_points.items():
     )
     batch_filter_options[batch_label] = batch_key
 
-scope_info_col, batch_filter_col = st.columns(
-    [5, 1.5],
-    vertical_alignment="center",
-    gap="medium",
-)
-with scope_info_col:
-    st.html(f"""
-    <div class="tp-scope-summary">
-        <div class="tp-scope-summary-label">▤&nbsp;{document_name}</div>
-        <div class="tp-scope-summary-value">所属项目：{project_name}　·　{version_label}　·　版本状态：{document_status}　·　创建时间：{document_created_at}　·　测试点批次数：{batch_count} 个</div>
-    </div>
-    """)
-with batch_filter_col:
-    selected_batch_label = st.selectbox(
-        "批次筛选",
-        options=list(batch_filter_options.keys()),
-        key=f"test_point_batch_filter_{selected_document_id}",
-        help="选择批次后，仅展示该批次的测试点及批量审核入口。",
+with st.container(border=True):
+    scope_title_col, batch_filter_col = st.columns(
+        [5, 1.5],
+        vertical_alignment="center",
+        gap="medium",
     )
+    with scope_title_col:
+        st.html(f"""
+        <div class="tp-scope-summary-label">▤&nbsp;{document_name}</div>
+        """)
+    with batch_filter_col:
+        selected_batch_label = st.selectbox(
+            "批次筛选",
+            options=list(batch_filter_options.keys()),
+            key=f"test_point_batch_filter_{selected_document_id}",
+            help="选择批次后，仅展示该批次的测试点及批量审核入口。",
+        )
+    st.html(f"""
+    <div class="tp-scope-summary-value">所属项目：{project_name}　·　{version_label}　·　版本状态：{document_status}　·　创建时间：{document_created_at}　·　测试点批次数：{batch_count} 个</div>
+    """)
 
 selected_batch_key = batch_filter_options[selected_batch_label]
 
