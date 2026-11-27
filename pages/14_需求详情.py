@@ -518,39 +518,11 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
 
         elif selected_key == "business_rules":
             rules = groups["business_rules"]
-            search_col, status_col = st.columns([2, 1])
-            with search_col:
-                keyword = st.text_input(
-                    "搜索业务规则",
-                    placeholder="输入规则编号、内容或需求依据",
-                    key=f"analysis_rule_search_{document_id}_{record_index}_{section_title}",
-                ).strip().lower()
-            statuses = sorted({
-                str(rule.get("status") or "").strip()
-                for rule in rules if isinstance(rule, dict) and rule.get("status")
-            })
-            with status_col:
-                status_filter = st.selectbox(
-                    "状态筛选",
-                    ["全部状态", *statuses],
-                    key=f"analysis_rule_status_{document_id}_{record_index}_{section_title}",
-                )
-            filtered_rules = []
             for idx, rule in enumerate(rules, start=1):
                 rule_id = _analysis_text(rule, "rule_id") or f"BR-{idx:03d}"
                 body = _analysis_text(rule, "rule_text", "description", "text") if isinstance(rule, dict) else str(rule)
                 source = _analysis_text(rule, "source_text")
                 rule_status = _analysis_text(rule, "status")
-                haystack = f"{rule_id} {body} {source}".lower()
-                if keyword and keyword not in haystack:
-                    continue
-                if status_filter != "全部状态" and rule_status != status_filter:
-                    continue
-                filtered_rules.append((rule_id, body, source, rule_status))
-            st.caption(f"显示 {len(filtered_rules)} / {len(rules)} 条业务规则")
-            if not filtered_rules:
-                st.info("没有找到符合条件的业务规则。")
-            for rule_id, body, source, rule_status in filtered_rules:
                 _render_analysis_card(rule_id, body, rule_status, source, rule_id)
 
         elif selected_key == "numeric_constraints":
