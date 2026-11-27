@@ -1647,9 +1647,13 @@ else:
         font-weight: 600;
         white-space: nowrap;
     }
-    /* 表头与数据行共用一个容器，关闭 Streamlit 组件之间的默认纵向间距。 */
-    [class*="st-key-tp-list-shell"] > div[data-testid="stVerticalBlock"] {
+    /* 表头与数据行共用一个容器：直接压缩容器内部纵向块的组件间距。 */
+    [class*="st-key-tp-list-shell"] [data-testid="stVerticalBlock"] {
         gap: 0 !important;
+        row-gap: 0 !important;
+    }
+    [class*="st-key-tp-list-shell"] [data-testid="stElementContainer"] {
+        margin-block: 0 !important;
     }
     .tp-list-row-cell {
         height: 48px;
