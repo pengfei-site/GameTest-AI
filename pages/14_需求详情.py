@@ -518,11 +518,27 @@ def render_requirement_analysis(document: dict, section_title: str = "需求结�
 
         elif selected_key == "business_rules":
             rules = groups["business_rules"]
+            keyword = st.text_input(
+                "搜索业务规则",
+                placeholder="输入规则编号、内容或需求依据",
+                key=f"analysis_rule_search_{document_id}_{record_index}_{section_title}",
+            ).strip().lower()
+
+            matched_rules = []
             for idx, rule in enumerate(rules, start=1):
                 rule_id = _analysis_text(rule, "rule_id") or f"BR-{idx:03d}"
                 body = _analysis_text(rule, "rule_text", "description", "text") if isinstance(rule, dict) else str(rule)
                 source = _analysis_text(rule, "source_text")
                 rule_status = _analysis_text(rule, "status")
+                haystack = f"{rule_id} {body} {source}".lower()
+                if keyword and keyword not in haystack:
+                    continue
+                matched_rules.append((rule_id, body, source, rule_status))
+
+            st.caption(f"显示 {len(matched_rules)} / {len(rules)} 条业务规则")
+            if not matched_rules:
+                st.info("没有找到符合条件的业务规则。")
+            for rule_id, body, source, rule_status in matched_rules:
                 _render_analysis_card(rule_id, body, rule_status, source, rule_id)
 
         elif selected_key == "numeric_constraints":
