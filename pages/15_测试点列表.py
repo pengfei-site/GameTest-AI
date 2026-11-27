@@ -1654,9 +1654,15 @@ else:
         # ----------------------------------------------------
 
         with st.container(border=True):
-            render_test_point_history(
-                test_point["id"]
-            )
+            if st.button(
+                "查看操作历史",
+                key=f"detail_test_point_history_{test_point['id']}",
+                width="stretch",
+            ):
+                render_test_point_history_dialog(
+                    test_point["id"],
+                    test_point.get("point_id") or test_point["id"],
+                )
 
         # ----------------------------------------------------
         # 原始内容
