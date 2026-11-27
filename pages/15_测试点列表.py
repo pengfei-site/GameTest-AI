@@ -1431,7 +1431,7 @@ for batch_id, batch_points in document_batch_points.items():
             batch_id,
         )
 
-statistics_cols = st.columns([10, 2], vertical_alignment="center")
+statistics_cols = st.columns([10.8, 1.2], vertical_alignment="center")
 with statistics_cols[0]:
     st.caption(
         f"当前筛选结果：{len(test_points)} 条 | "
