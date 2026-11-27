@@ -125,9 +125,9 @@ div[data-testid="stVerticalBlock"].st-key-test_point_project_picker_shell [data-
 # ============================================================
 
 render_header(
-    title="测试点列表",
+    title="测试点中心",
     description="统一查看、筛选和维护 AI 生成的游戏测试点，支持人工编辑、单条审核和批量审核。",
-    breadcrumb=["测试点中心", "测试点列表"],
+    breadcrumb=["测试点中心"],
 )
 
 
