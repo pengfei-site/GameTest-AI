@@ -105,7 +105,7 @@ def render_upload_action():
 
 
 render_header(
-    title="需求文档",
+    title="需求中心",
     description="导入和管理游戏策划需求文档，为后续结构化分析提供原始需求依据。",
     breadcrumb=["需求中心", "需求文档"],
     actions=render_upload_action,
@@ -236,7 +236,7 @@ st.html("""
 .gt-version-project-desc { color:#64748B; font-size:13px; line-height:1.6; }
 .gt-version-project-id { display:inline-block; margin-top:8px; padding:4px 9px; color:#64748B; background:#F3F5F9; border-radius:6px; font-size:11px; }
 
-/* 项目卡片容器结构与需求版本管理页面保持一致。 */
+/* 项目选择卡片与测试点列表保持一致。 */
 div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell {
     position: relative !important;
     height: 132px !important;
@@ -244,36 +244,20 @@ div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell {
     max-height: 132px !important;
     box-sizing: border-box;
     overflow: visible !important;
-    background: #FFFFFF !important;
+    background: #fff !important;
     border: 1px solid #E7EAF1 !important;
     border-radius: 12px !important;
     padding: 12px 18px !important;
-    box-shadow: 0 2px 8px rgba(23, 32, 51, 0.04);
-    transition: border-color .15s, box-shadow .15s;
+    box-shadow: 0 2px 8px rgba(23,32,51,.04);
+    transition: border-color .15s,box-shadow .15s;
 }
 div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell:hover {
     border-color: #C9C4E8 !important;
-    box-shadow: 0 3px 10px rgba(23, 32, 51, 0.06);
+    box-shadow: 0 3px 10px rgba(23,32,51,.06);
 }
 div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell::after {
-    content: "⌄";
-    position: absolute;
-    right: 16px;
-    bottom: 12px;
-    z-index: 3;
-    color: #8490A3;
-    font-size: 20px;
-    line-height: 1;
-    font-weight: 600;
-    pointer-events: none;
-    transition: color .15s, transform .15s;
-}
-div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell:hover::after {
-    color: #6D5CE7;
-}
-div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell:has([data-testid="stPopover"] button[aria-expanded="true"])::after {
-    content: "⌃";
-    color: #6D5CE7;
+    content: "⌄"; position:absolute; right:16px; bottom:12px; z-index:3;
+    color:#8490A3; font-size:20px; line-height:1; font-weight:600; pointer-events:none;
 }
 div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell > div {
     gap: 0;
@@ -281,10 +265,6 @@ div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell > div {
 .gt-version-project-title { color:#172033; font-size:19px; line-height:1.45; font-weight:750; margin-bottom:5px; }
 .gt-version-project-desc { color:#64748B; font-size:13px; line-height:1.6; }
 .gt-version-project-id { display:inline-block; margin-top:8px; padding:4px 9px; color:#64748B; background:#F3F5F9; border-radius:6px; font-size:11px; }
-div[data-testid="stVerticalBlock"].st-key-document_project_stats [data-testid="stMetric"] {
-    height:132px; min-height:132px; box-sizing:border-box;
-    display:flex; flex-direction:column; justify-content:center;
-}
 
 /* 项目卡片整卡透明点击层：不显示独立的“切换项目”按钮。 */
 div[data-testid="stVerticalBlock"].st-key-document_project_picker_shell {
@@ -383,7 +363,7 @@ status_label = "已归档" if project_status == "archived" else "进行中"
 status_color = "#64748B" if project_status == "archived" else "#15803D"
 status_bg = "#F1F5F9" if project_status == "archived" else "#DCFCE7"
 
-project_col, stats_col = st.columns([1.53, 1.47], gap="medium", vertical_alignment="center")
+project_col, stats_col = st.columns([1.15, 1.85], gap="medium", vertical_alignment="center")
 with project_col:
     with st.container(key="document_project_picker_shell"):
         st.html(f"""

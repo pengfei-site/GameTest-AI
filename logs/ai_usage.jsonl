@@ -70,3 +70,7 @@
 {"stage": "testcase_generation", "model": "deepseek-flash", "prompt_tokens": 4633, "completion_tokens": 486, "total_tokens": 5119, "success": true, "duration_ms": 3455.86, "timestamp": "2026-11-19T05:28:43.179752+00:00"}
 {"stage": "testcase_review", "model": "deepseek-flash", "prompt_tokens": 4127, "completion_tokens": 465, "total_tokens": 4592, "success": true, "duration_ms": 3544.55, "timestamp": "2026-11-19T05:28:47.128410+00:00"}
 {"stage": "testcase_generation", "model": "deepseek-flash", "prompt_tokens": 4633, "completion_tokens": 6, "total_tokens": 4639, "success": true, "duration_ms": 538.43, "timestamp": "2026-11-19T05:28:47.853910+00:00"}
+{"stage": "requirement_analysis", "model": "deepseek-flash", "prompt_tokens": 1358, "completion_tokens": 1832, "total_tokens": 3190, "success": true, "duration_ms": 5485.82, "timestamp": "2026-11-22T19:22:02.449006+00:00"}
+{"stage": "requirement_analysis", "model": "deepseek-flash", "prompt_tokens": 1358, "completion_tokens": 1735, "total_tokens": 3093, "success": true, "duration_ms": 5218.41, "timestamp": "2026-11-22T19:36:49.003462+00:00"}
+{"stage": "requirement_analysis", "model": "deepseek-flash", "prompt_tokens": 1358, "completion_tokens": 1816, "total_tokens": 3174, "success": true, "duration_ms": 5545.27, "timestamp": "2026-11-22T19:37:35.766985+00:00"}
+{"stage": "requirement_analysis", "model": "deepseek-flash", "prompt_tokens": 1358, "completion_tokens": 1672, "total_tokens": 3030, "success": true, "duration_ms": 5155.42, "timestamp": "2026-11-22T19:40:05.463490+00:00"}

@@ -1,4 +1,5 @@
 ﻿
+import html
 import streamlit as st
 from pydantic import ValidationError
 
@@ -16,6 +17,7 @@ from database.repositories.test_point_repository import (
     list_test_points,
     list_test_point_history,
 )
+from database.connection import get_connection
 
 from core.schemas import TestPointEditableContent
 from core.time_utils import format_local_datetime
@@ -103,6 +105,16 @@ st.html("""
     font-weight: 600;
     overflow-wrap: anywhere;
 }
+.tp-record {border:1px solid #e8e6f0;border-radius:12px;padding:14px 16px;margin:8px 0;background:#fff;}
+.tp-record-title {font-size:1rem;font-weight:700;color:#302b50;}
+.tp-record-meta {color:#77758b;font-size:.82rem;margin-top:6px;}
+.tp-pill {display:inline-block;border-radius:999px;padding:3px 9px;font-size:.76rem;font-weight:650;background:#f0eef8;color:#6254a4;margin-left:6px;}
+.tp-pill.pending {background:#fff4d6;color:#8a6200}.tp-pill.approved {background:#e6f6ee;color:#18794e}.tp-pill.rejected {background:#fdeaea;color:#a83232}
+div[data-testid="stVerticalBlock"].st-key-test_point_project_picker_shell {position:relative!important;height:132px!important;min-height:132px!important;max-height:132px!important;box-sizing:border-box;overflow:visible!important;background:#fff!important;border:1px solid #E7EAF1!important;border-radius:12px!important;padding:12px 18px!important;box-shadow:0 2px 8px rgba(23,32,51,.04);transition:border-color .15s,box-shadow .15s;}
+div[data-testid="stVerticalBlock"].st-key-test_point_project_picker_shell:hover {border-color:#C9C4E8!important;box-shadow:0 3px 10px rgba(23,32,51,.06);}
+div[data-testid="stVerticalBlock"].st-key-test_point_project_picker_shell::after {content:"⌄";position:absolute;right:16px;bottom:12px;z-index:3;color:#8490A3;font-size:20px;line-height:1;font-weight:600;pointer-events:none;}
+div[data-testid="stVerticalBlock"].st-key-test_point_project_picker_shell [data-testid="stPopover"] {position:static!important;z-index:2!important;}
+div[data-testid="stVerticalBlock"].st-key-test_point_project_picker_shell [data-testid="stPopover"] button[aria-haspopup="dialog"] {position:absolute!important;inset:0!important;z-index:5!important;display:block!important;width:100%!important;height:132px!important;min-height:132px!important;max-height:132px!important;max-width:none!important;margin:0!important;padding:0!important;opacity:0!important;color:transparent!important;background:transparent!important;border:0!important;box-shadow:none!important;cursor:pointer!important;}
 
 </style>
 """)
@@ -718,17 +730,47 @@ project_options = {
     for project in projects
 }
 
-st.subheader("查询条件")
-
-with st.container(border=True):
-    selected_project_id = st.selectbox(
-        "选择项目",
-        options=list(project_options.keys()),
-        format_func=lambda x: format_project(
-            project_options[x]
-        ),
-        key="test_point_list_project",
-    )
+project_ids = list(project_options)
+if st.session_state.get("test_point_list_project") not in project_options:
+    st.session_state["test_point_list_project"] = project_ids[0]
+selected_project_id = st.session_state["test_point_list_project"]
+selected_project = project_options[selected_project_id]
+project_name = html.escape(str(selected_project.get("project_name") or selected_project.get("name") or "未命名项目"))
+project_description = html.escape(str(selected_project.get("description") or "暂无项目描述"))
+project_status = selected_project.get("status", "active")
+status_label = "已归档" if project_status == "archived" else "进行中"
+status_color, status_bg = ("#64748B", "#F1F5F9") if project_status == "archived" else ("#15803D", "#DCFCE7")
+with get_connection() as conn:
+    project_stats_row = conn.execute("""
+        SELECT COUNT(*) AS total,
+               SUM(CASE WHEN tp.manual_review_status = 'approved' THEN 1 ELSE 0 END) AS approved,
+               SUM(CASE WHEN tp.manual_review_status = 'pending' THEN 1 ELSE 0 END) AS pending
+        FROM test_points tp
+        JOIN generation_batches gb ON gb.id = tp.batch_id
+        WHERE gb.project_id = ? AND tp.is_deleted = 0
+    """, (selected_project_id,)).fetchone()
+project_stats = dict(project_stats_row) if project_stats_row else {"total": 0, "approved": 0, "pending": 0}
+project_col, stats_col = st.columns([1.15, 1.85], gap="medium", vertical_alignment="center")
+with project_col:
+    with st.container(key="test_point_project_picker_shell"):
+        st.html(f'''<div style="color:#172033;padding:2px 2px 18px;min-height:92px;box-sizing:border-box"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><strong>🎮 {project_name}</strong><span style="border-radius:20px;padding:3px 8px;color:{status_color};background:{status_bg};font-size:11px">● {status_label}</span></div><div style="color:#64748B;font-size:12px;margin-top:8px">{project_description}</div><div style="color:#94A3B8;font-size:10px;margin-top:7px">项目 ID：{html.escape(str(selected_project_id))}</div></div>''')
+        with st.popover("切换项目", width="stretch"):
+            for project_id in project_ids:
+                project = project_options[project_id]
+                name = html.escape(str(project.get("project_name") or project.get("name") or "未命名项目"))
+                desc = html.escape(str(project.get("description") or "暂无项目描述"))
+                current = project_id == selected_project_id
+                color, bg = ("#64748B", "#F1F5F9") if project.get("status") == "archived" else ("#15803D", "#DCFCE7")
+                with st.container():
+                    st.html(f'<div style="border:1px solid {"#8B7CF6" if current else "#E5E7EB"};background:{"#F8F7FF" if current else "#FFF"};border-radius:11px;padding:13px 15px;margin:5px 0"><strong>🎮 {name}</strong><span style="float:right;color:{color};background:{bg};padding:3px 8px;border-radius:20px;font-size:11px">{"已归档" if project.get("status") == "archived" else "进行中"}</span><div style="color:#64748B;font-size:12px;margin-top:7px">{desc}</div><div style="color:#94A3B8;font-size:10px;margin-top:7px">项目 ID：{html.escape(str(project_id))}</div></div>')
+                    if not current and st.button("选择此项目", key=f"choose_test_point_project_{project_id}", width="stretch"):
+                        st.session_state["test_point_list_project"] = project_id
+                        st.rerun()
+with stats_col:
+    metric_cols = st.columns(3, gap="small")
+    for col, label, value in zip(metric_cols, ("测试点总数", "已通过", "待审核"), ("total", "approved", "pending")):
+        with col:
+            st.metric(label, project_stats.get(value) or 0)
 
 
 # ============================================================
@@ -800,58 +842,8 @@ statistics = calculate_statistics(
 
 
 # ============================================================
-# 4. 测试点统计
+# 4. 批次统计数据
 # ============================================================
-
-st.divider()
-st.subheader("测试点统计")
-
-stat_cards = st.columns(3)
-
-stat_data = [
-    ("有效测试点总数", statistics["total"]),
-    ("待审核测试点", statistics["pending"]),
-    ("已删除测试点", statistics["deleted"]),
-]
-
-for column, (label, value) in zip(stat_cards, stat_data):
-    with column:
-        st.html(f"""
-        <div class="tp-stat-card">
-            <div class="tp-stat-label">{label}</div>
-            <div class="tp-stat-value">{value}</div>
-        </div>
-        """)
-
-
-stat_cols = st.columns(3)
-
-secondary_stats = [
-    ("已通过", statistics["approved"]),
-    ("已驳回", statistics["rejected"]),
-    ("其他状态", statistics["other"]),
-]
-
-for column, (label, value) in zip(stat_cols, secondary_stats):
-    with column:
-        st.metric(label, value)
-
-
-expected_total = (
-    statistics["pending"]
-    + statistics["approved"]
-    + statistics["rejected"]
-    + statistics["other"]
-)
-
-if statistics["total"] == expected_total:
-    st.success("测试点统计数据校验通过。")
-
-else:
-    st.error(
-        "测试点统计数据不一致，请检查测试点记录。"
-    )
-
 
 if statistics["other"] > 0:
     st.warning(
@@ -936,10 +928,7 @@ if not test_points:
 else:
     st.subheader("测试点记录")
 
-    for index, point in enumerate(
-        test_points,
-        start=1,
-    ):
+    for index, point in enumerate(test_points, start=1):
         point_id = point.get(
             "point_id",
             "未知编号",
@@ -947,10 +936,10 @@ else:
 
         point_title = get_point_title(point)
 
-        with st.expander(
-            f"{index}. {point_id} — {point_title}",
-            expanded=False,
-        ):
+        status = point.get("manual_review_status", "未知")
+        status_label = {"pending":"待审核", "approved":"已通过", "rejected":"已驳回"}.get(status, status)
+        with st.container(border=True):
+            st.markdown(f'<div class="tp-record-title">{point_title}<span class="tp-pill {status}">{status_label}</span></div><div class="tp-record-meta">{point_id} · AI审核：{point.get("ai_review_status", "未知")}</div>', unsafe_allow_html=True)
             col1, col2, col3 = st.columns(3)
 
             col1.write(
@@ -959,8 +948,7 @@ else:
             )
 
             col2.write(
-                f"人工审核状态："
-                f"{point.get('manual_review_status', '未知')}"
+                f"人工审核状态：{status_label}"
             )
 
             col3.write(
@@ -968,9 +956,7 @@ else:
                 f"{'是' if point.get('is_deleted') else '否'}"
             )
 
-            st.caption(
-                f"内部 ID：{point.get('id', '')}"
-            )
+            st.caption(f"内部 ID：{point.get('id', '')}")
 
 
 # ============================================================
