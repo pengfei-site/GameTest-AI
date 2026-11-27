@@ -1435,7 +1435,9 @@ else:
         align-items: center;
         gap: 0.35rem;
         position: relative;
-        z-index: 1;
+        /* 整行内容容器必须高于透明展开按钮；否则子级操作按钮的 z-index
+           会被父级层叠上下文限制，无法真正覆盖透明点击层。 */
+        z-index: 3;
         pointer-events: none;
     }
     /* 透明点击层只覆盖列表行，不覆盖下方展开内容。 */
